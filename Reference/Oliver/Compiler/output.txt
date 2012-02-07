@@ -1,0 +1,15 @@
+	AREA sample2, CODE, READONLY
+
+	ENTRY
+
+.main
+	MOV	R7, #1
+	MOV	R5, R7
+	MOV	R8, R5
+	ADD	R8, R8, #1
+	MOV	R6, R8
+	MOV	R0, R6
+	BL	PRINTR0_
+
+	SWI SWI_FINISH
+	EXIT
