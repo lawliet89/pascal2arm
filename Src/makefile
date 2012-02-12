@@ -48,17 +48,25 @@ OBJ_FILES := $(patsubst %.cpp,%.o, $(SRC_FILES) )
 #-------------------------------------------------------------------------------
 # ACTUAL TARGETS
 #-------------------------------------------------------------------------------
-$(PROGRAM): main.o utility.o
-	@$(COMPILER) $(CXXFLAGS) -o $(PROGRAM) main.o utility.o
+$(PROGRAM): main.o utility.o lexer.o
+	@$(COMPILER) $(CXXFLAGS) -o $(PROGRAM) main.o utility.o lexer.o
 	@echo "Compiling $@"
 	
-main.o: main.cpp utility.h
+main.o: main.cpp utility.h lexer.h
 	@$(COMPILER) $(CXXFLAGS) -c -o main.o main.cpp
 	@echo "Compiling $@"
 	
 utility.o: utility.cpp utility.h
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	@echo "Compiling $@"
+
+lexer.o: lexer.cpp lexer.h
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+	@echo "Compiling $@"
+
+lexer.h lexer.cpp: lexer.l
+	@$(FLEX) -o $(FLEX_CPP) --header-file=$(FLEX_HEADER) $(FLEX_SRC)
+	@echo "Generating lexer"
 
 #-------------------------------------------------------------------------------
 # PHONY TARGETS

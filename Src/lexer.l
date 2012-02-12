@@ -1,3 +1,11 @@
+%{
+#include <iostream>
+#include "utility.h"
+
+extern Flags_T Flags;	
+
+%}
+
 %option noyywrap
 /* Pascal is case-insensitive */
 A [aA]
@@ -29,5 +37,15 @@ Z [zZ]
 
 %%
 
+\{.*\}		|
 
+\/\/[^\n]*\n	|
+\/\*.*\*\/	{
+			/* Comments */
+			OUTPUT << "{Comments found}";
+		};
+
+.	{
+		OUTPUT << yytext;
+	}
 %%

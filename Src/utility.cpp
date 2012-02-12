@@ -43,6 +43,7 @@ void ParseArg(int argc, char **argv){
 	 * Initialise some flags
 	 * */
 	Flags.Output = &std::cout;
+	Flags.OutputPath = "std::cout";
 	
 	while (1){		//TODO - Deal with no arguments & options
 		//Index of the option in the long_options array
@@ -67,6 +68,7 @@ void ParseArg(int argc, char **argv){
 			//Other Flags
 			case 'o':	//Output file flag
 				Flags.Output = new std::ofstream(optarg);
+				Flags.OutputPath = optarg;
 				//Check for stuff
 				break;
 				
@@ -81,9 +83,12 @@ void ParseArg(int argc, char **argv){
 	/* For any remaining command line arguments (not options). */
 	if (optind < argc)		//optind is set via getopt_long: see http://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html#Using-Getopt
 	{
-		//printf ("non-option ARGV-elements: ");
-		//while (optind < argc)
-		//	printf ("%s ", argv[optind++]);
-		//putchar ('\n');
+		Flags.Input = new std::ifstream(argv[optind]);
+		Flags.InputPath = argv[optind];
+		
+	}
+	else{
+		Flags.Input = &std::cin;
+		Flags.InputPath = "std::cin";
 	}
 }
