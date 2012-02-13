@@ -27,6 +27,13 @@ struct Flags_T{
 	//File input stream and name
 	FILE *Input;		//Required by yylex() to be FILE *
 	std::string InputPath;
+	
+	/*
+	 * 	Lexer Use Flags
+	 * */
+	unsigned LexerLineNo;
+	
+	
 };	//There will be one object - Flags - defined in utility.cpp
 
 //Parse arguments and initialise flags

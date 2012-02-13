@@ -18,8 +18,11 @@ int main(int argc, char **argv){
 		return 1;
 	}
 	
+	/* Setup for yylex */
 	//Setup yyin
 	yyin = INPUT;
+	Flags.LexerLineNo = 0;
+	
 	yylex();
 	return 0;
 }
