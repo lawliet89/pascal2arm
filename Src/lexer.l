@@ -5,7 +5,7 @@
 extern Flags_T Flags;	
 
 %}
-
+%option yylineno
 %option noyywrap
 /* Pascal is case-insensitive */
 A [aA]

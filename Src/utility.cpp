@@ -42,6 +42,7 @@ void ParseArg(int argc, char **argv){
 	/*
 	 * Initialise some flags
 	 * */
+	//Default output is -o is not set
 	Flags.Output = &std::cout;
 	Flags.OutputPath = "std::cout";
 	
@@ -83,12 +84,12 @@ void ParseArg(int argc, char **argv){
 	/* For any remaining command line arguments (not options). */
 	if (optind < argc)		//optind is set via getopt_long: see http://www.gnu.org/software/libc/manual/html_node/Using-Getopt.html#Using-Getopt
 	{
-		Flags.Input = new std::ifstream(argv[optind]);
+		Flags.Input = fopen(argv[optind],"r");
 		Flags.InputPath = argv[optind];
 		
 	}
 	else{
-		Flags.Input = &std::cin;
+		Flags.Input = stdin;
 		Flags.InputPath = "std::cin";
 	}
 }

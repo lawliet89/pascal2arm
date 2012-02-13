@@ -9,7 +9,7 @@ int main(int argc, char **argv){
 	ParseArg(argc, argv);	//Parse command line arguments and set Flags
 	
 	//Check for integrity of input and output
-	if (INPUT.fail()){
+	if (!INPUT){
 		std::cout << "Error reading " << Flags.InputPath << std::endl;
 		return 1;
 	}
@@ -18,6 +18,8 @@ int main(int argc, char **argv){
 		return 1;
 	}
 	
-	
+	//Setup yyin
+	yyin = INPUT;
+	yylex();
 	return 0;
 }

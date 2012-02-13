@@ -8,13 +8,13 @@
 
 #include <ostream>
 #include <string>
+#include <cstdio>
 
 /*
  * Shortcut macros
  * */
 #define OUTPUT (*Flags.Output)
-#define INPUT (*Flags.Input)
-
+#define INPUT Flags.Input
 
 /**
  * 	Command Arguments Parsing
@@ -25,10 +25,11 @@ struct Flags_T{
 	std::string OutputPath;
 	
 	//File input stream and name
-	std::istream *Input;
+	FILE *Input;		//Required by yylex() to be FILE *
 	std::string InputPath;
 };	//There will be one object - Flags - defined in utility.cpp
 
+//Parse arguments and initialise flags
 void ParseArg(int argc, char **argv);
 
 #endif /*Utility_H*/
