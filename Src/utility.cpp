@@ -93,3 +93,50 @@ void ParseArg(int argc, char **argv){
 		Flags.InputPath = "std::cin";
 	}
 }
+
+/**
+ *  Compile error handling
+ * 
+ * 	- All Syntax Errors are fatal
+ * */
+
+void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T level, unsigned line, unsigned character){
+	switch(level){
+		case E_NOTICE:
+			std::cout << "Notice";
+			break;
+		case E_WARNING:
+			std::cout << "Warning";
+			break;
+		case E_FATAL:
+			std::cout << "Fatal error";
+			break;		
+		case E_ERROR:
+		default:
+			std::cout << "Error";
+	}
+	std::cout << ": ";
+	
+	switch(ErrorClass){
+		case E_SYNTAX:
+			std::cout << "syntax error - ";
+			break;
+		case E_PARSE:
+			std::cout << "parse error - ";
+	}
+	
+	std::cout << message;
+	
+	if (line || character)
+		std::cout << " at ";
+		
+	if (line)
+		std::cout << line;
+	if (character)
+		std::cout << ":" << character-1;
+	
+	std::cout << std::endl;
+
+	if (level == E_FATAL)
+		abort();
+}

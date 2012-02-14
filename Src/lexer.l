@@ -3,11 +3,18 @@
 #include <iomanip>
 #include <cstring>
 #include "utility.h"
+#include "parser.h"
+#include "functions.h"
 
-extern Flags_T Flags;	
+extern Flags_T Flags;		//In utility.cpp
 
-//Forward declaration
-void LexerConsumeComments(const char *delimiter);
+//Lexer variables
+unsigned LexerCharCount, LexerLineCount;
+
+//Inline functions
+inline void LexerAddCharCount(){
+	LexerCharCount += strlen(yytext);
+}
 %}
 %option yylineno
 %option noyywrap
@@ -41,29 +48,90 @@ X [xX]
 Y [yY]
 Z [zZ]
 
-/* States */
+WHITESPACE [ \t]
+
+
 
 %%
 
+{A}{N}{D}   	{ LexerAddCharCount(); return(K_AND); }
+{A}{R}{R}{A}{Y} { LexerAddCharCount(); return(K_ARRAY); }
+{B}{E}{G}{I}{N} { LexerAddCharCount(); return(K_BEGIN); }
+{C}{A}{S}{E}   	{LexerAddCharCount(); return(K_CASE); }
+{C}{O}{N}{S}{T} {LexerAddCharCount();  return K_CONST; }
+{D}{I}{V}  	{LexerAddCharCount(); return K_DIV; }
+{D}{O}    	{LexerAddCharCount(); return K_DO; }
+{D}{O}{W}{N}{T}{O}  {LexerAddCharCount(); return K_DOWNTO; }
+{E}{L}{S}{E}   {LexerAddCharCount(); return K_ELSE; }
+{E}{N}{D}   	{LexerAddCharCount(); return K_END; }
+{F}{I}{L}{E}   {LexerAddCharCount(); return K_FILE; }
+{F}{O}{R}   	{LexerAddCharCount(); return K_FOR; }
+{F}{U}{N}{C}{T}{I}{O}{N} {LexerAddCharCount(); return K_FUNCTION; }
+{G}{O}{T}{O}   {LexerAddCharCount(); return K_GOTO; }
+{I}{F}    	{LexerAddCharCount(); return K_IF; }
+{I}{N}    	{LexerAddCharCount(); return K_IN; }
+{L}{A}{B}{E}{L}   {LexerAddCharCount(); return K_LABEL; }
+{M}{O}{D}   {LexerAddCharCount(); return K_MOD; }
+{N}{I}{L}   {LexerAddCharCount(); return K_NIL; }
+{N}{O}{T}   {LexerAddCharCount(); return K_NOT; }
+{O}{F}    {LexerAddCharCount(); return K_OF; }
+{O}{R}    {LexerAddCharCount(); return K_OR; }
+{P}{A}{C}{K}{E}{D}  {LexerAddCharCount(); return K_PACKED; }
+{P}{R}{O}{C}{E}{D}{U}{R}{E} {LexerAddCharCount(); return K_PROCEDURE; }
+{P}{R}{O}{G}{R}{A}{M}  {LexerAddCharCount(); return K_PROGRAM; }
+{R}{E}{C}{O}{R}{D}  {LexerAddCharCount(); return K_RECORD; }
+{R}{E}{P}{E}{A}{T}  {LexerAddCharCount(); return K_REPEAT; }
+{S}{E}{T}   {LexerAddCharCount(); return K_SET; }
+{T}{H}{E}{N}   {LexerAddCharCount(); return K_THEN; }
+{T}{O}    {LexerAddCharCount(); return K_TO; }
+{T}{Y}{P}{E}   {LexerAddCharCount(); return K_TYPE; }
+{U}{N}{T}{I}{L}   {LexerAddCharCount(); return K_UNTIL; }
+{V}{A}{R}   {LexerAddCharCount(); return K_VAR; }
+{W}{H}{I}{L}{E}   {LexerAddCharCount(); return K_WHILE; }
+{W}{I}{T}{H}   {LexerAddCharCount(); return K_WITH; }
 
-"{"	LexerConsumeComments("{");
+{F}{O}{R}{W}{A}{R}{D}  {LexerAddCharCount(); return I_FORWARD; }
+
+[a-zA-Z]([a-zA-Z0-9])+  { LexerAddCharCount(); return T_IDENTIFIER; }
+
+
+"{"	LexerConsumeComments("{");		/* Consume Comments - Place at bottom! */
 "{*"	LexerConsumeComments("{*");
-"/*"	LexerConsumeComments("\/*");
-"//"	LexerConsumeComments("\//");
+"/*"	LexerConsumeComments("/*");
+"//"	LexerConsumeComments("//");
 
-[\n]	{		/* New Line */
-		//OUTPUT << std::endl << std::setw(4) << yylineno << "\t";
-		ECHO;
+{WHITESPACE}	LexerCharCount++;
+
+[\n]	{
+		LexerLineCount++;
+		LexerCharCount = 1;
 	}
 
 .	{
-		OUTPUT << yytext;
+		if (yytext[0] == '\r')
+			LexerCharCount++;	//Do nothing
+		else{
+			LexerCharCount++;
+			char msg[26];
+			strcpy(msg, "Unexpected character '");
+			strcat(msg, yytext);
+			HandleError(strcat(msg, "'"), E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
+		}
 	}
 %%
+
+//Initialise Lexer
+void LexerInit(){
+	//Setup yyin
+	yyin = INPUT;
+	LexerCharCount = 1;
+	LexerLineCount = 1;
+}
 
 //Lexer Functions
 void LexerConsumeComments(const char *delimiter){
 	static char endDelimiter[3];
+	LexerCharCount += strlen(delimiter);
 
 	//Beginning of comment
 	//OUTPUT << "[[COMMENT DELIM " << delimiter;
@@ -87,10 +155,15 @@ void LexerConsumeComments(const char *delimiter){
 	//Time to eat charas
 	while(1){
 		c = yyinput();
-		
+		if (c == '\n'){
+			LexerLineCount++;
+			LexerCharCount = 1;
+		}
+		else
+			LexerCharCount++;
 		//Unexpected EOF
 		if (c == EOF){
-			OUTPUT << "Syntax error: unexpected EOF in comment";
+			HandleError("Unexpected EOF in comments", E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
 			return;
 		}
 		

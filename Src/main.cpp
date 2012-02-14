@@ -1,9 +1,12 @@
 #include <iostream>
 #include "utility.h"
 #include "lexer.h"
+#include "parser.h"
+#include "functions.h"
 
 //Flags - declared in utility.cpp
 extern Flags_T Flags;
+extern unsigned LexerCharCount, LexerLineCount;
 
 int main(int argc, char **argv){
 	ParseArg(argc, argv);	//Parse command line arguments and set Flags
@@ -18,11 +21,14 @@ int main(int argc, char **argv){
 		return 1;
 	}
 	
-	/* Setup for yylex */
-	//Setup yyin
-	yyin = INPUT;
-	Flags.LexerLineNo = 0;
+	//Initialise Lexer
+	LexerInit();
 	
-	yylex();
+	//yyparse();
+	int lex;
+	do{
+		lex = yylex();
+		std::cout << lex << " " << LexerLineCount << ":" << LexerCharCount << std::endl;
+	} while(lex);
 	return 0;
 }
