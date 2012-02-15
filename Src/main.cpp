@@ -3,12 +3,14 @@
 #include "lexer.h"
 #include "parser.h"
 #include "functions.h"
+#include <signal.h>
 
 //Flags - declared in utility.cpp
 extern Flags_T Flags;
 extern unsigned LexerCharCount, LexerLineCount;
 
 int main(int argc, char **argv){
+	signal(SIGABRT, &HandleAbort);	//Clean up and stuff
 	ParseArg(argc, argv);	//Parse command line arguments and set Flags
 	
 	//Check for integrity of input and output

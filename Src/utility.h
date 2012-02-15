@@ -50,4 +50,10 @@ enum ErrorLevel_T{
 
 void HandleError(const char* message, ErrorClass_T ErrorClass=E_GENERIC, ErrorLevel_T level=E_NOTICE, unsigned line = 0, unsigned chararacter=0);
 
+/**
+ * Handle SIGABRT
+ * 
+ * */
+
+void HandleAbort(int param);
 #endif /*Utility_H*/

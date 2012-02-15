@@ -10,13 +10,28 @@
 #include <getopt.h>	
 #include <fstream>
 #include <iostream>
+#include <cstdio>
+//#include <cstdlib>
+//#include <signal.h>
+
+//Global flags
+Flags_T Flags;
+
+/**
+ * Handle SIGABRT
+ * 
+ * */
+
+void HandleAbort(int param){
+	//Clean up
+	
+	std::cout << "Compilation Terminated." << std::endl;
+	exit(1);
+}
 
 /**
  * 	Command Arguments Parsing
  * */
-
-//Global flags
-Flags_T Flags;
 
 //Parse arguments. Based on example @ http://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html#Getopt-Long-Option-Example
 void ParseArg(int argc, char **argv){
