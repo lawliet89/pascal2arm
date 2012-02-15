@@ -32,6 +32,7 @@ void yyerror(const char *msg);
 void LexerInit();
 
 void LexerConsumeComments(const char *delimiter);
+void LexerConsumeInvalid();
 
 //Inline functions
 inline void LexerAddCharCount();

@@ -35,6 +35,7 @@ void ParseArg(int argc, char **argv){
 		//{"delete",  required_argument, 0, 'd'},
 		//{"create",  required_argument, 0, 'c'},
 		{"output",    required_argument, 0, 'o'},
+		{"hint", no_argument, 0, 'H'},
 		{ NULL, no_argument, NULL, 0 }			//Not entirely sure what this is for
 	};	
 	
@@ -46,11 +47,13 @@ void ParseArg(int argc, char **argv){
 	Flags.Output = &std::cout;
 	Flags.OutputPath = "std::cout";
 	
+	Flags.ShowHints = false;
+	
 	while (1){		//TODO - Deal with no arguments & options
 		//Index of the option in the long_options array
 		int option_index = 0;		
 		
-		c = getopt_long (argc, argv, "o:",	//Change short options here!
+		c = getopt_long (argc, argv, "Ho:",	//Change short options here!
 				 long_options, &option_index);
 		
 		if (c == -1) //getopt_long will return -1 at the end of options
@@ -72,7 +75,9 @@ void ParseArg(int argc, char **argv){
 				Flags.OutputPath = optarg;
 				//Check for stuff
 				break;
-				
+			case 'H':
+				Flags.ShowHints = true;
+				break;
 			case '?':
 				/* getopt_long already printed an error message. */
 				break;
@@ -115,6 +120,19 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 		default:
 			std::cout << "Error";
 	}
+	
+	//Line and chara no
+	if (line || character)
+		std::cout << "(";
+		
+	if (line)
+		std::cout << line;
+	if (character)
+		std::cout << ":" << character-1;
+	//Line and chara no
+	if (line || character)
+		std::cout << ")";
+	
 	std::cout << ": ";
 	
 	switch(ErrorClass){
@@ -126,14 +144,6 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 	}
 	
 	std::cout << message;
-	
-	if (line || character)
-		std::cout << " at ";
-		
-	if (line)
-		std::cout << line;
-	if (character)
-		std::cout << ":" << character-1;
 	
 	std::cout << std::endl;
 

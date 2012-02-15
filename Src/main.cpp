@@ -13,11 +13,11 @@ int main(int argc, char **argv){
 	
 	//Check for integrity of input and output
 	if (!INPUT){
-		std::cout << "Error reading " << Flags.InputPath << std::endl;
+		std::cout << "Error reading '" << Flags.InputPath << "'" << std::endl;
 		return 1;
 	}
 	if (OUTPUT.fail()){
-		std::cout << "Error writing to " << Flags.OutputPath << std::endl;
+		std::cout << "Error writing to '" << Flags.OutputPath << "'" << std::endl;
 		return 1;
 	}
 	

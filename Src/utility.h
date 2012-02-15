@@ -28,7 +28,7 @@ struct Flags_T{
 	FILE *Input;		//Required by yylex() to be FILE *
 	std::string InputPath;
 	
-	
+	bool ShowHints;
 	
 };	//There will be one object - Flags - defined in utility.cpp
 

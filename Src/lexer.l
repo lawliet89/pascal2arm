@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <sstream>
 #include "utility.h"
 #include "parser.h"
 #include "functions.h"
@@ -48,7 +49,7 @@ X [xX]
 Y [yY]
 Z [zZ]
 
-WHITESPACE [ \t]
+WHITESPACE [ \t\r]
 
 
 
@@ -108,15 +109,7 @@ WHITESPACE [ \t]
 	}
 
 .	{
-		if (yytext[0] == '\r')
-			LexerCharCount++;	//Do nothing
-		else{
-			LexerCharCount++;
-			char msg[26];
-			strcpy(msg, "Unexpected character '");
-			strcat(msg, yytext);
-			HandleError(strcat(msg, "'"), E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
-		}
+		LexerConsumeInvalid();
 	}
 %%
 
@@ -182,4 +175,32 @@ void LexerConsumeComments(const char *delimiter){
 		
 		//Reached here? Still in comment
 	}
+}
+
+void LexerConsumeInvalid(){
+	//Eat a whole word and then report failure
+	std::stringstream msg;
+	char c = yytext[0];
+	int charCount = 0;
+	msg << "Unexpected '" << c;
+
+	while(c != ' ' && c != '\t' && c != '\n' && c != EOF){
+		c = yyinput();
+		charCount++;
+		LexerCharCount++;
+		if (c != ' ' && c != '\t' && c != '\n' && c != EOF)
+			msg << c;		
+	};
+
+	if (c == EOF)
+		msg << " at the end of the file";
+	else
+		unput(c);
+
+	msg << "'";
+
+	if (Flags.ShowHints)
+		msg << "\n\tNote: Are you trying to define an identifier? An identifier can only begin with alphabets and can contain only numbers and alphabets.";
+	
+	HandleError(msg.str().c_str(), E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount-charCount+1);
 }

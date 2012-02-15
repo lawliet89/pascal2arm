@@ -43,7 +43,6 @@ extern Flags_T Flags;		//In utility.cpp
 
 Program: K_PROGRAM;   
 
-SyntaxError: 	Y_SYNTAX_ERROR	 { YYABORT; /*Already handled by a Flex call to HandleError */ };
 %%
 
 void yyerror(const char * msg){
