@@ -2,7 +2,9 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <string>
 #include <sstream>
+#include <new>
 
 #define IN_FLEX
 
@@ -16,11 +18,15 @@ extern Flags_T Flags;		//In utility.cpp
 //Lexer variables
 unsigned LexerCharCount, LexerLineCount;
 YYSTYPE CurrentToken;
+bool LexerSyntaxError;
+
+//Functions
+void LexerConsumeComments(const char *delimiter);
+int LexerConsumeInvalid();
 
 //Inline functions
-inline void LexerAddCharCount(){
-	LexerCharCount += strlen(yytext);
-}
+inline void LexerAddCharCount();	//Add count to char
+inline void LexerCleanCurrent();	//Clean up any memory leaks
 %}
 %option yylineno
 %option noyywrap
@@ -60,12 +66,12 @@ WHITESPACE [ \t\r]
 
 %%
 
-{A}{N}{D}   	{ LexerAddCharCount(); return(K_AND); }
+{A}{N}{D}   	{ LexerAddCharCount(); return(OP_AND); }
 {A}{R}{R}{A}{Y} { LexerAddCharCount(); return(K_ARRAY); }
 {B}{E}{G}{I}{N} { LexerAddCharCount(); return(K_BEGIN); }
 {C}{A}{S}{E}   	{LexerAddCharCount(); return(K_CASE); }
 {C}{O}{N}{S}{T} {LexerAddCharCount();  return K_CONST; }
-{D}{I}{V}  	{LexerAddCharCount(); return K_DIV; }
+{D}{I}{V}  	{LexerAddCharCount(); return OP_DIV; }
 {D}{O}    	{LexerAddCharCount(); return K_DO; }
 {D}{O}{W}{N}{T}{O}  {LexerAddCharCount(); return K_DOWNTO; }
 {E}{L}{S}{E}   {LexerAddCharCount(); return K_ELSE; }
@@ -75,13 +81,13 @@ WHITESPACE [ \t\r]
 {F}{U}{N}{C}{T}{I}{O}{N} {LexerAddCharCount(); return K_FUNCTION; }
 {G}{O}{T}{O}   {LexerAddCharCount(); return K_GOTO; }
 {I}{F}    	{LexerAddCharCount(); return K_IF; }
-{I}{N}    	{LexerAddCharCount(); return K_IN; }
+{I}{N}    	{LexerAddCharCount(); return OP_IN; }
 {L}{A}{B}{E}{L}   {LexerAddCharCount(); return K_LABEL; }
-{M}{O}{D}   {LexerAddCharCount(); return K_MOD; }
+{M}{O}{D}   {LexerAddCharCount(); return OP_MOD; }
 {N}{I}{L}   {LexerAddCharCount(); return K_NIL; }
-{N}{O}{T}   {LexerAddCharCount(); return K_NOT; }
+{N}{O}{T}   {LexerAddCharCount(); return OP_NOT; }
 {O}{F}    {LexerAddCharCount(); return K_OF; }
-{O}{R}    {LexerAddCharCount(); return K_OR; }
+{O}{R}    {LexerAddCharCount(); return OP_OR; }
 {P}{A}{C}{K}{E}{D}  {LexerAddCharCount(); return K_PACKED; }
 {P}{R}{O}{C}{E}{D}{U}{R}{E} {LexerAddCharCount(); return K_PROCEDURE; }
 {P}{R}{O}{G}{R}{A}{M}  {LexerAddCharCount(); return K_PROGRAM; }
@@ -98,9 +104,49 @@ WHITESPACE [ \t\r]
 
 {F}{O}{R}{W}{A}{R}{D}  {LexerAddCharCount(); return I_FORWARD; }
 
-[a-zA-Z]([a-zA-Z0-9])+  { LexerAddCharCount(); return T_IDENTIFIER; }
+[a-zA-Z]([a-zA-Z0-9])+  { //Identifier
+			LexerAddCharCount(); 
+			LexerCleanCurrent(); 
+			CurrentToken = new Token(yytext, V_IDENTIFIER);
+			return V_IDENTIFIER; }
+
+":="    {LexerAddCharCount(); return OP_ASSIGNMENT; }
+
+":"    |
+","    |
+"."    |
+"="    |
+"["    |
+"("    |
+"<"    |
+">"    |
+"-"    |
+"+"    |
+"]"    |
+")"    |
+";"    |
+"/"    |
+"*"    {LexerAddCharCount(); return yytext[0]; }
+
+".."    {LexerAddCharCount(); return(OP_DOTDOT); }
+">="    {LexerAddCharCount(); return(OP_GE); }
+"<="    {LexerAddCharCount(); return(OP_LE); }
+"<>"    {LexerAddCharCount(); return(OP_NOTEQUAL); }
+"**"    {LexerAddCharCount(); return(OP_STARSTAR); }
+"->"   |
+"^"    {LexerAddCharCount(); return(OP_UPARROW); }
+
+[0-9]+"."[0-9]+   {
+			LexerAddCharCount(); 
+			LexerCleanCurrent(); 
+			CurrentToken = new Token(yytext, V_REAL);	//TODO	
+			
+			return(V_REAL);
+		  }
 
 
+			
+			
 "{"	LexerConsumeComments("{");		/* Consume Comments - Place at bottom! */
 "{*"	LexerConsumeComments("{*");
 "/*"	LexerConsumeComments("/*");
@@ -114,7 +160,14 @@ WHITESPACE [ \t\r]
 	}
 
 .	{
-		LexerConsumeInvalid();
+		return LexerConsumeInvalid();
+	}
+	
+<<EOF>> {
+		if (LexerSyntaxError){
+			HandleError("There are syntax errors. Compilation cannot proceed.", E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
+			return Y_FATAL_ERROR;
+		}
 	}
 %%
 
@@ -124,6 +177,8 @@ void LexerInit(){
 	yyin = INPUT;
 	LexerCharCount = 1;
 	LexerLineCount = 1;
+	
+	LexerSyntaxError = false;
 }
 
 //Lexer Functions
@@ -182,23 +237,26 @@ void LexerConsumeComments(const char *delimiter){
 	}
 }
 
-void LexerConsumeInvalid(){
+int LexerConsumeInvalid(){
 	//Eat a whole word and then report failure
 	std::stringstream msg;
 	char c = yytext[0];
 	int charCount = 0;
 	msg << "Unexpected '" << c;
 
-	while(c != ' ' && c != '\t' && c != '\n' && c != EOF){
+	while(c != ' ' && c != '\t' && c != '\n' && c != EOF && c != '\r'){
 		c = yyinput();
 		charCount++;
 		LexerCharCount++;
-		if (c != ' ' && c != '\t' && c != '\n' && c != EOF)
+		if (c != ' ' && c != '\t' && c != '\n' && c != EOF && c != '\r')
 			msg << c;		
 	};
 
-	if (c == EOF)
+	bool EOFError = false;
+	if (c == EOF){
 		msg << " at the end of the file";
+		EOFError = true;
+	}
 	else
 		unput(c);
 
@@ -207,5 +265,20 @@ void LexerConsumeInvalid(){
 	if (Flags.ShowHints)
 		msg << "\n\tNote: Are you trying to define an identifier? An identifier can only begin with alphabets and can contain only numbers and alphabets.";
 	
-	HandleError(msg.str().c_str(), E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount-charCount+1);
+	LexerSyntaxError = true;
+	ErrorLevel_T level = EOFError == true ? E_FATAL : E_ERROR;
+	
+	HandleError(msg.str().c_str(), E_SYNTAX, level, LexerLineCount, LexerCharCount-charCount+1);
+	
+	return Y_SYNTAX_ERROR;
+}
+
+//Inline functions
+inline void LexerAddCharCount(){
+	LexerCharCount += strlen(yytext);
+}
+
+inline void LexerCleanCurrent(){
+	if (CurrentToken)
+		delete CurrentToken;
 }

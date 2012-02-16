@@ -129,7 +129,7 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 			std::cout << "Warning";
 			break;
 		case E_FATAL:
-			std::cout << "Fatal error";
+			std::cout << "Fatal Error";
 			break;		
 		case E_ERROR:
 		default:
@@ -152,10 +152,10 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 	
 	switch(ErrorClass){
 		case E_SYNTAX:
-			std::cout << "syntax error - ";
+			std::cout << "Syntax Error - ";
 			break;
 		case E_PARSE:
-			std::cout << "parse error - ";
+			std::cout << "Parse Error - ";
 	}
 	
 	std::cout << message;

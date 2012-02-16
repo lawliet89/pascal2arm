@@ -14,7 +14,7 @@ class Token;
  * 
  * */
 
-class Token{
+class Token{		//Base class is sufficient for normal strings
 public:
 	//OCCF
 	

@@ -40,18 +40,6 @@ void LexerInit();
 
 void yyerror(const char *msg);
 
-/*
- * 
- * 	Flex Functions - defined in lexer.l
- * 
- */
-
-
-void LexerConsumeComments(const char *delimiter);
-void LexerConsumeInvalid();
-
-//Inline functions
-inline void LexerAddCharCount();
 
 #endif
 #endif
