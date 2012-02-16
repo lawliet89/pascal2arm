@@ -31,6 +31,6 @@ protected:
 	yytokentype type;
 };
 
-#include "all.h"	//All specialisations
+#include "Gen/all.h"	//All specialisations
 
 #endif

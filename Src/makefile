@@ -6,6 +6,9 @@
 # Variable that contains the name of the program
 PROGRAM := a
 
+# Directory to store generated files
+GEN_DIR := Gen/
+
 # Source file for flex
 FLEX_SRC := lexer.l
 # Source file for bisonc++
@@ -24,6 +27,8 @@ FLEX_CPP := lexer.cpp
 BISON_CPP := parser.cpp
 
 DEBUG_BUILD := true
+
+
 
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
@@ -53,49 +58,50 @@ OBJ_FILES := $(patsubst %.cpp,%.o, $(SRC_FILES) )
 #-------------------------------------------------------------------------------
 # ACTUAL TARGETS
 #-------------------------------------------------------------------------------
-$(PROGRAM): main.o utility.o lexer.o parser.o token.o
+$(PROGRAM): $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -o $(PROGRAM) $^
 	@echo "Make complete."
 	
-main.o: main.cpp utility.h functions.h 
+$(GEN_DIR)main.o: main.cpp utility.h functions.h 
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-utility.o: utility.cpp utility.h
+$(GEN_DIR)utility.o: utility.cpp utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-lexer.o: lexer.cpp parser.h functions.h utility.h
+$(GEN_DIR)lexer.o: $(FLEX_CPP) $(BISON_HEADER) functions.h utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-lexer.h lexer.cpp: lexer.l
+$(FLEX_CPP) $(FLEX_HEADER): $(FLEX_SRC)
 	@echo "Generating lexer"
 	@$(FLEX) -o $(FLEX_CPP) --header-file=$(FLEX_HEADER) $(FLEX_SRC)
 	
-parser.h parser.cpp: parser.y
+$(BISON_CPP) $(BISON_HEADER): $(BISON_SRC)
 	@echo "Generating parser"
 	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_SRC)
 	
-parser.o: parser.cpp lexer.h functions.h utility.h
+$(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) functions.h utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-token.o: token.cpp token.h 
+$(GEN_DIR)token.o: token.cpp token.h 
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
 functions.h: token.h
 	
 #Tokens specialisation header generation	
-token.h: all.h parser.h
-	@echo "Regenerating all.h"
+token.h: $(GEN_DIR)all.h $(BISON_HEADER)
+#	@echo "Regenerating all.h"
 
-all.h: all_gen $(wildcard Tokens/*.h) 
-	@ls ./Tokens/*.h | ./all_gen all.h
+$(GEN_DIR)all.h: $(GEN_DIR)all_gen $(wildcard Tokens/*.h) 
+	@echo "Regenerating all.h"
+	@ls ./Tokens/*.h | $(GEN_DIR)all_gen $(GEN_DIR)all.h
 	
-all_gen: all_gen.cpp
+$(GEN_DIR)all_gen: all_gen.cpp
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -o $@ $<
 	
@@ -109,7 +115,7 @@ all_gen: all_gen.cpp
 .PHONY : clean again clean-temp
 clean:
 	@rm -f -v *.o $(FLEX_HEADER) $(BISON_HEADER) $(PROGRAM) $(FLEX_CPP) $(BISON_CPP) 
-	@rm -f -v Tokens/all_gen all.h
+	@rm -f -v Gen/*
 	@echo 'Cleaned.'
 again:
 	@make clean
