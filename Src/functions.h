@@ -24,7 +24,7 @@
 #define YY_DECL int yylex(void)
 
 /*
- * Function Prototypes for Flex and Bison
+ * Function Prototypes for Flex and Bison for everyone
  */
 int yyparse();	//Bison
 YY_DECL; 	//Flex
@@ -32,14 +32,5 @@ YY_DECL; 	//Flex
 //Initialise Lexer
 void LexerInit();
 
-//Bison and Flex specific
-#if defined IN_BISON || defined IN_FLEX
-/*
-	Bison Functions
-*/
 
-void yyerror(const char *msg);
-
-
-#endif
-#endif
+#endif /* FunctionsH */

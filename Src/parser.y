@@ -20,6 +20,7 @@
 extern Flags_T Flags;		//In utility.cpp
 extern YYSTYPE CurrentToken;	//In lexer.l
 
+void yyerror(const char *msg);
 %}
 /* Value Tokens */
 %token V_IDENTIFIER V_INT V_REAL
