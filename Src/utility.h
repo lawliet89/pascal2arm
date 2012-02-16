@@ -8,6 +8,7 @@
 
 #include <ostream>
 #include <string>
+#include <sstream>
 #include <cstdio>
 
 /*
@@ -56,4 +57,25 @@ void HandleError(const char* message, ErrorClass_T ErrorClass=E_GENERIC, ErrorLe
  * */
 
 void HandleAbort(int param);
+
+/**
+ * Utility functions
+ * 
+ * */
+
+template<typename T> std::string ToString(T input){
+	std::stringstream output;
+	output << input;
+	
+	return output.str();
+}
+
+template<typename T> T FromString(std::string input){
+	T output;
+	std::stringstream stream(input);
+	stream >> output;
+	
+	return output;
+}
+
 #endif /*Utility_H*/

@@ -53,33 +53,51 @@ OBJ_FILES := $(patsubst %.cpp,%.o, $(SRC_FILES) )
 #-------------------------------------------------------------------------------
 # ACTUAL TARGETS
 #-------------------------------------------------------------------------------
-$(PROGRAM): main.o utility.o lexer.o parser.o
+$(PROGRAM): main.o utility.o lexer.o parser.o token.o
+	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -o $(PROGRAM) $^
-	@echo "Compiling $@"
+	@echo "Make complete."
 	
-main.o: main.cpp utility.h lexer.h parser.h functions.h
-	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+main.o: main.cpp utility.h functions.h 
 	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
 utility.o: utility.cpp utility.h
-	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	@echo "Compiling $@"
-
-lexer.o: lexer.cpp lexer.h parser.h functions.h
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+	
+lexer.o: lexer.cpp functions.h utility.h
 	@echo "Compiling $@"
-
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+	
 lexer.h lexer.cpp: lexer.l
-	@$(FLEX) -o $(FLEX_CPP) --header-file=$(FLEX_HEADER) $(FLEX_SRC)
 	@echo "Generating lexer"
+	@$(FLEX) -o $(FLEX_CPP) --header-file=$(FLEX_HEADER) $(FLEX_SRC)
 	
 parser.h parser.cpp: parser.y
-	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_SRC)
 	@echo "Generating parser"
+	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_SRC)
 	
-parser.o: parser.cpp parser.h lexer.h functions.h
-	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+parser.o: parser.cpp functions.h utility.h
 	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+	
+token.o: token.cpp token.h 
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+	
+functions.h: lexer.h token.h
+	
+#Tokens specialisation header generation	
+token.h: all.h parser.h
+	@echo "Regenerating all.h"
+
+all.h: Tokens/all_gen $(wildcard Tokens/*.h) 
+	@ls ./Tokens/*.h | Tokens/all_gen all.h
+	
+Tokens/all_gen: Tokens/all_gen.cpp
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -o $@ $<
 	
 #functions.o: functions.cpp functions.h utility.h parser.h lexer.h
 #	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
@@ -88,10 +106,13 @@ parser.o: parser.cpp parser.h lexer.h functions.h
 #-------------------------------------------------------------------------------
 # PHONY TARGETS
 #-------------------------------------------------------------------------------
-.PHONY : clean again
+.PHONY : clean again clean-temp
 clean:
 	@rm -f -v *.o $(FLEX_HEADER) $(BISON_HEADER) $(PROGRAM) $(FLEX_CPP) $(BISON_CPP) 
+	@rm -f -v Tokens/all_gen all.h
 	@echo 'Cleaned.'
 again:
 	@make clean
 	@make
+clean-temp:
+	@rm -f -v *~

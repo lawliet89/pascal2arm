@@ -12,11 +12,12 @@
 
 %{
 #include <iostream>
+#define IN_BISON
 #include "functions.h"
-#include "lexer.h"
 #include "utility.h"
 
 extern Flags_T Flags;		//In utility.cpp
+extern YYSTYPE CurrentToken;	//In lexer.l
 
 %}
 /* Compound Tokens */

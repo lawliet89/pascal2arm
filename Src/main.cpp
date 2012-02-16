@@ -1,7 +1,5 @@
 #include <iostream>
 #include "utility.h"
-#include "lexer.h"
-#include "parser.h"
 #include "functions.h"
 #include <signal.h>
 

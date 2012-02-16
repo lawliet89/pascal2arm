@@ -3,14 +3,16 @@
 #include <iomanip>
 #include <cstring>
 #include <sstream>
-#include "utility.h"
-#include "parser.h"
+#define IN_FLEX
 #include "functions.h"
+#include "utility.h"
+
 
 extern Flags_T Flags;		//In utility.cpp
 
 //Lexer variables
 unsigned LexerCharCount, LexerLineCount;
+YYSTYPE CurrentToken;
 
 //Inline functions
 inline void LexerAddCharCount(){

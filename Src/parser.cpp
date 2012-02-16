@@ -71,16 +71,17 @@
 #line 13 "parser.y"
 
 #include <iostream>
+#define IN_BISON
 #include "functions.h"
-#include "lexer.h"
 #include "utility.h"
 
 extern Flags_T Flags;		//In utility.cpp
+extern YYSTYPE CurrentToken;	//In lexer.l
 
 
 
 /* Line 189 of yacc.c  */
-#line 84 "parser.cpp"
+#line 85 "parser.cpp"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -172,7 +173,7 @@ typedef int YYSTYPE;
 
 
 /* Line 264 of yacc.c  */
-#line 176 "parser.cpp"
+#line 177 "parser.cpp"
 
 #ifdef short
 # undef short
@@ -458,7 +459,7 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    44,    44
+       0,    45,    45
 };
 #endif
 
@@ -1366,7 +1367,7 @@ yyreduce:
       
 
 /* Line 1455 of yacc.c  */
-#line 1370 "parser.cpp"
+#line 1371 "parser.cpp"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1578,7 +1579,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 46 "parser.y"
+#line 47 "parser.y"
 
 
 void yyerror(const char * msg){
