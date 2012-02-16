@@ -18,7 +18,7 @@
 
 //Bison specific
 #ifdef IN_BISON
-#include "lexer.h"
+#include "Gen/lexer.h"
 #endif
 
 #define YY_DECL int yylex(void)

@@ -3,9 +3,12 @@
 #include <iomanip>
 #include <cstring>
 #include <sstream>
+
 #define IN_FLEX
-#include "functions.h"
-#include "utility.h"
+
+//Because FLEX generated CPP files are in Gen/ folder, ../ is required
+#include "../functions.h"
+#include "../utility.h"
 
 
 extern Flags_T Flags;		//In utility.cpp

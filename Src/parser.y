@@ -13,8 +13,8 @@
 %{
 #include <iostream>
 #define IN_BISON
-#include "functions.h"
-#include "utility.h"
+#include "../functions.h"
+#include "../utility.h"
 
 extern Flags_T Flags;		//In utility.cpp
 extern YYSTYPE CurrentToken;	//In lexer.l

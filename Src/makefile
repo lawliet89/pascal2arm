@@ -15,16 +15,16 @@ FLEX_SRC := lexer.l
 BISON_SRC := parser.y
 
 # Header file name for flex
-FLEX_HEADER := lexer.h
+FLEX_HEADER := $(GEN_DIR)lexer.h
 
 # Header file for Bison
-BISON_HEADER := parser.h
+BISON_HEADER := $(GEN_DIR)parser.h
 
 # CPP File for Flex
-FLEX_CPP := lexer.cpp
+FLEX_CPP := $(GEN_DIR)lexer.cpp
 
 # CPP File for Bison
-BISON_CPP := parser.cpp
+BISON_CPP := $(GEN_DIR)parser.cpp
 
 DEBUG_BUILD := true
 

@@ -5,7 +5,9 @@
 
 class Token;
 #define YYSTYPE Token *
-#include "parser.h"
+
+//Because parser files are generated
+#include "Gen/parser.h"
 
 /*
  * Token base class that can be derived for the various data types
@@ -31,6 +33,8 @@ protected:
 	yytokentype type;
 };
 
+#if defined IN_BISON || defined IN_FLEX
 #include "Gen/all.h"	//All specialisations
+#endif
 
 #endif

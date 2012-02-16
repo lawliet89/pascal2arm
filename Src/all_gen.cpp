@@ -15,7 +15,7 @@ int main(int argc, const char **argv){
 		getline(cin, list);
 		
 		if (!list.empty())
-			output << "#include \"" << list << "\"\n";
+			output << "#include \"../" << list << "\"\n";
 	}
 	
 	output << "#endif";
