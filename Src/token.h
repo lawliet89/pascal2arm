@@ -5,7 +5,6 @@
 
 class Token;
 #define YYSTYPE Token *
-
 #include "parser.h"
 
 /*

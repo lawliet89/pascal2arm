@@ -66,7 +66,7 @@ utility.o: utility.cpp utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-lexer.o: lexer.cpp functions.h utility.h
+lexer.o: lexer.cpp parser.h functions.h utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
@@ -78,7 +78,7 @@ parser.h parser.cpp: parser.y
 	@echo "Generating parser"
 	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_SRC)
 	
-parser.o: parser.cpp functions.h utility.h
+parser.o: parser.cpp lexer.h functions.h utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
@@ -86,16 +86,16 @@ token.o: token.cpp token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-functions.h: lexer.h token.h
+functions.h: token.h
 	
 #Tokens specialisation header generation	
 token.h: all.h parser.h
 	@echo "Regenerating all.h"
 
-all.h: Tokens/all_gen $(wildcard Tokens/*.h) 
-	@ls ./Tokens/*.h | Tokens/all_gen all.h
+all.h: all_gen $(wildcard Tokens/*.h) 
+	@ls ./Tokens/*.h | ./all_gen all.h
 	
-Tokens/all_gen: Tokens/all_gen.cpp
+all_gen: all_gen.cpp
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -o $@ $<
 	
