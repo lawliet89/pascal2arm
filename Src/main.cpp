@@ -31,5 +31,7 @@ int main(int argc, char **argv){
 		lex = yylex();
 		std::cout << lex << " " << LexerLineCount << ":" << LexerCharCount << std::endl;
 	} while(lex);
+	
+	std::cout << "Syntax okay" << std::endl;
 	return 0;
 }

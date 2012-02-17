@@ -23,7 +23,7 @@ extern YYSTYPE CurrentToken;	//In lexer.l
 void yyerror(const char *msg);
 %}
 /* Value Tokens */
-%token V_IDENTIFIER V_INT V_REAL
+%token V_IDENTIFIER V_INT V_REAL V_STRING
 
 /* Characters/operators tokens */
 

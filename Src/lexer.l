@@ -61,7 +61,7 @@ Y [yY]
 Z [zZ]
 
 WHITESPACE [ \t\r]
-
+NQUOTE [^']
 
 
 %%
@@ -103,6 +103,12 @@ WHITESPACE [ \t\r]
 {W}{I}{T}{H}   {LexerAddCharCount(); return K_WITH; }
 
 {F}{O}{R}{W}{A}{R}{D}  {LexerAddCharCount(); return I_FORWARD; }
+
+'({NQUOTE}|'')+'	{LexerAddCharCount(); 
+			LexerCleanCurrent(); 
+			CurrentToken = new Token(yytext, V_STRING);
+			return V_STRING; 
+			}
 
 [a-zA-Z]([a-zA-Z0-9])+  { //Identifier
 			LexerAddCharCount(); 
@@ -241,16 +247,15 @@ int LexerConsumeInvalid(){
 	//Eat a whole word and then report failure
 	std::stringstream msg;
 	char c = yytext[0];
-	int charCount = 0;
+	int charCount = 1;
 	msg << "Unexpected '" << c;
 
-	while(c != ' ' && c != '\t' && c != '\n' && c != EOF && c != '\r'){
+	while( (c >= 48 && c <= 57) || (c >= 45 && c <= 90) || ( c >= 97 && c <= 122 ) ){
 		c = yyinput();
 		charCount++;
 		LexerCharCount++;
-		if (c != ' ' && c != '\t' && c != '\n' && c != EOF && c != '\r')
-			msg << c;		
-	};
+		msg << c;		
+	}
 
 	bool EOFError = false;
 	if (c == EOF){
