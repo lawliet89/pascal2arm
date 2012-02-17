@@ -25,13 +25,15 @@ int main(int argc, char **argv){
 	//Initialise Lexer
 	LexerInit();
 	
-	//yyparse();
-	int lex;
+	yyparse();
+	
+	/*int lex;
 	do{
 		lex = yylex();
 		std::cout << lex << " " << LexerLineCount << ":" << LexerCharCount << std::endl;
 	} while(lex);
 	
-	std::cout << "Syntax okay" << std::endl;
+	std::cout << "Syntax okay" << std::endl;*/
+	
 	return 0;
 }

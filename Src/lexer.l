@@ -150,6 +150,13 @@ NQUOTE [^']
 			return(V_REAL);
 		  }
 
+[0-9]+		{
+			LexerAddCharCount(); 
+			LexerCleanCurrent(); 
+			CurrentToken = new Token(yytext, V_INT);	//TODO	
+			
+			return(V_INT);
+		  }
 
 			
 			
@@ -250,11 +257,12 @@ int LexerConsumeInvalid(){
 	int charCount = 1;
 	msg << "Unexpected '" << c;
 
-	while( (c >= 48 && c <= 57) || (c >= 45 && c <= 90) || ( c >= 97 && c <= 122 ) ){
+	while( (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || ( c >= 97 && c <= 122 ) ){
 		c = yyinput();
 		charCount++;
 		LexerCharCount++;
-		msg << c;		
+		if((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || ( c >= 97 && c <= 122 ) )
+			msg << c;		
 	}
 
 	bool EOFError = false;

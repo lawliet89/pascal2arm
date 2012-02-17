@@ -19,6 +19,7 @@
 
 extern Flags_T Flags;		//In utility.cpp
 extern YYSTYPE CurrentToken;	//In lexer.l
+extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
 
 void yyerror(const char *msg);
 %}
@@ -59,6 +60,7 @@ Program: K_PROGRAM;
 
 %%
 
+//If this is called then we have encountered an unknown parse error
 void yyerror(const char * msg){
-	std::cout << msg << std::endl;
+	HandleError("Unknown parse error.", E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
 }
