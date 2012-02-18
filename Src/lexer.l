@@ -64,6 +64,19 @@ WHITESPACE [ \t\r]
 NQUOTE [^']
 
 
+
+/* Literals */
+LETTER [A-Za-z]
+IDENTIFIER [a-zA-Z_]([a-zA-Z0-9_])+
+STRING '({NQUOTE}|'')+'
+DIGIT [0-9]
+DIGIT_NONZERO [1-9
+/*SIGN [+\-]*/
+BOOLEAN ({T}{R}{U}{E})|({F}{A}{L}{S}{E})
+NIL {N}{I}{L} 
+FLOAT ({DIGIT}+\.)|({DIGIT}+\.)|(\.{DIGIT}+)
+SIGNED_NUMBER [+\-]?{DIGIT}+
+
 %%
 
 {A}{N}{D}   	{ LexerAddCharCount(); return(OP_AND); }
@@ -84,7 +97,7 @@ NQUOTE [^']
 {I}{N}    	{LexerAddCharCount(); return OP_IN; }
 {L}{A}{B}{E}{L}   {LexerAddCharCount(); return K_LABEL; }
 {M}{O}{D}   {LexerAddCharCount(); return OP_MOD; }
-{N}{I}{L}   {LexerAddCharCount(); return K_NIL; }
+{NIL}  {LexerAddCharCount(); return V_NIL; }
 {N}{O}{T}   {LexerAddCharCount(); return OP_NOT; }
 {O}{F}    {LexerAddCharCount(); return K_OF; }
 {O}{R}    {LexerAddCharCount(); return OP_OR; }
@@ -104,18 +117,44 @@ NQUOTE [^']
 
 {F}{O}{R}{W}{A}{R}{D}  {LexerAddCharCount(); return I_FORWARD; }
 
-'({NQUOTE}|'')+'	{LexerAddCharCount(); 
+{STRING}	{LexerAddCharCount(); 
 			LexerCleanCurrent(); 
 			CurrentToken = new Token(yytext, V_STRING);
 			return V_STRING; 
 			}
-
-[a-zA-Z]([a-zA-Z0-9])+  { //Identifier
+			
+{BOOLEAN}	{
+			LexerAddCharCount(); 
+			LexerCleanCurrent(); 
+			CurrentToken = new Token(yytext, V_BOOLEAN);	//TODO
+			return V_BOOLEAN;
+		}
+		
+{IDENTIFIER}  { //Identifier
 			LexerAddCharCount(); 
 			LexerCleanCurrent(); 
 			CurrentToken = new Token(yytext, V_IDENTIFIER);
 			return V_IDENTIFIER; }
 
+
+
+{FLOAT}			|
+{FLOAT}{E}{SIGNED_NUMBER} {
+				LexerAddCharCount(); 
+				LexerCleanCurrent(); 
+				CurrentToken = new Token(yytext, V_REAL); //TODO
+				return V_REAL;
+			}
+
+
+		
+{DIGIT}+	{
+			LexerAddCharCount(); 
+			LexerCleanCurrent(); 
+			CurrentToken = new Token(yytext, V_INT); //TODO
+			return V_INT;
+		}
+		
 ":="    {LexerAddCharCount(); return OP_ASSIGNMENT; }
 
 ":"    |
@@ -141,23 +180,6 @@ NQUOTE [^']
 "**"    {LexerAddCharCount(); return(OP_STARSTAR); }
 "->"   |
 "^"    {LexerAddCharCount(); return(OP_UPARROW); }
-
-[0-9]+"."[0-9]+   {
-			LexerAddCharCount(); 
-			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, V_REAL);	//TODO	
-			
-			return(V_REAL);
-		  }
-
-[0-9]+		{
-			LexerAddCharCount(); 
-			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, V_INT);	//TODO	
-			
-			return(V_INT);
-		  }
-
 			
 			
 "{"	LexerConsumeComments("{");		/* Consume Comments - Place at bottom! */
