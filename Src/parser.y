@@ -97,9 +97,10 @@ BlockConstantDeclaration: K_CONST ConstantList
 			|;
 BlockTypeDeclaration: K_TYPE TypeList
 			|;
-BlockVarDeclaration: K_VAR VarDeclaration
+BlockVarDeclaration: K_VAR VarList
 			|;
-BlockProcFuncDeclaration: ProcFuncDeclaration
+BlockProcFuncDeclaration: ProcList
+			| FuncList
 			|;
 
 /* Generic Stuff */
@@ -127,6 +128,22 @@ TypeList:	TypeList TypeDeclaration
 		
 TypeDeclaration: Identifier '=' Type ';' 
 		;
+
+VarList:	VarList VarDeclaration
+		| VarDeclaration
+		;
+
+VarDeclaration:	Identifier ':' Type '=' Expression ';'
+		| Identifier ':' Type ';'
+		;
+
+ProcList: ProcList ProcDeclaration
+	| ProcDeclaration
+	;
+
+FuncList: FuncList FuncDeclaration
+	| FuncDeclaration
+	;
 
 /* Types */
 Type: SimpleType
@@ -181,6 +198,47 @@ L_Real: '+' V_REAL
 Constant: Identifier
 	| L_Int
 	;
+
+/* Prodcedures and functions */
+FormalParamList: '(' FormalParam ')'
+		;
+
+FormalParam:  FormalParam ';' ParamDeclaration 
+	| ParamDeclaration
+	;
+
+ParamDeclaration: ValueParam
+	/*	| VarParam
+		| OutParam
+		| ConstantParam */
+		;
+
+ValueParam:	IdentifierList ':' Type
+	/*	| Identifier ':' Type '=' DefaultParamValue  */
+		;
+
+SubroutineBlock: Block
+		| I_FORWARD
+		;
+
+ProcDeclaration: ProcHeader ';' SubroutineBlock ';'
+		;
+
+ProcHeader: K_PROCEDURE Identifier FormalParamList
+	;
+
+FuncDeclaration: FuncHeader ';' SubroutineBlock ';'
+		;
+
+FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
+	;
+
+/* Expression */
+Expression: ;
+
+/* Statements */
+CompoudStatement: ;
+
 %%
 
 //If this is called then we have encountered an unknown parse error
