@@ -30,6 +30,7 @@ inline void LexerAddCharCount();	//Add count to char
 inline void LexerCleanCurrent();	//Clean up any memory leaks
 %}
 %option yylineno
+%option noyywrap
 %option stack
 
 /* Pascal is case-insensitive */
@@ -324,9 +325,6 @@ int LexerConsumeInvalid(){
 	return Y_SYNTAX_ERROR;
 }
 
-int yywrap(){
-	return 1;
-}
 
 //Inline functions
 inline void LexerAddCharCount(){

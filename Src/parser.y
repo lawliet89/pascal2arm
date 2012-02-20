@@ -58,6 +58,8 @@ void yyerror(const char *msg);
 
 /* Internal Use Tokens */
 %token Y_SYNTAX_ERROR Y_FATAL_ERROR Y_EOF
+
+%start Sentence
 %%
 
 Sentence: Program  Y_EOF { YYACCEPT; }
