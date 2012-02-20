@@ -20,7 +20,7 @@ public:
 	
 	//Constructor
 	Token(const char *StrValue, yytokentype type);	//Type is the token type as defined by parser.h (generated from parser.y)
-	~Token(){ }				//Destructor
+	virtual ~Token(){ }				//Destructor
 	Token(const Token &obj);		//Copy Constructor
 	Token operator=(const Token &obj);	//Assignment operator
 	

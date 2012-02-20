@@ -23,13 +23,13 @@ bool LexerSyntaxError;
 //Functions
 void LexerConsumeComments(const char *delimiter);
 int LexerConsumeInvalid();
+//int yywrap();
 
 //Inline functions
 inline void LexerAddCharCount();	//Add count to char
 inline void LexerCleanCurrent();	//Clean up any memory leaks
 %}
 %option yylineno
-%option noyywrap
 %option stack
 
 /* Pascal is case-insensitive */
@@ -319,6 +319,10 @@ int LexerConsumeInvalid(){
 	HandleError(msg.str().c_str(), E_SYNTAX, level, LexerLineCount, LexerCharCount-charCount+1);
 	
 	return Y_SYNTAX_ERROR;
+}
+
+int yywrap(){
+	return 1;
 }
 
 //Inline functions
