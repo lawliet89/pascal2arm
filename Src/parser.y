@@ -173,7 +173,12 @@ EnumTypeList: EnumTypeList ',' IdentifierList
 	/* | Identifier OP_ASSIGNMENT Expression */
 	;
 
-SubrangeType: Constant OP_DOTDOT Constant
+SubrangeType: SubrangeValue OP_DOTDOT SubrangeValue
+		;
+SubrangeValue: Identifier
+		| V_INT
+		| '-' V_INT
+		| '+' V_INT
 		;
 
 RealType: I_REAL;
@@ -185,7 +190,7 @@ StringType: I_STRING
 TypeIdentifier: Identifier;
 
 /* Values */
-L_Int: '+' V_INT
+/*L_Int: '+' V_INT
 	| '-' V_INT
 	| V_INT
 	;
@@ -197,7 +202,7 @@ L_Real: '+' V_REAL
 	
 Constant: Identifier
 	| L_Int
-	;
+	;*/
 
 /* Prodcedures and functions */
 FormalParamList: '(' FormalParam ')'
@@ -234,10 +239,103 @@ FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
 	;
 
 /* Expression */
-Expression: ;
+Expression: SimpleExpression SimpleOp Expression
+	| SimpleExpression;
+
+SimpleOp: '*'
+	| '<'
+	| OP_LE
+	| '>'
+	| OP_GE
+	| '='
+	| OP_NOTEQUAL
+	| OP_IN
+	; 
+
+SimpleExpression: Term TermOP SimpleExpression
+		| Term
+		;
+
+TermOP: '+'
+	| '-'
+	| OP_OR
+	/* XOR ? */
+	;
+
+Term: Factor FactorOP Term
+	| Factor
+	;
+
+FactorOP: '*'
+	| '/'
+	| OP_DIV
+	| OP_MOD
+	| OP_AND
+	;
+
+/* Factor can be shifted into Identifier in multiple paths. Need to optimise */
+Factor: '(' Expression ')'
+	| VarRef
+	| FuncCall
+	| UnsignedConstant
+	| OP_NOT Factor
+	| '+' Factor
+	| '-' Factor
+	/* Set, value typecast, address factor ?? */
+	;
+VarRef: Identifier
+	;
+
+UnsignedConstant: V_REAL
+		| V_INT
+		| V_STRING
+		| V_CHAR
+		/* | Identifier */
+		| V_NIL
+		;
+
+FuncCall: Identifier '(' ActualParamList ')'
+	/* | Identifier */
+	;
+
+ActualParamList: ActualParamList ',' Expression
+		| Expression
+		|
+		;
 
 /* Statements */
-CompoudStatement: ;
+CompoudStatement: K_BEGIN StatementList K_END
+		;
+
+StatementList: StatementList ';' Statement
+		| Statement
+		;
+
+StatementLabel: V_INT ':' 
+		| ;
+
+Statement: StatementLabel SimpleStatement
+	| StatementLabel StructuredStatement
+	;
+
+SimpleStatement: AssignmentStatement
+		| ProcedureStatement
+		| GotoStatement
+		;
+
+AssignmentStatement: Identifier OP_ASSIGNMENT Expression
+		/* += -= /= *= */
+		;
+
+ProcedureStatement: Identifier '(' ActualParamList ')'
+		| Identifier
+		;
+
+GotoStatement: K_GOTO V_INT
+		;
+
+StructuredStatement: 
+		;
 
 %%
 
