@@ -1,0 +1,109 @@
+:Base APM2.HLP
+:Title 
+1 Introduction
+2 ARM Project Manager=ARM_Project_Manager@APM2.HLP
+2 Getting Started=Getting_Started@APM2.HLP
+2 APM Terminology=APM_Terminology@APM2.HLP
+2 Starting the Project Manager=Starting_the_Project_Manager@APM2.HLP
+2 Version=Version
+1 What is . . .
+2 a Build?=What_is_a_build@APM2.HLP
+2 a Build Step?=What_is_a_Build_Step@APM2.HLP
+2 a Partition?=What_is_a_Partition@APM2.HLP
+2 a Project?=What_is_a_Project@APM2.HLP
+2 the Project Hierarchy?=What_is_the_Project_Hierarchy@APM2.HLP
+2 a Project Template?=What_is_a_Project_Template@APM2.HLP
+2 a Variable?=What_is_a_Variable@APM2.HLP
+2 a Source File?=What_is_a_Source_File@APM2.HLP
+2 a Sub-Project?=What_is_a_Sub_Project@APM2.HLP
+2 the Project Output?=What_is_a_Project_Output@APM2.HLP
+2 a Build Step Pattern?=What_is_a_Build_Step_Pattern@APM2.HLP
+2 a Variant?=What_is_a_Variant@APM2.HLP
+1 Creating Projects
+2 About Creating Projects=Creating_Projects
+2 Project Directory Structure=Project_Directory_Structure
+2 Creating a New Project=Creating_a_New_Project
+2 Adding Files to a Project=Adding_Files_to_a_Project
+2 Adding Files to a Partition=Adding_Files_to_a_Partition
+2 Removing a File from a Project=Removing_a_File_from_a_Project
+2 Changing a Project Name=Changing_a_Project_Name
+2 Converting Old Projects=Converting_Old_Projects
+1 Building Projects
+2 About Build Steps: Assembling, Compiling, Linking and Building=Assembling_Compiling_Linking_and_Building
+2 Building a Project=Building_a_Project
+2 Building a Variant=Building_a_Variants
+2 Performing a Single Build Step=Performing_a_single_build_step
+2 Force Building a Project=Rebuilding_a_Project
+2 Stopping Project Build=Stopping_Project_Build
+1 Source Files
+2 Working with Source Files=Working_with_Source_Files@APM2.HLP
+2 Creating a New Source File=Creating_a_New_Source_File
+2 Performing a Single Build Step=Performing_a_single_build_step
+2 Adding Files to a Project=Adding_Files_to_a_Project
+2 Adding Files to a Partition=Adding_Files_to_a_Partition
+2 Editing a Source File=Editing_a_Source_File
+2 Removing a File from a Project=Removing_a_File_from_a_Project
+1 Debugging and Executing
+2 About Correcting Problems=Correcting_Problems
+2 Debugging a Project=Debugging_a_Project
+2 Executing a Project=Executing_a_Project
+1 Displaying Files and Projects
+2 APM Windows=APM_Windows
+2 Viewing a Project=Viewing_a_Project
+2 Changing the APM Display=Changing_the_APM_Display
+2 Viewing an Object, Image or Library File=Viewing_an_Object_Image_or_Library_File
+2 ARMLIB Command Line Options=ARMLIB_Command_Line_Options
+2 DecAXF Command Line Options=DecAXF_Command_Line_Options
+2 DecAOF Command Line Options=DecAOF_Command_Line_Options
+1 Templates
+2 Working with Templates=Working_with_Templates@APM2.HLP
+2 Editing  a Template=Editing_a_Template@APM2.HLP
+2 Editing a Variable=Editing_a_Variable@APM2.HLP
+2 Adding a Build Step Pattern=Adding_a_Build_Step_Pattern@APM2.HLP
+2 Editing a Path=Editing_a_Path@APM2.HLP
+2 Creating a New Template=Creating_a_New_Template@APM2.HLP
+2 Adding a New Variant to a Project=Adding_a_New_Variant_to_a_Project
+2 Removing a Variant from a Project=Removing_a_Variant_from_a_Project
+2 Editing a Template's Details=Editing_a_Template_s_Details@APM2.HLP
+1 Build Step Patterns
+2 Working with Build Step Patterns=Working_with_Build_Step_Patterns@APM2.HLP
+2 Specifying Input and Output Patterns=Specifying_Input_and_Output_Patterns@APM2.HLP
+2 Input Pattern Expressions=Input_Pattern_Expressions
+2 Output and Command-line Pattern Expressions=Output_and_Command_line_Pattern_Expressions
+2 Adding a Build Step Pattern=Adding_a_Build_Step_Pattern
+2 Adding an Partition to a Build Step Pattern=Adding_an_Partition_to_a_Build_Step_Pattern
+2 Editing a Build Step Pattern=Editing_a_Build_Step_Pattern@APM2.HLP
+2 Removing a File from a Project=Removing_a_File_from_a_Project
+1 Tools
+2 Editing a Tool's Configuration Within a Project=Editing_a_Tool_s_Configuration_Within_a_Project@APM2.HLP
+2 Adding a New Tool =Adding_a_New_Tool@APM2.HLP
+2 Resetting a Tool's Configuration=Resetting_a_Tools_Configuration@APM2.HLP
+2 Editing a Tool's Sytem Wide Configuration=Editing_a_Tools_System_Wide_Configuration@APM2.HLP
+1 APM Preferences
+2 APM Preferences Dialog=APM_Preferences_dialog_box
+2 Editor Preferences Dialog=Editor_Preferences_dialog_box
+1 User Interface
+2 APM Windows=APM_Windows@APM2.HLP
+2 APM ToolBar=APM_ToolBar@APM2.HLP
+2 APM Shortcut Keys=APM_Shortcut_Keys@APM2.HLP
+2 APM Status Bar=APM_Status_Bar@APM2.HLP
+2 Dialog Boxes
+3 Add Variant dialog box=Add_Variant_dialog_box@APM2.HLP
+3 APM Preferences dialog box=APM_Preferences_dialog_box@APM2.HLP
+3 Confirm Action on Multiple Selection dialog box=Confirm_Action_on_Multiple_Selection_dialog_box@APM2.HLP
+3 Confirm Delete message box=Confirm_Delete_message_box@APM2.HLP
+3 Choose Tool DLL dialog box=Choose_Tool_DLL_dialog_box@APM2.HLP
+3 Create a New Build Step Pattern dialog box=Create_a_New_Build_Step_Pattern_dialog_box@APM2.HLP
+3 Edit Paths dialog box=Edit_Paths_dialog_box@APM2.HLP
+3 Edit Template Details dialog box=Edit_Template_Details_dialog_box@APM2.HLP
+3 Template Editor dialog box=Template_Editor_dialog_box@APM2.HLP
+3 Edit Build Step Pattern dialog box=Edit_Build_Pattern_dialog_box@APM2.HLP
+3 Edit Variables dialog box=Edit_Variables_dialog_box@APM2.HLP
+3 Editor Preferences dialog box=Editor_Preferences_dialog_box@APM2.HLP
+3 Failed to Locate the Tool dialog box=Failed_to_Locate_the_Tool_dialog_box@APM2.HLP
+3 Files Matched Multiple Partitions dialog box=Files_Matched_Multiple_Partitions_dialog_box@APM2.HLP
+3 New File or Project dialog box=New_File_dialog_box@APM2.HLP
+3 New Project dialog box=New_Project_dialog_box@APM2.HLP
+3 Tool Configuration dialog box=Tool_Configuration_dialog_box@APM2.HLP
+3 Unable to Add Files message box=Unable_to_Add_Files_message_box@APM2.HLP
+3 Viewing dialog box=Viewing_dialog_box@APM2.HLP

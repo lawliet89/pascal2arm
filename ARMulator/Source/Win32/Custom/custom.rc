@@ -1,0 +1,143 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "prodver.h"
+
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+SPLASHBITMAP            BITMAP  DISCARDABLE     "RES\\ARMLOGO1.BMP"
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_APMCUSTICON         ICON    DISCARDABLE     "RES\\IDR_CONS.ICO"
+IDR_WINDBGCUSTICON      ICON    DISCARDABLE     "RES\\IDR_APMC.ICO"
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,1,1,0
+ PRODUCTVERSION 2,1,1,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "CompanyName", "Advanced RISC Machines Ltd.\0"
+            VALUE "FileDescription", "custom\0"
+            VALUE "FileVersion", "2.11a\0"
+            VALUE "InternalName", "custom\0"
+            VALUE "LegalCopyright", "Copyright © 1998\0"
+            VALUE "OriginalFilename", "custom.dll\0"
+            VALUE "ProductName", "ARM SDT v2.11a\0"
+            VALUE "ProductVersion", "2.11a\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_APMLINE1            "ARM Project Manager for Windows"
+    IDS_WINDBGLINE1         "ARM Debugger for Windows"
+    IDS_APMLINE2            INSTALL_PACKAGE_VERSION
+    IDS_WINDBGLINE2         INSTALL_PACKAGE_VERSION
+    IDS_APMLINE3            INSTALL_PACKAGE_NAME_VERSION
+    IDS_WINDBGLINE3         INSTALL_PACKAGE_NAME_VERSION
+        IDS_PACKAGE                             INSTALL_PACKAGE_NAME
+        IDS_PACKAGE_VERSION             INSTALL_PACKAGE_VERSION 
+        IDS_PACKAGE_NAME_VERSION INSTALL_PACKAGE_NAME_VERSION
+        IDS_COMPANY                             INSTALL_COMPANY
+END
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

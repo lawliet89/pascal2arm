@@ -1,0 +1,12 @@
+## RCS $Revision: 1.2 $
+## Checkin $Date: 1996/10/04 23:03:14 $
+## Revising $Author: enevill $
+##
+memcpy = small
+divide = rolled
+stdfile_redirection = on
+fp_type = library
+stack = contiguous
+backtrace = off
+fpregargs = off
+thumb = true

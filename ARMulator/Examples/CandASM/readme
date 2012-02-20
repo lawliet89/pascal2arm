@@ -1,0 +1,10 @@
+This directory contains the following examples. All are described in the
+User Guide for version 2.11 of the ARM Software Development Toolkit.
+
+  Example                              User Guide section
+
+  add64_1.c, add64_2.c, add64_3.s      10.2.2
+  half_str.c                           10.4.2
+  int64.h, mul64.h, mul64.s, multest.c 10.4.3
+  two_ch.c                             10.4.1
+

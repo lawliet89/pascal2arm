@@ -1,0 +1,23 @@
+ARMTOOLS=../../bin
+
+CC=$(ARMTOOLS)/armcc -O
+LD=$(ARMTOOLS)/armlink
+AS=$(ARMTOOLS)/armasm
+ARMLIB=$(ARMTOOLS)/armlib
+
+MKTMP=mktmp
+RM=rm -f
+RENAME=mv
+APPEND=cat
+MAKEMAKE=../util/makemake
+DEPLIST=deplist
+BAKFILE=MakeFBak
+CP=cp
+
+CFLAGS=-ffah -li -apcs 3/26bit -c -J../stdh -I..,. -DHOSTSEX_l
+DCFLAGS=${CFLAGS} -M
+AFLAGS=-li -apcs 3/26bit -s -I..,.
+DAFLAGS=${AFLAGS} -D ${MKTMP}
+
+#.SILENT:
+

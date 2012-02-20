@@ -1,0 +1,443 @@
+## RCS $Revision: 1.26.2.2 $
+## Checkin $Date: 1998/02/09 11:51:43 $
+## Revising $Author: wdijkstr $
+##
+oshigh          semi/os.c
+## 64-bit int implementation
+llneg           longlong.s [-PD 'make SETS "_ll_neg"']
+lladd           longlong.s [-PD 'make SETS "_ll_add"']
+llsub           longlong.s [-PD 'make SETS "_ll_sub"']
+llrsb           longlong.s [-PD 'make SETS "_ll_rsb"']
+llmul           longlong.s [-PD 'make SETS "_ll_mul"']
+llsdiv          longlong.s [-PD 'make SETS "_ll_sdiv"']
+llsrdv          longlong.s [-PD 'make SETS "_ll_srdv"']
+lludiv          longlong.s [-PD 'make SETS "_ll_udiv"']
+llurdv          longlong.s [-PD 'make SETS "_ll_urdv"']
+llnot           longlong.s [-PD 'make SETS "_ll_not"']
+lland           longlong.s [-PD 'make SETS "_ll_and"']
+llor            longlong.s [-PD 'make SETS "_ll_or"']
+lleor           longlong.s [-PD 'make SETS "_ll_eor"']
+llshl           longlong.s [-PD 'make SETS "_ll_shift_l"']
+llushr          longlong.s [-PD 'make SETS "_ll_ushift_r"']
+llsshr          longlong.s [-PD 'make SETS "_ll_sshift_r"']
+llcmpeq         longlong.s [-PD 'make SETS "_ll_cmpeq"']
+llcmpne         longlong.s [-PD 'make SETS "_ll_cmpne"']
+llucmpgt        longlong.s [-PD 'make SETS "_ll_ucmpgt"']
+llucmpge        longlong.s [-PD 'make SETS "_ll_ucmpge"']
+llucmplt        longlong.s [-PD 'make SETS "_ll_ucmplt"']
+llucmple        longlong.s [-PD 'make SETS "_ll_ucmple"']
+llscmpgt        longlong.s [-PD 'make SETS "_ll_scmpgt"']
+llscmpge        longlong.s [-PD 'make SETS "_ll_scmpge"']
+llscmplt        longlong.s [-PD 'make SETS "_ll_scmplt"']
+llscmple        longlong.s [-PD 'make SETS "_ll_scmple"']
+llfroml         longlong.s [-PD 'make SETS "_ll_from_l"']
+llfromu         longlong.s [-PD 'make SETS "_ll_from_u"']
+lltol           longlong.s [-PD 'make SETS "_ll_to_l"']
+llstod          fplib/format_d.s [ -PD 'll_sto_d_s SETL {TRUE}' ]
+llutod          fplib/format_d.s [ -PD 'll_uto_d_s SETL {TRUE}' ]
+llstof          fplib/format_f.s [ -PD 'll_sto_f_s SETL {TRUE}' ]
+llutof          fplib/format_f.s [ -PD 'll_uto_f_s SETL {TRUE}' ]
+llsfromd        fplib/format_d.s [ -PD 'll_sfrom_d_s SETL {TRUE}' ]
+llufromd        fplib/format_d.s [ -PD 'll_ufrom_d_s SETL {TRUE}' ]
+llsfromf        fplib/format_f.s [ -PD 'll_sfrom_f_s SETL {TRUE}' ]
+llufromf        fplib/format_f.s [ -PD 'll_ufrom_f_s SETL {TRUE}' ]
+fflt            fplib/format_f.s [-PD 'fflt_s SETL {TRUE}']
+ffltu           fplib/format_f.s [-PD 'ffltu_s SETL {TRUE}']
+dflt            fplib/format_d.s [-PD 'dflt_s SETL {TRUE}']
+dfltu           fplib/format_d.s [-PD 'dfltu_s SETL {TRUE}']
+#if fp_type == linked
+oslow           semi/os.s [-PD 'linked_fpe SETL {TRUE}']
+fpe             fpe/$(FPE).o
+fpestub         fpestub.s
+#else
+oslow           semi/os.s [-PD 'linked_fpe SETL {FALSE}']
+#end
+#if fp_type == library
+fmod            fplib/fmod.c [-Dfmod_c]
+dadd            fplib/veneer_d.s [-PD 'add_s SETL {TRUE}']
+#if thumb == true
+dsub            fplib/veneer_d.s [-PD 'sub_s SETL {TRUE}']
+drsb            fplib/veneer_d.s [-PD 'rsb_s SETL {TRUE}']
+#end
+dmul            fplib/veneer_d.s [-PD 'mul_s SETL {TRUE}']
+ddiv            fplib/veneer_d.s [-PD 'div_s SETL {TRUE}']
+drdv            fplib/veneer_d.s [-PD 'rdv_s SETL {TRUE}']
+dsqrt           fplib/veneer_d.s [-PD 'sqrt_s SETL {TRUE}']
+eadd            fplib/veneer_e.s [-PD 'add_s SETL {TRUE}']
+esub            fplib/veneer_e.s [-PD 'sub_s SETL {TRUE}']
+emul            fplib/veneer_e.s [-PD 'mul_s SETL {TRUE}']
+esquare         fplib/veneer_e.s [-PD 'square_s SETL {TRUE}']
+ediv            fplib/veneer_e.s [-PD 'div_s SETL {TRUE}']
+erdv            fplib/veneer_e.s [-PD 'rdv_s SETL {TRUE}']
+esqrt           fplib/veneer_e.s [-PD 'sqrt_s SETL {TRUE}']
+efix            fplib/veneer_e.s [-PD 'fix_s SETL {TRUE}']
+efixu           fplib/veneer_e.s [-PD 'fixu_s SETL {TRUE}']
+fadd            fplib/veneer_f.s [-PD 'add_s SETL {TRUE}']
+#if thumb == true
+fsub            fplib/veneer_f.s [-PD 'sub_s SETL {TRUE}']
+frsb            fplib/veneer_f.s [-PD 'rsb_s SETL {TRUE}']
+#end
+fmul            fplib/veneer_f.s [-PD 'mul_s SETL {TRUE}']
+fdiv            fplib/veneer_f.s [-PD 'div_s SETL {TRUE}']
+frdv            fplib/veneer_f.s [-PD 'rdv_s SETL {TRUE}']
+mul             fplib/veneer.s [-PD 'mul_s SETL {TRUE}']
+addsub          fplib/veneer.s [-PD 'addsub_s SETL {TRUE}']
+div             fplib/veneer.s [-PD 'div_s SETL {TRUE}']
+sqrt            fplib/veneer.s [-PD 'sqrt_s SETL {TRUE}']
+fix             fplib/veneer.s [-PD 'fix_s SETL {TRUE}']
+fixu            fplib/veneer.s [-PD 'fixu_s SETL {TRUE}']
+normal          fplib/normal.s
+basic           fplib/basic.s
+deq             fplib/basic_d.s [-PD 'eq_s SETL {TRUE}']
+dneq            fplib/basic_d.s [-PD 'neq_s SETL {TRUE}']
+dls             fplib/basic_d.s [-PD 'ls_s SETL {TRUE}']
+dleq            fplib/basic_d.s [-PD 'leq_s SETL {TRUE}']
+dgr             fplib/basic_d.s [-PD 'gr_s SETL {TRUE}']
+dgeq            fplib/basic_d.s [-PD 'geq_s SETL {TRUE}']
+dcompare        fplib/basic_d.s [-PD 'compare_s SETL {TRUE}']
+feq             fplib/basic_f.s [-PD 'eq_s SETL {TRUE}']
+fneq            fplib/basic_f.s [-PD 'neq_s SETL {TRUE}']
+fls             fplib/basic_f.s [-PD 'ls_s SETL {TRUE}']
+fleq            fplib/basic_f.s [-PD 'leq_s SETL {TRUE}']
+fgr             fplib/basic_f.s [-PD 'gr_s SETL {TRUE}']
+fgeq            fplib/basic_f.s [-PD 'geq_s SETL {TRUE}']
+fcompare        fplib/basic_f.s [-PD 'compare_s SETL {TRUE}']
+eeq             fplib/basic_e.s [-PD 'eq_s SETL {TRUE}']
+eneq            fplib/basic_e.s [-PD 'neq_s SETL {TRUE}']
+els             fplib/basic_e.s [-PD 'ls_s SETL {TRUE}']
+eleq            fplib/basic_e.s [-PD 'leq_s SETL {TRUE}']
+egr             fplib/basic_e.s [-PD 'gr_s SETL {TRUE}']
+egeq            fplib/basic_e.s [-PD 'geq_s SETL {TRUE}']
+ecompare        fplib/veneer.s [-PD 'compare_s SETL {TRUE}']
+dfix            fplib/format_d.s [-PD 'dfix_s SETL {TRUE}']
+dfixu           fplib/format_d.s [-PD 'dfixu_s SETL {TRUE}']
+d2e             fplib/format_d.s [-PD 'd2e_s SETL {TRUE}']
+e2d             fplib/format_d.s [-PD 'e2d_s SETL {TRUE}']
+frexp           fplib/format_d.s [-PD 'frexp_s SETL {TRUE}']
+ldexp           fplib/format_d.s [-PD 'ldexp_s SETL {TRUE}']
+floor           fplib/format_d.s [-PD 'floor_s SETL {TRUE}']
+ceil            fplib/format_d.s [-PD 'ceil_s SETL {TRUE}']
+modf            fplib/format_d.s [-PD 'modf_s SETL {TRUE}']
+except          fplib/except.s [-PD 'except_s SETL {TRUE}']
+liberror        fplib/except.s [-PD 'liberror_s SETL {TRUE}']
+status          fplib/except.s [-PD 'status_s SETL {TRUE}']
+fpdata          fplib/except.s [-PD 'fpdata_s SETL {TRUE}']
+nans            fplib/nans.s
+d2f             fplib/format.s [-PD 'd2f_s SETL {TRUE}']
+f2d             fplib/format.s [-PD 'f2d_s SETL {TRUE}']
+ffix            fplib/format_f.s [-PD 'ffix_s SETL {TRUE}']
+ffixu           fplib/format_f.s [-PD 'ffixu_s SETL {TRUE}']
+e2f             fplib/format_f.s [-PD 'e2f_s SETL {TRUE}']
+norm_op1        fplib/format_e.s [-PD 'norm_op1_s SETL {TRUE}']
+norm_op2        fplib/format_e.s [-PD 'norm_op2_s SETL {TRUE}']
+eflt            fplib/format_e.s [-PD 'eflt_s SETL {TRUE}']
+efltu           fplib/format_e.s [-PD 'efltu_s SETL {TRUE}']
+e2e             fplib/format_e.s [-PD 'e2e_s SETL {TRUE}']
+#if thumb == true
+range           fplib/thumb.s [-PD 'range_s SETL {TRUE}']
+poly            fplib/thumb.s [-PD 'poly_s SETL {TRUE}']
+poly0           fplib/thumb.s [-PD 'poly0_s SETL {TRUE}']
+poly1           fplib/thumb.s [-PD 'poly1_s SETL {TRUE}']
+#else
+range           fplib/arm.s [-PD 'range_s SETL {TRUE}']
+poly            fplib/arm.s [-PD 'poly_s SETL {TRUE}']
+poly0           fplib/arm.s [-PD 'poly0_s SETL {TRUE}']
+poly1           fplib/arm.s [-PD 'poly1_s SETL {TRUE}']
+#end
+exp             fplib/exp.c [-Dexp_c]
+_exp            fplib/exp.c [-D_exp_c]
+log             fplib/log.c [-Dlog_c]
+log10           fplib/log.c [-Dlog10_c]
+_log            fplib/log.c [-D_log_c]
+sin             fplib/sincos.c [-Dsin_c]
+cos             fplib/sincos.c [-Dcos_c]
+_sincos         fplib/sincos.c [-D_sincos_c]
+tan             fplib/tan.c
+atan            fplib/atan.c [-Datan_c]
+atan2           fplib/atan.c [-Datan2_c]
+_atnpol         fplib/atan.c [-D_atnpol_c]
+asin            fplib/asinacos.c [-Dasin_c]
+acos            fplib/asinacos.c [-Dacos_c]
+_asnacs         fplib/asinacos.c [-D_asnacs_c]
+sinh            fplib/sinh.c
+cosh            fplib/cosh.c
+tanh            fplib/tanh.c
+pow             fplib/pow.c
+__fp_con        fplib/constant.c
+#else
+_edom_mh        mathf.s [-PD 'make SETS "_edom_mh"']
+_ernge_0        mathf.s [-PD 'make SETS "_ernge_0"']
+_ernge_h        mathf.s [-PD 'make SETS "_ernge_h"']
+_erng_mh        mathf.s [-PD 'make SETS "_ernge_mh"']
+_ldfp           mathf.s [-PD 'make SETS "_ldfp"']
+_seterno        mathf.s [-PD 'make SETS "_set_errno"']
+#if fpregargs == on
+status          mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "status"']
+acos            mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "acos"']
+asin            mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "asin"']
+atan            mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "atan"']
+atan2           mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "atan2"']
+ceil            mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "ceil"']
+cos             mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "cos"']
+exp             mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "exp"']
+fabs            mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "fabs"']
+floor           mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "floor"']
+log             mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "log"']
+log10           mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "log10"']
+modf            mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "modf"']
+pow             mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "pow"']
+sin             mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "sin"']
+sqrt            mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "sqrt"']
+tan             mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "tan"']
+_stfp           mathf.s [-PD 'fpregargs SETL {TRUE}' -PD 'make SETS "_stfp"']
+#else
+status          mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "status"']
+acos            mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "acos"']
+asin            mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "asin"']
+atan            mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "atan"']
+atan2           mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "atan2"']
+ceil            mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "ceil"']
+cos             mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "cos"']
+exp             mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "exp"']
+fabs            mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "fabs"']
+floor           mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "floor"']
+log             mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "log"']
+log10           mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "log10"']
+modf            mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "modf"']
+pow             mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "pow"']
+sin             mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "sin"']
+sqrt            mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "sqrt"']
+tan             mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "tan"']
+_stfp           mathf.s [-PD 'fpregargs SETL {FALSE}' -PD 'make SETS "_stfp"']
+#end
+mcosh           math.c [-Dcosh_c]
+mfmod           math.c [-Dfmod_c]
+mfrexp          math.c [-Dfrexp_c]
+mldexp          math.c [-Dldexp_c]
+msinh           math.c [-Dsinh_c]
+mtanh           math.c [-Dtanh_c]
+#end
+mabs            math.c [-Dabs_c]
+mdiv            math.c [-Ddiv_c]
+mlabs           math.c [-Dlabs_c]
+mldiv           math.c [-Dldiv_c]
+ctype           ctype.c [-Dctype_c]
+isalnum         ctype.c [-Disalnum_c]
+isalpha         ctype.c [-Disalpha_c]
+iscntrl         ctype.c [-Discntrl_c]
+isdigit         ctype.c [-Disdigit_c]
+isgraph         ctype.c [-Disgraph_c]
+islower         ctype.c [-Dislower_c]
+isprint         ctype.c [-Disprint_c]
+ispunct         ctype.c [-Dispunct_c]
+isspace         ctype.c [-Disspace_c]
+isupper         ctype.c [-Disupper_c]
+isxdigit        ctype.c [-Disxdigit_c]
+tolower         ctype.c [-Dtolower_c]
+toupper         ctype.c [-Dtoupper_c]
+_set8859        ctype.c [-D_set8859_c]
+xmath           xmath.c
+#if thumb != true
+fmapstor        profile.c [-D_fmapstore_c]
+mapstore        profile.c [-D_mapstore_c]
+_mapstor        profile.c [-D_map_store_c]
+writepro        profile.c [-D_write_pro_c]
+#end
+image           image.s
+_sputc          printf.c [-D_sputc_c]
+_fp_disp        printf.c [-D_fp_disp_c]
+fprintf         printf.c [-Dfprintf_c]
+printf          printf.c [-Dprintf_c]
+sprintf         printf.c [-Dsprintf_c]
+vfprintf        printf.c [-Dvfprintf_c]
+vprintf         printf.c [-Dvprintf_c]
+vsprintf        printf.c [-Dvsprintf_c]
+_fprintf        printf.c [-D_fprintf_c]
+nofpdisp        printf.c [-D_nofp_disp_c]
+_printf         printf.c [-D_printf_c]
+_sprintf        printf.c [-D_sprintf_c]
+_vfprntf        printf.c [-D_vfprintf_c]
+_vsprntf        printf.c [-D_vsprintf_c]
+__vfpntf        printf.c [-D__vfprintf_c]
+_chval          scanf.c [-D_chval_c]
+_scanf          scanf.c [-D_scanf_c]
+_strtoul        scanf.c [-D_strtoul_c]
+strtod          scanf.c [-Dstrtod_c]
+strtol          scanf.c [-Dstrtol_c]
+strtoul         scanf.c [-Dstrtoul_c]
+scanf           scanf.c [-Dscanf_c]
+sgetc           scanf.c [-D_sgetc_c]
+fscanf          scanf.c [-Dfscanf_c]
+sscanf          scanf.c [-Dsscanf_c]
+atof            scanf.c [-Datof_c]
+atoi            scanf.c [-Datoi_c]
+atol            scanf.c [-Datol_c]
+backspce        stdio.c [-Dbackspace_c]
+clearerr        stdio.c [-Dclearerr_c]
+feof            stdio.c [-Dfeof_c]
+ferror          stdio.c [-Dferror_c]
+fflush          stdio.c [-Dfflush_c]
+fgetc           stdio.c [-Dfgetc_c]
+fgetpos         stdio.c [-Dfgetpos_c]
+fgets           stdio.c [-Dfgets_c]
+fisatty         stdio.c [-Dfisatty_c]
+filbuf          stdio.c [-Dfilbuf_c]
+flsbuf          stdio.c [-Dflsbuf_c]
+fputc           stdio.c [-Dfputc_c]
+fputs           stdio.c [-Dfputs_c]
+fread           stdio.c [-Dfread_c]
+fseek           stdio.c [-Dfseek_c]
+fsetpos         stdio.c [-Dfsetpos_c]
+ftell           stdio.c [-Dftell_c]
+fwrite          stdio.c [-Dfwrite_c]
+getc            stdio.c [-Dgetc_c]
+getchar         stdio.c [-Dgetchar_c]
+gets            stdio.c [-Dgets_c]
+osf             stdio.c [-Dosf_c]
+perror          stdio.c [-Dperror_c]
+putc            stdio.c [-Dputc_c]
+putchar         stdio.c [-Dputchar_c]
+puts            stdio.c [-Dputs_c]
+rewind          stdio.c [-Drewind_c]
+setbuf          stdio.c [-Dsetbuf_c]
+setvbuf         stdio.c [-Dsetvbuf_c]
+stdio           stdio.c [-Dstdio_c]
+tmpnam          stdio.c [-Dtmpnam_c]
+ungetc          stdio.c [-Dungetc_c]
+_sys_msg        stdio.c [-D_sys_msg_c]
+__dup           stdio.c [-D__dup_c]
+alloc           alloc.c [-Dalloc_c]
+calloc          alloc.c [-Dcalloc_c]
+realloc         alloc.c [-Drealloc_c]
+rand            stdlib.c [-Drand_c]
+ansirand        stdlib.c [-DANSI_rand_c]
+atexit          stdlib.c [-Datexit_c]
+exit            stdlib.c [-Dexit_c]
+abort           stdlib.c [-Dabort_c]
+qsort           stdlib.c [-Dqsort_c]
+bsearch         stdlib.c [-Dbsearch_c]
+_version        stdlib.c [-D_version_c]
+signal          signal.c
+assert          assert.c
+locale          locale.c [-Dlocale_c]
+localecv        locale.c [-Dlocaleconv_c]
+_lc             locale.c [-D_lc_c]
+mblen           locale.c [-Dmblen_c]
+mbtowc          locale.c [-Dmbtowc_c]
+wctomb          locale.c [-Dwctomb_c]
+mbstowcs        locale.c [-Dmbstowcs_c]
+wcstombs        locale.c [-Dwcstombs_c]
+#if thumb == true
+memcmp          thumb/memcmp.s
+memset          thumb/memset.s
+memmove         thumb/memmove.s
+strcmp          thumb/strcmp.s
+strcpy          thumb/strcpy.s
+strncmp         thumb/strncmp.s
+strncpy         thumb/strncpy.s
+strlen          thumb/strlen.s
+call_via        thumb/call_via.s
+#else
+memcmp          string.c [-Dmemcmp_c]
+# if memcpy == fast
+memcpy          memcpset.s [-PD 'make SETS "memcpy"']
+memset          memcpset.s [-PD 'make SETS "memset"']
+# else
+memcpy          string.c [-Dmemcpy_c]
+memmove         string.c [-Dmemmove_c]
+memset          string.c [-Dmemset_c]
+# end
+strcmp          string.c [-Dstrcmp_c]
+strcpy          string.c [-Dstrcpy_c]
+strncmp         string.c [-Dstrncmp_c]
+strncpy         string.c [-Dstrncpy_c]
+strlen          string.c [-Dstrlen_c]
+#end
+memchr          string.c [-Dmemchr_c]
+strcat          string.c [-Dstrcat_c]
+strchr          string.c [-Dstrchr_c]
+strcoll         string.c [-Dstrcoll_c]
+strcspn         string.c [-Dstrcspn_c]
+strerror        string.c [-Dstrerror_c]
+strncat         string.c [-Dstrncat_c]
+strpbrk         string.c [-Dstrpbrk_c]
+strrchr         string.c [-Dstrrchr_c]
+strspn          string.c [-Dstrspn_c]
+strstr          string.c [-Dstrstr_c]
+strtok          string.c [-Dstrtok_c]
+strxfrm         string.c [-Dstrxfrm_c]
+_streror        string.c [-D_strerror_c]
+asctime         time.c [-Dasctime_c]
+ctime           time.c [-Dctime_c]
+difftime        time.c [-Ddifftime_c]
+gmtime          time.c [-Dgmtime_c]
+locltime        time.c [-Dlocaltime_c]
+mktime          time.c [-Dmktime_c]
+strftime        time.c [-Dstrftime_c]
+_monlen         time.c [-D_monlen_c]
+#if thumb != true
+rtcount         unhosted.s [-PD 'make SETS "count"']
+rtcount1        unhosted.s [-PD 'make SETS "count1"']
+#end
+rtdivtst        unhosted.s [-PD 'make SETS "divtest"']
+rtsdiv10        unhosted.s [-PD 'make SETS "sdiv10"']
+rtudiv10        unhosted.s [-PD 'make SETS "udiv10"']
+#if thumb != true
+dspdiv32        unhosted.s [-PD 'make SETS "dspdiv32"']
+dspdiv64        unhosted.s [-PD 'make SETS "dspdiv64"']
+#end
+#if thumb == true
+rt_sdiv         unhosted.s [-PD 'make SETS "sdiv_rolled"']
+rt_udiv         unhosted.s [-PD 'make SETS "udiv_rolled"']
+#else
+# if divide == small
+rt_sdiv         unhosted.s [-PD 'make SETS "sdiv_rolled"']
+rt_udiv         unhosted.s [-PD 'make SETS "udiv_rolled"']
+# elif divide == unrolled
+rt_sdiv         unhosted.s [-PD 'make SETS "sdiv_unrolled8"']
+rt_udiv         unhosted.s [-PD 'make SETS "udiv_unrolled8"']
+# end
+#end
+#if thumb == true
+divtst          unhosted.s [-32 -PD 'make SETS "divtest"']
+sdiv10          unhosted.s [-32 -PD 'make SETS "sdiv10"']
+udiv10          unhosted.s [-32 -PD 'make SETS "udiv10"']
+_sdiv           unhosted.s [-32 -PD 'make SETS "sdiv_rolled"']
+_udiv           unhosted.s [-32 -PD 'make SETS "udiv_rolled"']
+#end
+rt_div0         unhosted.s [-PD 'make SETS "div0"']
+#if thumb != true
+rtrwchck        unhosted.s [-PD 'make SETS "rwcheck"']
+#end
+setjmp          setjmp.s
+h_signal        h_signal.s
+# if stack == chunked
+stkchnks        stkchunk.s [-PD 'make SETS "stkchunks"']
+chunkcpy        stkchunk.s [-PD 'make SETS "chunk_copy"']
+# else
+stkcont         stkcont.s
+# end
+unwind          unwind.s
+kallocs         kallocs.s
+lib_init        armsys.c [-Dlib_init_c]
+_sysdie         armsys.c [-D_sysdie_c]
+sysalloc        armsys.c [-D_sys_alloc_c]
+# if stdfile_redirection == on
+_main           armsys.c [-D_main_c -DSTDFILE_REDIRECTION]
+# else
+_main           armsys.c [-D_main_c]
+# end
+# if backtrace == on
+handlers        handlers.s [-PD 'backtrace_enabled SETL {TRUE}']
+backtrc         backtrc.c
+unwind          unwind.s
+kernel          semi/kernel.s [-PD 'backtrace_enabled SETL {TRUE}']
+# else
+handlers        handlers.s [-PD 'backtrace_enabled SETL {FALSE}']
+kernel          semi/kernel.s [-PD 'backtrace_enabled SETL {FALSE}']
+# end
+#if thumb == true
+startup         semi/startup.s
+#else
+__main          semi/startup.s
+#end

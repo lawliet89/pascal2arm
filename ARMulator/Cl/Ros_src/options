@@ -1,0 +1,7 @@
+memcpy = fast
+divide = unrolled
+stdfile_redirection = on
+fp_type = module
+stack = chunked
+backtrace = off
+fpregargs = off

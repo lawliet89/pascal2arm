@@ -1,0 +1,24 @@
+# Macintosh/MPW makefile for makemake.c
+# (There is no compile-and-link command for MPW)
+#
+# RCS $Revision: 1.2 $
+# Checkin $Date: 1993/12/21 12:12:44 $
+# Revising $Author: irickard $
+
+
+makemakeobjs =	makemake.c.o
+
+Libs =			¶
+				"{Libraries}"Runtime.o			¶
+				"{Libraries}"Interface.o		¶
+				"{CLibraries}"StdClib.o			¶
+
+COptions =		¶
+				-w3								¶
+				-d __STDC__						¶
+				-model far
+
+LinkOptions =	-c 'MPS ' -t MPST -model far
+
+makemake	Ä	{makemakeobjs}
+	Link {LinkOptions} -o {Targ} {Libs} {Deps}

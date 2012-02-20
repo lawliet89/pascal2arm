@@ -1,0 +1,49 @@
+# makedefs variant for PC's (armmake)
+#
+# RCS $Revision: 1.1.2.4 $
+# Checkin $Date: 1998/03/10 12:42:40 $
+# Revising $Author: ijohnson $
+#
+# Set ENDIAN to b or l as required.
+# Set INTERWORK to "INTERWORK" or "NOINTERWORK" (case sensitive)
+ENDIAN=l
+INTERWORK=INTERWORK
+
+# set ARMTOOLS if the ARM tools are not available on your PATH
+# NB: Leave a trailing directory separator at the end
+ARMTOOLS=
+
+MAKETOOL=$(ARMTOOLS)armmake
+CC=$(ARMTOOLS)tcc
+LD=$(ARMTOOLS)armlink
+AS=$(ARMTOOLS)tasm
+ARMLIB=$(ARMTOOLS)armlib
+
+MKTMP=mktmp
+RM=del
+RENAME=rename
+APPEND=type
+MAKEMAKE=..\util\makemake
+DEPLIST=deplist
+BAKFILE=MakeFBak
+CP=copy
+
+# via files are needed because of DOS command-line length restrictions
+CFLAGS=-via cv
+DCFLAGS=$(CFLAGS) -M
+AFLAGS=-via av 
+DAFLAGS=$(AFLAGS) -D $(MKTMP)
+
+via: 
+        @echo -$(ENDIAN)i -ffah -apcs 3/$(INTERWORK)/noswst > cv
+        @echo -c -J..\..\include -I..,..\semi,..\fplib,../stdh -I../../../fpe400/coresrc -DHOSTSEX_$(ENDIAN) >>cv
+        @echo -D$(INTERWORK) $(CFL) >> cv
+        @echo -16 -$(ENDIAN)i -apcs 3/noswst -PD "$(INTERWORK) SETL {TRUE}" > av
+        @echo -PD "noswst SETL {TRUE}" -PD "thumb SETL {TRUE}" >> av
+        @echo -I..,..\semi,../stdh -I../../../fpe400/coresrc >> av
+        @echo
+        @echo ARM C-library build is a 3-stage process on the PC
+        @echo -via files have been created for armasm and armcc
+        @echo now type:
+        @echo   $(MAKETOOL) -a depend      -- optional; adds dependencies to makefile
+        @echo   $(MAKETOOL) armlib.o       -- to make the library

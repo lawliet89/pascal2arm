@@ -1,0 +1,42 @@
+# makedefs variant for SunOS
+#
+# RCS $Revision: 1.3.18.1 $
+# Checkin $Date: 1998/02/25 17:36:22 $
+# Revising $Author: dbrooke $
+#
+# Set PCSZ to 32 or 26, as appropriate
+# Set ENDIAN to b or l as required.
+# Set FPIS (FP Instruction Set) to 2 or 3 as appropriate
+# Set LDMLIMIT to the maximum number of registers to be allowed in a LDM or STM
+PCSZ=32
+ENDIAN=l
+FPIS=2
+LDMLIMIT=16
+
+# Set ARMTOOLS if the ARM tools are not available on your PATH
+# NB: Leave a trailing directory separator at the end
+ARMTOOLS=
+
+CC=$(ARMTOOLS)armcc
+LD=$(ARMTOOLS)armlink
+AS=$(ARMTOOLS)armasm
+ARMLIB=$(ARMTOOLS)armlib
+
+MKTMP=mktmp
+RM=rm -f
+RENAME=mv
+APPEND=cat
+MAKEMAKE=../util/makemake
+DEPLIST=deplist
+BAKFILE=MakeFBak
+CP=cp
+
+CFLAGS=-$(ENDIAN)i -ffah -apcs 3/$(PCSZ)bit/fpe$(FPIS) -zr$(LDMLIMIT) -c -J../../include -I..,../ros_src,../stdh -I../../../fpe400/coresrc -DHOSTSEX_$(ENDIAN) -D__riscos -D__acorn $(CFL)
+DCFLAGS=$(CFLAGS) -M
+AFLAGS=-$(ENDIAN)i -apcs 3/$(PCSZ)bit -PD 'FPIS SETA $(FPIS)' -PD 'LDM_MAX SETA $(LDMLIMIT)' -I..,../ros_src,../stdh -I../../../fpe400/coresrc
+DAFLAGS=$(AFLAGS) -D $(MKTMP)
+
+FPE=fpe_$(PCSZ)$(ENDIAN)
+
+#.SILENT:
+

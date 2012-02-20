@@ -1,0 +1,17 @@
+This directory contains the following examples. All are described in the
+User Guide for version 2.11 of the ARM Software Development Toolkit.
+
+  Example                   User Guide section
+
+  adrlabel.s                9.7.3
+  armex.s                   9.2
+  blocks.s                  9.9.2
+  jump.s                    9.7.4
+  ldrlabel.s                9.7.1
+  loadcon.s                 9.5.4
+  scopy.s and strtest.c     9.8
+  strcopy.s                 9.7.2
+  subrout.s                 9.3
+  tblock.s                  9.9.3
+  thumbsub.s                9.4
+  word.s                    9.9.2

@@ -1,0 +1,45 @@
+# $Revision: 1.2 $
+#   $Author: ijohnson $
+#     $Date: 1996/05/09 17:11:04 $
+
+CC = gcc
+
+GCCOPTS= -W -Wall -Wpointer-arithmetic -Wcast-qual -Wmissing-prototypes \
+	 -Wstrict-prototypes -Wmissing-declarations
+
+CFLAGS = -g -I.. -DLITTLE_ENDIAN -DPIE_HW_TEST -DTARGET -DASSERTIONS_ENABLED \
+	$(GCCOPTS)
+
+sertest: sertest.o serial.o devclnt.o rx.o tx.o devices.o crc.o
+	$(CC) -g -o sertest sertest.o serial.o devclnt.o rx.o tx.o devices.o \
+			 crc.o
+
+sertest.o: sertest.c hw.h pie.h ../serial.h ../channels.h ../devclnt.h
+sertest.o: ../devdriv.h ../support.h ../devices.h ../chandefs.h ../angel.h
+sertest.o: ../buffers.h ../serlock.h
+
+serial.o: serial.c hw.h pie.h ../serial.h ../channels.h ../rxtx.h ../support.h
+serial.o: ../devdriv.h	../devices.h ../chandefs.h ../devclnt.h ../angel.h
+serial.o: ../buffers.h ../serlock.h
+
+devclnt.o: ../devclnt.c ../devclnt.h ../devdriv.h ../devices.h ../angel.h
+devclnt.o: ../buffers.h ../serlock.h
+	$(CC) $(CFLAGS) -c -o $@ ../devclnt.c
+
+rx.o:	../rx.c ../rxtx.h ../angel.h ../endian.h ../crc.h ../channels.h
+rx.o:	../buffers.h ../devclnt.h ../devices.h ../chandefs.h ../devdriv.h
+rx.o:	../serlock.h
+	$(CC) $(CFLAGS) -c -o $@ ../rx.c
+
+tx.o:	   ../tx.c ../rxtx.h ../angel.h ../endian.h ../crc.h ../channels.h
+tx.o:	../buffers.h ../devclnt.h ../devices.h ../chandefs.h 
+	$(CC) $(CFLAGS) -c -o $@ ../tx.c
+
+devices.o: ../devices.c ../devdriv.h ../serial.h ../devclnt.h ../devices.h
+devices.o: ../angel.h ../buffers.h ../serlock.h
+	$(CC) $(CFLAGS) -c -o $@ ../devices.c
+
+crc.o:	../crc.c ../crc.h
+	$(CC) $(CFLAGS) -c -o $@ ../crc.c
+
+

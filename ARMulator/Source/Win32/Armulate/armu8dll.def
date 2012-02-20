@@ -1,0 +1,41 @@
+; RCS $Revision: 1.5 $
+; Checkin $Date: 1997/02/26 12:51:22 $
+; Revising $Author: hbullman $
+;
+
+LIBRARY   ARMULATE
+
+CODE      LOADONCALL DISCARDABLE
+DATA      LOADONCALL SINGLE
+
+EXPORTS
+;    ARMul_RDI_open                      @1
+;    ARMul_RDI_close                     @2
+;    ARMul_RDI_read                      @3
+;    ARMul_RDI_write                     @4
+;    ARMul_RDI_CPUread           @5
+;    ARMul_RDI_CPUwrite          @6
+;    ARMul_RDI_CPread            @7
+;    ARMul_RDI_CPwrite           @8
+;    ARMul_RDI_setbreak          @9
+;    ARMul_RDI_clearbreak        @10
+;    ARMul_RDI_setwatch          @11
+;    ARMul_RDI_clearwatch        @12
+;    ARMul_RDI_execute           @13
+;    ARMul_RDI_step                      @14
+;    ARMul_RDI_info                      @15
+;    ARMul_RDI_cpunames          @16
+;        RDI_Config                              @30
+;        RDI_Get                                 @31
+
+    WinRDI_Config
+    WinRDI_GetRDIProcVec
+
+;(This next line required for PICCOLO)
+;       WinRDI_GetRDIProcVec2
+
+    WinRDI_GetVersion
+
+    WinRDI_Get_DLL_Description @7
+    WinRDI_Valid_RDI_DLL       @8
+    WinRDI_Register_Yield_Callback @9
