@@ -13,18 +13,26 @@
 		L_ - Internal literals
 */
 
-%{
+%code top{
 #include <iostream>
+#include <sstream>
 #define IN_BISON
-#include "../functions.h"
+#include "../functions.h"	//See Prologue alternatives: http://www.gnu.org/software/bison/manual/bison.html#Prologue-Alternatives
+}
+
+%code{
 #include "../utility.h"
 
 extern Flags_T Flags;		//In utility.cpp
-extern YYSTYPE CurrentToken;	//In lexer.l
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
 
 void yyerror(const char *msg);
-%}
+}
+
+/*
+	Note: Might need to use code provides eventually.
+*/
+
 /* Value Tokens */
 /* Note that V_INT is unsigned and will be turned signed via a non terminal */
 %token V_IDENTIFIER V_INT V_REAL V_STRING V_CHAR V_NIL
@@ -54,15 +62,24 @@ void yyerror(const char *msg);
 /* Relational */
 %left '=' OP_GE OP_LE OP_NOTEQUAL '<' '>' OP_IN
 
+/* Unary sign */
+%left OP_POSITIVE OP_NEGATIVE
+
 %token OP_DOTDOT OP_STARSTAR OP_UPARROW OP_ASSIGNMENT
 
 /* Internal Use Tokens */
 %token Y_SYNTAX_ERROR Y_FATAL_ERROR Y_EOF
 
 %start Sentence
+
+/* Debug Options */
+%error-verbose
+/* %define lr.type ielr */  	/* Needs 2.5 */
+/* %define parse.lac full */
+
 %%
 
-Sentence: Program  Y_EOF { YYACCEPT; }
+Sentence: Program  Y_EOF 
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
@@ -91,7 +108,7 @@ Block: BlockDeclaration CompoundStatement
 	;
 
 BlockDeclaration: BlockLabelDeclaration BlockConstantDeclaration BlockTypeDeclaration BlockVarDeclaration BlockProcFuncDeclaration
-		|;
+		;
 
 BlockLabelDeclaration: LabelDeclaration
 			|;
@@ -178,9 +195,7 @@ EnumTypeList: EnumTypeList ',' IdentifierList
 SubrangeType: SubrangeValue OP_DOTDOT SubrangeValue
 		;
 SubrangeValue: Identifier
-		| V_INT
-		| '-' V_INT
-		| '+' V_INT
+		| L_Int
 		;
 
 RealType: I_REAL;
@@ -192,8 +207,8 @@ StringType: I_STRING
 TypeIdentifier: Identifier;
 
 /* Values */
-L_Int: '+' V_INT
-	| '-' V_INT
+L_Int: '+' V_INT %prec OP_POSITIVE
+	| '-' V_INT %prec OP_NEGATIVE
 	| V_INT
 	;
 
@@ -281,8 +296,8 @@ Factor: '(' Expression ')'
 	| FuncCall
 	| UnsignedConstant
 	| OP_NOT Factor
-	| '+' Factor
-	| '-' Factor
+	| '+' Factor %prec OP_POSITIVE
+	| '-' Factor %prec OP_NEGATIVE
 	/* Set, value typecast, address factor ?? */
 	;
 VarRef: Identifier
@@ -294,6 +309,9 @@ UnsignedConstant: V_REAL
 		| V_CHAR
 		/* | Identifier */
 		| V_NIL
+		| I_TRUE
+		| I_FALSE
+		| I_MAXINT
 		;
 
 FuncCall: Identifier '(' ActualParamList ')'
@@ -391,5 +409,7 @@ WhileStatement: K_WHILE Expression K_DO Statement
 
 //If this is called then we have encountered an unknown parse error
 void yyerror(const char * msg){
-	HandleError("Unknown parse error.", E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
+	std::stringstream text;
+	text << "Unknown parse error: " << msg;
+	HandleError(text.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
 }

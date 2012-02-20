@@ -28,7 +28,7 @@ BISON_CPP := $(GEN_DIR)parser.cpp
 
 DEBUG_BUILD := true
 
-
+BISON_DEBUG := true
 
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
@@ -43,6 +43,12 @@ ifdef DEBUG_BUILD
 CXXFLAGS := -g -pedantic -std=c++0x
 else
 CXXFLAGS := -pedantic -std=c++0x
+endif
+
+ifdef BISON_DEBUG
+BISON_FLAGS := --report=itemset --debug
+else
+BISON_FLAGS := 
 endif
 
 # UNUSED For now
@@ -81,7 +87,7 @@ $(FLEX_CPP) $(FLEX_HEADER): $(FLEX_SRC)
 	
 $(BISON_CPP) $(BISON_HEADER): $(BISON_SRC)
 	@echo "Generating parser"
-	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_SRC)
+	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_FLAGS) $(BISON_SRC)
 	
 $(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) functions.h utility.h
 	@echo "Compiling $@"

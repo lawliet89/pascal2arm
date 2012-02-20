@@ -14,10 +14,12 @@
 
 
 extern Flags_T Flags;		//In utility.cpp
+extern YYSTYPE yylval;		//In parser.cpp (generated)
+extern int yydebug;		// IN parser.cpp
+#define CurrentToken yylval
 
 //Lexer variables
 unsigned LexerCharCount, LexerLineCount;
-YYSTYPE CurrentToken;
 bool LexerSyntaxError;
 
 //Functions
@@ -231,6 +233,7 @@ void LexerInit(){
 	LexerLineCount = 1;
 	
 	LexerSyntaxError = false;
+	yydebug = 1;
 }
 
 //Lexer Functions
