@@ -68,11 +68,11 @@ NQUOTE [^']
 /* Literals */
 LETTER [A-Za-z]
 IDENTIFIER [a-zA-Z_]([a-zA-Z0-9_])+
-STRING '({NQUOTE}|'')+'
+CHAR ({NQUOTE}|'')
+STRING '{CHAR}+'
 DIGIT [0-9]
-DIGIT_NONZERO [1-9
+DIGIT_NONZERO [1-9]
 /*SIGN [+\-]*/
-BOOLEAN ({T}{R}{U}{E})|({F}{A}{L}{S}{E})
 NIL {N}{I}{L} 
 FLOAT ({DIGIT}+\.)|({DIGIT}+\.)|(\.{DIGIT}+)
 SIGNED_NUMBER [+\-]?{DIGIT}+
@@ -115,20 +115,33 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {W}{H}{I}{L}{E}   {LexerAddCharCount(); return K_WHILE; }
 {W}{I}{T}{H}   {LexerAddCharCount(); return K_WITH; }
 
+{T}{R}{U}{E} { LexerAddCharCount(); return I_TRUE; }
+{F}{A}{L}{S}{E} { LexerAddCharCount(); return I_FALSE; }
+{M}{A}{X}{I}{N}{T} { LexerAddCharCount(); return I_MAXINT; }
+{B}{O}{O}{L}{E}{A}{N} { LexerAddCharCount(); return I_BOOLEAN; }
+{C}{H}{A}{R} { LexerAddCharCount(); return I_CHAR; }
+{I}{N}{T}{E}{G}{E}{R} { LexerAddCharCount(); return I_INTEGER; }
+{R}{E}{A}{L} { LexerAddCharCount(); return I_REAL; }
+{I}{N}{P}{U}{T} { LexerAddCharCount(); return I_INPUT; }
+{O}{U}{P}{U}{T} { LexerAddCharCount(); return I_OUTPUT; }
+{S}{T}{R}{I}{N}{G} { LexerAddCharCount(); return I_STRING; }
+
+
 {F}{O}{R}{W}{A}{R}{D}  {LexerAddCharCount(); return I_FORWARD; }
+
+'{CHAR}'	|
+"#"{DIGIT}+	|
+"^"{LETTER}	{LexerAddCharCount(); 
+			LexerCleanCurrent(); 
+			CurrentToken = new Token(yytext, V_CHAR);
+			return V_CHAR; 
+			}
 
 {STRING}	{LexerAddCharCount(); 
 			LexerCleanCurrent(); 
 			CurrentToken = new Token(yytext, V_STRING);
 			return V_STRING; 
 			}
-			
-{BOOLEAN}	{
-			LexerAddCharCount(); 
-			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, V_BOOLEAN);	//TODO
-			return V_BOOLEAN;
-		}
 		
 {IDENTIFIER}  { //Identifier
 			LexerAddCharCount(); 
@@ -154,7 +167,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 			CurrentToken = new Token(yytext, V_INT); //TODO
 			return V_INT;
 		}
-		
+	
 ":="    {LexerAddCharCount(); return OP_ASSIGNMENT; }
 
 ":"    |

@@ -4,7 +4,8 @@
 		K_ - keywords
 		I_ - predefined identifiers 
 		OP_ - Operator Tokens (if operators are single character, will not be defined as a separate enum token)
-		V_ - Values tokens from Flex
+		V_ - Literal Values tokens from Flex
+		VAR_ Variables or constants
 		
 		Y_ - Internal Tokens
 		
@@ -25,11 +26,8 @@ extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
 void yyerror(const char *msg);
 %}
 /* Value Tokens */
-%token V_IDENTIFIER V_INT V_REAL V_STRING V_BOOLEAN V_NIL
-
-/* Literal Tokens */
-/* After determining signed or unsigned etc.*/
-%token L_Int L_Real
+/* Note that V_INT is unsigned and will be turned signed via a non terminal */
+%token V_IDENTIFIER V_INT V_REAL V_STRING V_CHAR V_NIL
 
 
 /* Keywords */
@@ -40,7 +38,7 @@ void yyerror(const char *msg);
 
 /* Pre-defined identifiers */
 %token I_TRUE I_FALSE I_MAXINT
-%token I_BOOLEAN I_CHAR I_INTEGER I_REAL I_TEXT
+%token I_BOOLEAN I_CHAR I_INTEGER I_REAL I_STRING I_TEXT
 %token I_INPUT I_OUTPUT
 %token I_FORWARD
 
@@ -58,7 +56,6 @@ void yyerror(const char *msg);
 
 %token OP_DOTDOT OP_STARSTAR OP_UPARROW OP_ASSIGNMENT
 
-
 /* Internal Use Tokens */
 %token Y_SYNTAX_ERROR Y_FATAL_ERROR
 %%
@@ -73,33 +70,117 @@ Program: Block '.'
 	;
 	
 /* Program Headers */
-ProgramHeader:	K_PROGRAM V_IDENTIFIER 
-		| K_PROGRAM V_IDENTIFIER '('')'
-		| K_PROGRAM V_IDENTIFIER '(' IdentifierList ')'
+ProgramHeader:	K_PROGRAM Identifier 
+		| K_PROGRAM Identifier '('')'
+		| K_PROGRAM Identifier '(' FileIdentifierList ')'
+		;
+
+FileIdentifierList: FileIdentifier ',' FileIdentifierList
+		| FileIdentifier
+		;
+
+FileIdentifier: I_INPUT
+		| I_OUTPUT
+		| Identifier
 		;
 
 /* Block */	
 Block: BlockDeclaration CompoudStatement
 	;
 
-BlockDeclaration: BlockLabelDeclaration
+BlockDeclaration: BlockLabelDeclaration BlockConstantDeclaration BlockTypeDeclaration BlockVarDeclaration BlockProcFuncDeclaration
 		|;
 
-BlockLabelDeclaration: LabelDeclaration BlockConstantDeclaration;
-BlockConstantDeclaration: ConstantDeclaration BlockTypeDeclaration;
-BlockTypeDeclaration: TypeDeclaration BlockVarDeclaration;
-BlockVarDeclaration: VarDeclaration BlockProcFuncDeclaration;
+BlockLabelDeclaration: LabelDeclaration
+			|;
+BlockConstantDeclaration: K_CONST ConstantList
+			|;
+BlockTypeDeclaration: K_TYPE TypeList
+			|;
+BlockVarDeclaration: K_VAR VarDeclaration
+			|;
 BlockProcFuncDeclaration: ProcFuncDeclaration
 			|;
 
 /* Generic Stuff */
-IdentifierList: V_IDENTIFIER ',' IdentifierList
-		| V_IDENTIFIER
+Identifier: V_IDENTIFIER
+	;
+
+IdentifierList: Identifier ',' IdentifierList
+		| Identifier
 		;
 
 LabelDeclaration: K_LABEL V_INT ',' LabelDeclaration
 		| K_LABEL V_INT ';'
 		;
+
+ConstantList: 	ConstantList ConstantDeclaration
+		| ConstantDeclaration;
+		
+		
+ConstantDeclaration: Identifier '=' Expression ';' 
+		;
+
+TypeList:	TypeList TypeDeclaration
+		| TypeDeclaration
+		;
+		
+TypeDeclaration: Identifier '=' Type ';' 
+		;
+
+/* Types */
+Type: SimpleType
+	| StringType
+/*	| StructuredType 
+	| PointerType   */
+	| TypeIdentifier
+	;
+	
+SimpleType: OrdinalType
+	| RealType
+	;
+
+OrdinalType: I_INTEGER
+	| I_CHAR
+	| I_BOOLEAN
+	| EnumType
+	| SubrangeType
+	;
+
+EnumType:'(' EnumTypeList ')'
+	;
+
+EnumTypeList: EnumTypeList ',' IdentifierList
+	/* | EnumTypeList ',' Identifier OP_ASSIGNMENT Expression */
+	| IdentifierList
+	/* | Identifier OP_ASSIGNMENT Expression */
+	;
+
+SubrangeType: Constant OP_DOTDOT Constant
+		;
+
+RealType: I_REAL;
+
+StringType: I_STRING
+	| I_STRING '[' V_INT ']'
+	;
+	
+TypeIdentifier: Identifier;
+
+/* Values */
+L_Int: '+' V_INT
+	| '-' V_INT
+	| V_INT
+	;
+
+L_Real: '+' V_REAL
+	| '-' V_REAL
+	| V_REAL
+	;
+	
+Constant: Identifier
+	| L_Int
+	;
 %%
 
 //If this is called then we have encountered an unknown parse error
