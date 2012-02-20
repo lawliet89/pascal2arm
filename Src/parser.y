@@ -66,7 +66,7 @@ Sentence: Program
 
 Program: Block '.'
 	| ProgramHeader ';' Block '.'
-	/* Uses block if we are implementing units */
+	/* UsesBlock if we are implementing units */
 	;
 	
 /* Program Headers */
@@ -85,7 +85,7 @@ FileIdentifier: I_INPUT
 		;
 
 /* Block */	
-Block: BlockDeclaration CompoudStatement
+Block: BlockDeclaration CompoundStatement
 	;
 
 BlockDeclaration: BlockLabelDeclaration BlockConstantDeclaration BlockTypeDeclaration BlockVarDeclaration BlockProcFuncDeclaration
@@ -190,19 +190,19 @@ StringType: I_STRING
 TypeIdentifier: Identifier;
 
 /* Values */
-/*L_Int: '+' V_INT
+L_Int: '+' V_INT
 	| '-' V_INT
 	| V_INT
 	;
 
-L_Real: '+' V_REAL
+/*L_Real: '+' V_REAL
 	| '-' V_REAL
 	| V_REAL
 	;
-	
+;*/	
 Constant: Identifier
 	| L_Int
-	;*/
+	;
 
 /* Prodcedures and functions */
 FormalParamList: '(' FormalParam ')'
@@ -304,10 +304,11 @@ ActualParamList: ActualParamList ',' Expression
 		;
 
 /* Statements */
-CompoudStatement: K_BEGIN StatementList K_END
+CompoundStatement: K_BEGIN StatementList K_END
 		;
 
 StatementList: StatementList ';' Statement
+		| Statement ';'
 		| Statement
 		;
 
@@ -334,7 +335,54 @@ ProcedureStatement: Identifier '(' ActualParamList ')'
 GotoStatement: K_GOTO V_INT
 		;
 
-StructuredStatement: 
+StructuredStatement: CompoundStatement
+		| ConditionalStatement
+		| RepetitiveStatement
+		/* | WithStatement */
+		;
+
+ConditionalStatement: CaseStatement
+		| IfStatement
+		;
+
+RepetitiveStatement: ForStatement
+		| RepeatStatement
+		| WhileStatement
+		;
+
+CaseStatement: K_CASE Expression K_OF CaseBody K_END;
+
+CaseBody: Cases ElsePart ';'
+	| Cases ElsePart 
+	| Cases  ';'
+	| Cases
+	;
+
+Cases: Cases ';' Case ':' Statement
+	|  Case   ':' Statement
+	;
+
+Case: Case ',' CaseConstant 
+	|  CaseConstant
+	;
+
+CaseConstant: Constant
+	| Constant OP_DOTDOT Constant
+	;
+ElsePart: K_ELSE Statement
+	;
+
+IfStatement: K_IF Expression K_THEN Statement ElsePart
+	| K_IF Expression K_THEN Statement
+	;
+
+ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression K_DO Statement
+	;
+
+RepeatStatement: K_REPEAT StatementList K_UNTIL Expression
+		;
+
+WhileStatement: K_WHILE Expression K_DO Statement
 		;
 
 %%
