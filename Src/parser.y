@@ -57,10 +57,10 @@ void yyerror(const char *msg);
 %token OP_DOTDOT OP_STARSTAR OP_UPARROW OP_ASSIGNMENT
 
 /* Internal Use Tokens */
-%token Y_SYNTAX_ERROR Y_FATAL_ERROR
+%token Y_SYNTAX_ERROR Y_FATAL_ERROR Y_EOF
 %%
 
-Sentence: Program 
+Sentence: Program  Y_EOF { YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 

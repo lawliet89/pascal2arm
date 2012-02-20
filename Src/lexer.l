@@ -216,6 +216,9 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 			HandleError("There are syntax errors. Compilation cannot proceed.", E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
 			return Y_FATAL_ERROR;
 		}
+		else{
+			return Y_EOF;
+		}
 	}
 %%
 
