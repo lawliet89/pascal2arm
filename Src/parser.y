@@ -79,7 +79,7 @@ void yyerror(const char *msg);
 
 %%
 
-Sentence: Program  Y_EOF 
+Sentence: Program  Y_EOF { YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
@@ -327,7 +327,7 @@ ActualParamList: ActualParamList ',' Expression
 CompoundStatement: K_BEGIN StatementList K_END
 		;
 
-StatementList: StatementList ';' Statement
+StatementList:  Statement ';' StatementList
 		| Statement ';'
 		| Statement
 		;
