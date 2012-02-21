@@ -5,14 +5,14 @@
 class Token_Real: public Token{
 public:
 	//OCCF
-	Token_Real(char const *StrValue, yytokentype type);
+	Token_Real(char const *StrValue, int type);
+	Token_Real(double value, int type);
 	~Token_Real() { }
 	Token_Real(const Token_Real &obj);
 	Token_Real operator=(const Token_Real &obj);
 	
-	double GetValue() const { return value; }
-	double operator()() const { return value; }
-	
+	virtual const void * GetValue() const { return (void *) &value; }
+	virtual const void * operator()() const { return (void *) &value; }
 protected:
 	double value;
 	

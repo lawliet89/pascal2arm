@@ -30,6 +30,7 @@ extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
 
 void yyerror(const char *msg);
 inline void ParserCleanCurrent();
+template <typename T> T GetValue(YYSTYPE token);
 }
 
 /*
@@ -86,7 +87,7 @@ inline void ParserCleanCurrent();
 };
 %%
 
-Sentence: Program  Y_EOF { YYACCEPT; }
+Sentence: Program  Y_EOF { ParserCleanCurrent(); YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
@@ -215,11 +216,20 @@ StringType: I_STRING
 TypeIdentifier: Identifier;
 
 /* Values */
-Signed_Int: '+' V_INT 
-	| '-' V_INT ;
+Signed_Int: '+' V_INT {  
+			$$ = new Token_Int(GetValue<int>(yylval), Signed_Int);
+		}
+	| '-' V_INT { 
+			$$ = new Token_Int(GetValue<int>(yylval) * -1, Signed_Int);   
+		}
+	;
 	
-Signed_Real: '+' V_REAL
-	| '-' V_REAL
+Signed_Real: '+' V_REAL {
+			$$ = new Token_Int(GetValue<double>(yylval), Signed_Real);
+			}
+	| '-' V_REAL{
+			$$ = new Token_Int(GetValue<double>(yylval)*-1, Signed_Real);
+			}
 	;
 ;
 Constant: Identifier
@@ -429,4 +439,7 @@ inline void ParserCleanCurrent(){
 		delete CurrentToken;
 		CurrentToken = NULL;
 	}
+}
+template <typename T> T GetValue(YYSTYPE token){
+	return DereferenceVoidPtr<T>(token -> GetValue());
 }

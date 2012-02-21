@@ -21,6 +21,10 @@
 #include "Gen/lexer.h"
 #endif
 
+#ifdef IN_FLEX
+#include "Gen/parser.h"
+#endif
+
 #define YY_DECL int yylex(void)
 
 /*

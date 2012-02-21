@@ -6,8 +6,6 @@
 class Token;
 #define YYSTYPE Token *
 
-//Because parser files are generated
-#include "Gen/parser.h"
 
 /*
  * Token base class that can be derived for the various data types
@@ -19,23 +17,33 @@ public:
 	//OCCF
 	
 	//Constructor
-	Token(const char *StrValue, yytokentype type);	//Type is the token type as defined by parser.h (generated from parser.y)
+	Token(const char *StrValue, int type);	//Type is the token type as defined by parser.h (generated from parser.y)
 	virtual ~Token(){ }				//Destructor
 	Token(const Token &obj);		//Copy Constructor
 	virtual Token operator=(const Token &obj);	//Assignment operator
 	
 	//Virtual methods
 	virtual std::string GetStrValue() const { return StrValue; }
-	yytokentype GetType() const { return type; }
+	int GetType() const { return type; }
 	
-	//Derived class should hide these methods to return their appropriate types.
-	//Cannot be virtual due to non "covariant" return types
-	std::string GetValue() const { return StrValue; }
-	std::string operator()() const { return StrValue; }
+	//Return type is set to void * so that derived classes can override this
+	//Use the utility function DereferenceVoidPtr<T> to dereference this
+	//where T is the intended type
+	virtual const void * GetValue() const { return (void *) &StrValue; }
+	virtual const void * operator()() const { return (void *) &StrValue; }
 protected:
 	std::string StrValue;
-	yytokentype type;
+	int type;
 };
+
+/**
+ * 	Non terminal symbols definition
+ * 
+ * */
+
+#define Signed_Int -1
+#define Signed_Real -2
+
 
 #if defined IN_BISON || defined IN_FLEX
 #include "Gen/all.h"	//All specialisations

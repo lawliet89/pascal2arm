@@ -1,7 +1,11 @@
 #include "int.h"
 #include "../utility.h"
 
-Token_Int::Token_Int(const char *StrValue, yytokentype type) : Token(StrValue, type), value(FromString<int>(StrValue)){
+Token_Int::Token_Int(const char *StrValue, int type) : Token(StrValue, type), value(FromString<int>(StrValue)){
+	//...
+}
+
+Token_Int::Token_Int(int value, int type) : Token(ToString<int>(value).c_str(), type), value(value){
 	//...
 }
 

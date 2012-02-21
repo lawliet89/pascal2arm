@@ -136,20 +136,20 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 "#"{DIGIT}+	|
 "^"{LETTER}	{LexerAddCharCount(); 
 			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, V_CHAR);
+			CurrentToken = new Token(yytext, (int) V_CHAR);
 			return V_CHAR; 
 			}
 
 {STRING}	{LexerAddCharCount(); 
 			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, V_STRING);
+			CurrentToken = new Token(yytext,(int) V_STRING);
 			return V_STRING; 
 			}
 		
 {IDENTIFIER}  { //Identifier
 			LexerAddCharCount(); 
 			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, V_IDENTIFIER);
+			CurrentToken = new Token(yytext,(int) V_IDENTIFIER);
 			return V_IDENTIFIER; }
 
 
@@ -159,7 +159,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {FLOAT}{E}{SIGNED_NUMBER} {
 				LexerAddCharCount(); 
 				LexerCleanCurrent(); 
-				CurrentToken = new Token_Real(yytext, V_REAL);
+				CurrentToken = new Token_Real(yytext, (int) V_REAL);
 				return V_REAL;
 			}
 
@@ -169,7 +169,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 			LexerAddCharCount(); 
 			LexerCleanCurrent(); 
 			
-			CurrentToken = new Token_Int(yytext, V_INT); 
+			CurrentToken = new Token_Int(yytext,(int) V_INT); 
 			return V_INT;
 		}
 	
@@ -217,6 +217,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 	}
 	
 <<EOF>> {
+		LexerCleanCurrent();
 		if (LexerSyntaxError){
 			HandleError("There are syntax errors. Compilation cannot proceed.", E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
 			return Y_FATAL_ERROR;

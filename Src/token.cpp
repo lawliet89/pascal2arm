@@ -1,7 +1,7 @@
 #include "token.h"
 
 //Constructors
-Token::Token(const char *StrValue, yytokentype type): StrValue(StrValue), type(type){
+Token::Token(const char *StrValue, int type): StrValue(StrValue), type(type){
 	//...
 }
 

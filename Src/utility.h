@@ -78,4 +78,12 @@ template<typename T> T FromString(std::string input){
 	return output;
 }
 
+//This function can be potentially unsafe. Make sure you know what you are doing!
+//Compiler will check for type casting validity during compile time... if you want something
+//more general, replace the cast with a reinterpret_cast
+template <typename T> T DereferenceVoidPtr(const void *ptr){
+	T *output = (T*) ptr;
+	return *output;
+}
+
 #endif /*Utility_H*/
