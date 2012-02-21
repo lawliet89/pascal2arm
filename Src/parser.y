@@ -195,7 +195,8 @@ EnumTypeList: EnumTypeList ',' IdentifierList
 SubrangeType: SubrangeValue OP_DOTDOT SubrangeValue
 		;
 SubrangeValue: Identifier
-		| L_Int
+		| V_INT
+		| Signed_Int
 		;
 
 RealType: I_REAL;
@@ -207,18 +208,16 @@ StringType: I_STRING
 TypeIdentifier: Identifier;
 
 /* Values */
-L_Int: '+' V_INT %prec OP_POSITIVE
-	| '-' V_INT %prec OP_NEGATIVE
-	| V_INT
-	;
-
-/*L_Real: '+' V_REAL
+Signed_Int: '+' V_INT 
+	| '-' V_INT ;
+	
+Signed_Real: '+' V_REAL
 	| '-' V_REAL
-	| V_REAL
 	;
-;*/	
+;
 Constant: Identifier
-	| L_Int
+	| V_INT
+	| Signed_Int
 	;
 
 /* Prodcedures and functions */
@@ -296,8 +295,7 @@ Factor: '(' Expression ')'
 	| FuncCall
 	| UnsignedConstant
 	| OP_NOT Factor
-	| '+' Factor %prec OP_POSITIVE
-	| '-' Factor %prec OP_NEGATIVE
+	| SignedConstant
 	/* Set, value typecast, address factor ?? */
 	;
 VarRef: Identifier
@@ -313,7 +311,10 @@ UnsignedConstant: V_REAL
 		| I_FALSE
 		| I_MAXINT
 		;
-
+SignedConstant: Signed_Int
+		| Signed_Real
+		;
+		
 FuncCall: Identifier '(' ActualParamList ')'
 	/* | Identifier */
 	;

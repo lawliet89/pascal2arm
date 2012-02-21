@@ -46,7 +46,7 @@ CXXFLAGS := -pedantic -std=c++0x
 endif
 
 ifdef BISON_DEBUG
-BISON_FLAGS := --report=itemset --debug
+BISON_FLAGS := --report=itemset --debug -g
 else
 BISON_FLAGS := 
 endif
