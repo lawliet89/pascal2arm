@@ -75,8 +75,8 @@ void yyerror(const char *msg);
 /* Debug Options */
 %error-verbose
 /* %define lr.type ielr */  	/* Needs 2.5 */
-/* %define parse.lac full */
-
+%define parse.lac full 
+/* %define lr.default-reductions consistent */
 %%
 
 Sentence: Program  Y_EOF { YYACCEPT; }

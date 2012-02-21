@@ -6,6 +6,6 @@ VAR
 BEGIN
 	Writeln('Hello World');
 	test := 5 * 6 + 5;
-	
+
 	test := -5 + -6;
 END.
