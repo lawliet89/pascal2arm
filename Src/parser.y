@@ -412,5 +412,7 @@ WhileStatement: K_WHILE Expression K_DO Statement
 void yyerror(const char * msg){
 	std::stringstream text;
 	text << "Unknown parse error: " << msg;
+	//text << "(" << yylloc.first_line << "-" << yylloc.last_line << ":" << yylloc.first_column;
+	//text << "-" << yylloc.last_column << ")";
 	HandleError(text.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
 }

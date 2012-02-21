@@ -24,7 +24,7 @@ bool LexerSyntaxError;
 
 //Functions
 void LexerConsumeComments(const char *delimiter);
-int LexerConsumeInvalid();
+void LexerConsumeInvalid();
 //int yywrap();
 
 //Inline functions
@@ -77,7 +77,7 @@ DIGIT [0-9]
 DIGIT_NONZERO [1-9]
 /*SIGN [+\-]*/
 NIL {N}{I}{L} 
-FLOAT ({DIGIT}+\.)|({DIGIT}+\.)|(\.{DIGIT}+)
+FLOAT ({DIGIT}+\.{DIGIT}+)|(\.{DIGIT}+)
 SIGNED_NUMBER [+\-]?{DIGIT}+
 
 %%
@@ -155,6 +155,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 
 
 {FLOAT}			|
+{DIGIT}{E}{SIGNED_NUMBER} |
 {FLOAT}{E}{SIGNED_NUMBER} {
 				LexerAddCharCount(); 
 				LexerCleanCurrent(); 
@@ -211,7 +212,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 	}
 
 .	{
-		return LexerConsumeInvalid();
+		LexerConsumeInvalid();
 	}
 	
 <<EOF>> {
@@ -292,7 +293,7 @@ void LexerConsumeComments(const char *delimiter){
 	}
 }
 
-int LexerConsumeInvalid(){
+void LexerConsumeInvalid(){
 	//Eat a whole word and then report failure
 	std::stringstream msg;
 	char c = yytext[0];
@@ -325,7 +326,7 @@ int LexerConsumeInvalid(){
 	
 	HandleError(msg.str().c_str(), E_SYNTAX, level, LexerLineCount, LexerCharCount-charCount+1);
 	
-	return Y_SYNTAX_ERROR;
+	//return Y_SYNTAX_ERROR;
 }
 
 
