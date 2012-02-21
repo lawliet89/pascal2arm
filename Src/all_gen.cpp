@@ -9,7 +9,7 @@ int main(int argc, const char **argv){
 	string list;
 	ofstream output(argv[1], ios_base::out | ios_base::trunc);
 	
-	output << "#ifdef AllH\n#define AllH\n";
+	output << "#ifndef AllH\n#define AllH\n";
 	
 	while(!cin.eof()){
 		getline(cin, list);

@@ -22,7 +22,7 @@ public:
 	Token(const char *StrValue, yytokentype type);	//Type is the token type as defined by parser.h (generated from parser.y)
 	virtual ~Token(){ }				//Destructor
 	Token(const Token &obj);		//Copy Constructor
-	Token operator=(const Token &obj);	//Assignment operator
+	virtual Token operator=(const Token &obj);	//Assignment operator
 	
 	//Virtual methods
 	virtual std::string GetStrValue() const { return StrValue; }
@@ -34,6 +34,7 @@ protected:
 };
 
 #if defined IN_BISON || defined IN_FLEX
+//#include "Tokens/int.h"
 #include "Gen/all.h"	//All specialisations
 #endif
 

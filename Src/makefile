@@ -30,6 +30,8 @@ DEBUG_BUILD := true
 
 BISON_DEBUG := true
 
+OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o
+
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
 #-------------------------------------------------------------------------------
@@ -64,7 +66,7 @@ OBJ_FILES := $(patsubst %.cpp,%.o, $(SRC_FILES) )
 #-------------------------------------------------------------------------------
 # ACTUAL TARGETS
 #-------------------------------------------------------------------------------
-$(PROGRAM): $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o
+$(PROGRAM): $(OBJ_LIST)
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -o $(PROGRAM) $^
 	@echo "Make complete."
@@ -77,7 +79,7 @@ $(GEN_DIR)utility.o: utility.cpp utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-$(GEN_DIR)lexer.o: $(FLEX_CPP) $(BISON_HEADER) functions.h utility.h
+$(GEN_DIR)lexer.o: $(FLEX_CPP) $(BISON_HEADER) functions.h utility.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
@@ -89,7 +91,7 @@ $(BISON_CPP) $(BISON_HEADER): $(BISON_SRC)
 	@echo "Generating parser"
 	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_FLAGS) $(BISON_SRC)
 	
-$(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) functions.h utility.h
+$(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) functions.h utility.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
@@ -97,8 +99,7 @@ $(GEN_DIR)token.o: token.cpp token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-functions.h: token.h
-	
+
 #Tokens specialisation header generation	
 token.h: $(GEN_DIR)all.h $(BISON_HEADER)
 #	@echo "Regenerating all.h"
@@ -110,6 +111,11 @@ $(GEN_DIR)all.h: $(GEN_DIR)all_gen $(wildcard Tokens/*.h)
 $(GEN_DIR)all_gen: all_gen.cpp
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -o $@ $<
+
+#Tokens/...
+$(GEN_DIR)int.o: Tokens/int.cpp Tokens/int.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
 #functions.o: functions.cpp functions.h utility.h parser.h lexer.h
 #	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<

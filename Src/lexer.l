@@ -168,7 +168,8 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {DIGIT}+	{
 			LexerAddCharCount(); 
 			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, V_INT); //TODO
+			
+			CurrentToken = new Token_Int(yytext, V_INT); 
 			return V_INT;
 		}
 	
