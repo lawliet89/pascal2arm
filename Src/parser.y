@@ -94,7 +94,7 @@ ProgramHeader:	K_PROGRAM Identifier
 		| K_PROGRAM Identifier '(' FileIdentifierList ')'
 		;
 
-FileIdentifierList: FileIdentifier ',' FileIdentifierList
+FileIdentifierList: FileIdentifierList ',' FileIdentifier
 		| FileIdentifier
 		;
 
@@ -130,7 +130,7 @@ IdentifierList: Identifier ',' IdentifierList
 		| Identifier
 		;
 
-LabelDeclaration: K_LABEL V_INT ',' LabelDeclaration
+LabelDeclaration: LabelDeclaration ',' K_LABEL V_INT
 		| K_LABEL V_INT ';'
 		;
 
@@ -255,7 +255,7 @@ FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
 	;
 
 /* Expression */
-Expression: SimpleExpression SimpleOp Expression
+Expression:  Expression SimpleOp SimpleExpression
 	| SimpleExpression;
 
 SimpleOp: '*'
@@ -268,7 +268,7 @@ SimpleOp: '*'
 	| OP_IN
 	; 
 
-SimpleExpression: Term TermOP SimpleExpression
+SimpleExpression: SimpleExpression TermOP Term
 		| Term
 		;
 
@@ -278,7 +278,7 @@ TermOP: '+'
 	/* XOR ? */
 	;
 
-Term: Factor FactorOP Term
+Term:  Term FactorOP Factor
 	| Factor
 	;
 
@@ -328,8 +328,7 @@ ActualParamList: ActualParamList ',' Expression
 CompoundStatement: K_BEGIN StatementList K_END
 		;
 
-StatementList:  Statement ';' StatementList
-		| Statement ';'
+StatementList:   StatementList ';' Statement
 		| Statement
 		;
 
@@ -338,6 +337,7 @@ StatementLabel: V_INT ':'
 
 Statement: StatementLabel SimpleStatement
 	| StatementLabel StructuredStatement
+	| /* A statement can be empty - this is to allow for that pesky optional ';' at the end of the last statement */
 	;
 
 SimpleStatement: AssignmentStatement
