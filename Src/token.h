@@ -28,13 +28,16 @@ public:
 	virtual std::string GetStrValue() const { return StrValue; }
 	yytokentype GetType() const { return type; }
 	
+	//Derived class should hide these methods to return their appropriate types.
+	//Cannot be virtual due to non "covariant" return types
+	std::string GetValue() const { return StrValue; }
+	std::string operator()() const { return StrValue; }
 protected:
 	std::string StrValue;
 	yytokentype type;
 };
 
 #if defined IN_BISON || defined IN_FLEX
-//#include "Tokens/int.h"
 #include "Gen/all.h"	//All specialisations
 #endif
 

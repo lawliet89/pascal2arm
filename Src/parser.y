@@ -16,17 +16,20 @@
 %code top{
 #include <iostream>
 #include <sstream>
+#include <new>
 #define IN_BISON
 #include "../functions.h"	//See Prologue alternatives: http://www.gnu.org/software/bison/manual/bison.html#Prologue-Alternatives
 }
 
 %code{
 #include "../utility.h"
+#define CurrentToken yylval
 
 extern Flags_T Flags;		//In utility.cpp
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
 
 void yyerror(const char *msg);
+inline void ParserCleanCurrent();
 }
 
 /*
@@ -77,6 +80,10 @@ void yyerror(const char *msg);
 /* %define lr.type ielr */  	/* Needs 2.5 */
 %define parse.lac full 
 /* %define lr.default-reductions consistent */
+
+%initial-action{
+	CurrentToken = NULL;
+};
 %%
 
 Sentence: Program  Y_EOF { YYACCEPT; }
@@ -415,4 +422,11 @@ void yyerror(const char * msg){
 	//text << "(" << yylloc.first_line << "-" << yylloc.last_line << ":" << yylloc.first_column;
 	//text << "-" << yylloc.last_column << ")";
 	HandleError(text.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
+}
+
+inline void ParserCleanCurrent(){
+	if (CurrentToken != NULL){
+		delete CurrentToken;
+		CurrentToken = NULL;
+	}
 }

@@ -10,6 +10,9 @@ public:
 	Token_Int(const Token_Int &obj);
 	Token_Int operator=(const Token_Int &obj);
 	
+	int GetValue() const { return value; }
+	int operator()() const { return value; }
+	
 protected:
 	int value;
 	

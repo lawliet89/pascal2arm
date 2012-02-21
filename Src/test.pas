@@ -12,6 +12,8 @@ BEGIN
 	
 	float := 3.59;
 	
-	float := 9e-6;
+	float := 10e-2;
+	
+	float := -10e3
 
 END.

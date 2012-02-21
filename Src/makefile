@@ -30,7 +30,8 @@ DEBUG_BUILD := true
 
 BISON_DEBUG := true
 
-OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o
+OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o \
+$(GEN_DIR)real.o
 
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
@@ -116,6 +117,10 @@ $(GEN_DIR)all_gen: all_gen.cpp
 $(GEN_DIR)int.o: Tokens/int.cpp Tokens/int.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+
+$(GEN_DIR)real.o: Tokens/real.cpp Tokens/real.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	
 #functions.o: functions.cpp functions.h utility.h parser.h lexer.h
 #	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<

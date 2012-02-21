@@ -155,11 +155,11 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 
 
 {FLOAT}			|
-{DIGIT}{E}{SIGNED_NUMBER} |
+{DIGIT}+{E}{SIGNED_NUMBER} |
 {FLOAT}{E}{SIGNED_NUMBER} {
 				LexerAddCharCount(); 
 				LexerCleanCurrent(); 
-				CurrentToken = new Token(yytext, V_REAL); //TODO
+				CurrentToken = new Token_Real(yytext, V_REAL);
 				return V_REAL;
 			}
 
@@ -234,6 +234,7 @@ void LexerInit(){
 	LexerCharCount = 1;
 	LexerLineCount = 1;
 	
+	CurrentToken = NULL;
 	LexerSyntaxError = false;
 	yydebug = 1;
 }
@@ -295,6 +296,7 @@ void LexerConsumeComments(const char *delimiter){
 }
 
 void LexerConsumeInvalid(){
+	LexerCleanCurrent();
 	//Eat a whole word and then report failure
 	std::stringstream msg;
 	char c = yytext[0];
@@ -337,6 +339,10 @@ inline void LexerAddCharCount(){
 }
 
 inline void LexerCleanCurrent(){
-	if (CurrentToken)
+
+	if (CurrentToken != NULL){
 		delete CurrentToken;
+		CurrentToken = NULL;
+	}
+
 }
