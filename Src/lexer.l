@@ -70,7 +70,7 @@ NQUOTE [^']
 
 /* Literals */
 LETTER [A-Za-z]
-IDENTIFIER [a-zA-Z_]([a-zA-Z0-9_])+
+IDENTIFIER [a-zA-Z_]([a-zA-Z0-9_])*
 CHAR ({NQUOTE}|'')
 STRING '{CHAR}+'
 DIGIT [0-9]

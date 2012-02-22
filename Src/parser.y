@@ -133,7 +133,7 @@ Identifier: V_IDENTIFIER {
 			}
 	;
 
-IdentifierList: Identifier ',' IdentifierList
+IdentifierList: IdentifierList ',' Identifier
 		| Identifier
 		;
 
@@ -159,8 +159,8 @@ VarList:	VarList VarDeclaration
 		| VarDeclaration
 		;
 
-VarDeclaration:	Identifier ':' Type '=' Expression ';'
-		| Identifier ':' Type ';'
+VarDeclaration:	IdentifierList ':' Type '=' Expression ';'
+		| IdentifierList ':' Type ';'
 		;
 
 ProcList: ProcList ProcDeclaration
