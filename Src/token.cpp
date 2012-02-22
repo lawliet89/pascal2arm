@@ -4,6 +4,9 @@
 Token::Token(const char *StrValue, int type): StrValue(StrValue), type(type){
 	//...
 }
+Token::Token(std::string StrValue, int type): StrValue(StrValue), type(type){
+	//...
+}
 
 //Copy constructor
 Token::Token (const Token &obj){

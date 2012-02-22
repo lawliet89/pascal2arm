@@ -2,7 +2,7 @@
 #include <signal.h>
 #include "utility.h"
 #include "functions.h"
-
+#include <climits>
 
 //Flags - declared in utility.cpp
 extern Flags_T Flags;

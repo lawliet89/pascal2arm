@@ -5,6 +5,10 @@ Token_Int::Token_Int(const char *StrValue, int type) : Token(StrValue, type), va
 	//...
 }
 
+Token_Int::Token_Int(std::string StrValue, int type) : Token(StrValue, type), value(FromString<int>(StrValue)){
+	//...
+}
+
 Token_Int::Token_Int(int value, int type) : Token(ToString<int>(value).c_str(), type), value(value){
 	//...
 }

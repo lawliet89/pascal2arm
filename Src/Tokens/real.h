@@ -6,6 +6,7 @@ class Token_Real: public Token{
 public:
 	//OCCF
 	Token_Real(char const *StrValue, int type);
+	Token_Real(std::string StrValue, int type);
 	Token_Real(double value, int type);
 	~Token_Real() { }
 	Token_Real(const Token_Real &obj);

@@ -66,9 +66,6 @@ template <typename T> T GetValue(YYSTYPE token);
 /* Relational */
 %left '=' OP_GE OP_LE OP_NOTEQUAL '<' '>' OP_IN
 
-/* Unary sign */
-%left OP_POSITIVE OP_NEGATIVE
-
 %token OP_DOTDOT OP_STARSTAR OP_UPARROW OP_ASSIGNMENT
 
 /* Internal Use Tokens */
@@ -131,7 +128,9 @@ BlockProcFuncDeclaration: ProcList
 			|;
 
 /* Generic Stuff */
-Identifier: V_IDENTIFIER
+Identifier: V_IDENTIFIER {
+				$$ = new Token(yylval-> GetStrValue(), Identifier);
+			}
 	;
 
 IdentifierList: Identifier ',' IdentifierList
@@ -217,10 +216,10 @@ TypeIdentifier: Identifier;
 
 /* Values */
 Signed_Int: '+' V_INT {  
-			$$ = new Token_Int(GetValue<int>(yylval), Signed_Int);
+			$$ = new Token_Int(GetValue<long>(yylval), Signed_Int);
 		}
 	| '-' V_INT { 
-			$$ = new Token_Int(GetValue<int>(yylval) * -1, Signed_Int);   
+			$$ = new Token_Int(GetValue<long>(yylval) * -1, Signed_Int);   
 		}
 	;
 	
@@ -318,15 +317,15 @@ Factor: '(' Expression ')'
 VarRef: Identifier
 	;
 
-UnsignedConstant: V_REAL
-		| V_INT
-		| V_STRING
-		| V_CHAR
+UnsignedConstant: V_REAL	{ $$ = new Token_Real(GetValue<double>(yylval), (int) V_REAL); }
+		| V_INT		{ $$ = new Token_Int(GetValue<int>(yylval), (int) V_INT); }
+		| V_STRING	{ $$ = new Token(yylval -> GetStrValue(), (int) V_STRING); }
+		| V_CHAR	{ $$ = new Token(yylval -> GetStrValue(), (int) V_CHAR); }
 		/* | Identifier */
-		| V_NIL
-		| I_TRUE
-		| I_FALSE
-		| I_MAXINT
+		| V_NIL		{ $$ = new Token("NIL", (int) V_NIL); }
+		| I_TRUE	{ $$ = new Token("TRUE", (int) I_TRUE); }
+		| I_FALSE	{ $$ = new Token("FALSE", (int) I_FALSE); }
+		| I_MAXINT	{ $$ = new Token_Int(2147483647, (int) V_INT); }
 		;
 SignedConstant: Signed_Int
 		| Signed_Real

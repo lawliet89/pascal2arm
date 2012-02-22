@@ -6,6 +6,7 @@ class Token_Int: public Token{
 public:
 	//OCCF
 	Token_Int(const char *StrValue, int type);
+	Token_Int(std::string StrValue, int type);
 	Token_Int(int value, int type);
 	~Token_Int() { }
 	Token_Int(const Token_Int &obj);
@@ -15,7 +16,7 @@ public:
 	virtual const void * operator()() const { return (void *) &value; }
 	
 protected:
-	int value;
+	int value;	//We use Long so that up to MaxInt can be supported.
 	
 };
 

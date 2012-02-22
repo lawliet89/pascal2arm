@@ -70,12 +70,16 @@ template<typename T> std::string ToString(T input){
 	return output.str();
 }
 
-template<typename T> T FromString(std::string input){
+template<typename T> T FromString(const char* input){
 	T output;
 	std::stringstream stream(input);
 	stream >> output;
 	
 	return output;
+}
+
+template<typename T> T FromString(std::string input){
+	return FromString<T>(input.c_str());
 }
 
 //This function can be potentially unsafe. Make sure you know what you are doing!

@@ -18,12 +18,14 @@ public:
 	
 	//Constructor
 	Token(const char *StrValue, int type);	//Type is the token type as defined by parser.h (generated from parser.y)
+	Token(std::string StrValue, int type);	
 	virtual ~Token(){ }				//Destructor
 	Token(const Token &obj);		//Copy Constructor
 	virtual Token operator=(const Token &obj);	//Assignment operator
 	
 	//Virtual methods
 	virtual std::string GetStrValue() const { return StrValue; }
+	virtual const char* GetCStrValue() const { return StrValue.c_str(); }
 	int GetType() const { return type; }
 	
 	//Return type is set to void * so that derived classes can override this
@@ -43,6 +45,8 @@ protected:
 
 #define Signed_Int -1
 #define Signed_Real -2
+
+#define Identifier -3
 
 
 #if defined IN_BISON || defined IN_FLEX
