@@ -174,8 +174,8 @@ FuncList: FuncList FuncDeclaration
 /* Types */
 Type: SimpleType
 	| StringType
-/*	| StructuredType 
-	| PointerType   */
+/*	| StructuredType 		//TODO
+	| PointerType   */		//TODO
 	| TypeIdentifier
 	;
 	
@@ -245,15 +245,17 @@ FormalParam:  FormalParam ';' ParamDeclaration
 	;
 
 ParamDeclaration: ValueParam
-	/*	| VarParam
-		| OutParam
+		| VarParam
+	/*	| OutParam
 		| ConstantParam */
 		;
 
 ValueParam:	IdentifierList ':' Type
 	/*	| Identifier ':' Type '=' DefaultParamValue  */
 		;
-
+VarParam: K_VAR IdentifierList ':' Type
+		;
+		
 SubroutineBlock: Block
 		| I_FORWARD
 		;
