@@ -76,7 +76,7 @@ template <typename T> T GetValue(YYSTYPE token);
 /* Debug Options */
 %error-verbose
 /* %define lr.type ielr */  	/* Needs 2.5 */
-%define parse.lac full 
+//%define parse.lac full 
 /* %define lr.default-reductions consistent */
 
 %initial-action{
@@ -174,8 +174,8 @@ FuncList: FuncList FuncDeclaration
 /* Types */
 Type: SimpleType
 	| StringType
-/*	| StructuredType 		//TODO
-	| PointerType   */		//TODO
+	| StructuredType 
+	| PointerType   
 	| TypeIdentifier
 	;
 	
@@ -213,6 +213,44 @@ StringType: I_STRING
 	;
 	
 TypeIdentifier: Identifier;
+
+StructuredType: ArrayType
+		| RecordType
+		| SetType
+		| FileType
+		;
+ArrayType: Packness K_ARRAY ArraySize K_OF Type
+	;
+
+Packness: K_PACKED
+		| 
+		;
+
+ArraySize: '[' SubRangeList ']'
+	|
+	;
+
+SubRangeList: SubRangeList ',' SubrangeType
+		| SubrangeType
+		;
+
+RecordType: Packness K_RECORD FieldList K_END
+		;
+
+FieldList: VarList;
+
+SetType: K_SET K_OF OrdinalType;
+
+FileType: K_FILE 
+	| K_FILE K_OF FileTypes
+	;
+
+FileTypes: Type
+	| I_TEXT
+	;
+
+PointerType: '^' Type
+	;
 
 /* Values */
 Signed_Int: '+' V_INT {  
@@ -316,7 +354,25 @@ Factor: '(' Expression ')'
 	| SignedConstant
 	/* Set, value typecast, address factor ?? */
 	;
-VarRef: Identifier
+VarRef: SimpleVarReference VarQualifier
+	| SimpleVarReference
+	;
+
+SimpleVarReference: Identifier
+		;
+
+VarQualifier: FieldSpecifier
+		| Index
+		;
+
+FieldSpecifier: '.' Identifier
+		;
+
+Index: '[' IndexList ']'
+	;
+
+IndexList: IndexList ',' Expression
+	| Expression
 	;
 
 UnsignedConstant: V_REAL	{ $$ = new Token_Real(GetValue<double>(yylval), (int) V_REAL); }

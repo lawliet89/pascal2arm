@@ -196,8 +196,6 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 "<="    {LexerAddCharCount(); return(OP_LE); }
 "<>"    {LexerAddCharCount(); return(OP_NOTEQUAL); }
 "**"    {LexerAddCharCount(); return(OP_STARSTAR); }
-"->"   |
-"^"    {LexerAddCharCount(); return(OP_UPARROW); }
 			
 			
 "{"	LexerConsumeComments("{");		/* Consume Comments - Place at bottom! */
