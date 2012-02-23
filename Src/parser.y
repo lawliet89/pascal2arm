@@ -27,9 +27,13 @@
 
 extern Flags_T Flags;		//In utility.cpp
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
+extern Data_T Data;	//Utility.cpp
 
+//Parser functions declaration
 void yyerror(const char *msg);
 template <typename T> T GetValue(YYSTYPE token);
+inline void WriteASMProgHeader();
+
 }
 
 /*
@@ -80,19 +84,26 @@ template <typename T> T GetValue(YYSTYPE token);
 
 %%
 
-Sentence: Program  Y_EOF { CurrentToken.reset(); YYACCEPT; }
+Sentence: Program Y_EOF { CurrentToken.reset(); OUTPUT << "\tEND"; YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
-Program: Block '.'
-	| ProgramHeader ';' Block '.'
+Program: {
+		//No program name?
+		Data.ProgramName = "Pascal";
+		WriteASMProgHeader();
+		
+	} Block '.'
+	| ProgramHeader ';' {
+		WriteASMProgHeader();
+	} Block '.'
 	/* UsesBlock if we are implementing units */
 	;
 	
 /* Program Headers */
-ProgramHeader:	K_PROGRAM Identifier 
-		| K_PROGRAM Identifier '('')'
-		| K_PROGRAM Identifier '(' FileIdentifierList ')'
+ProgramHeader:	K_PROGRAM Identifier 	{ Data.ProgramName = $2 -> GetStrValue(); }
+		| K_PROGRAM Identifier '('')' { Data.ProgramName = $2 -> GetStrValue(); }
+		| K_PROGRAM Identifier '(' FileIdentifierList ')' { Data.ProgramName = $2 -> GetStrValue(); } 
 		;
 
 FileIdentifierList: FileIdentifierList ',' FileIdentifier
@@ -489,4 +500,8 @@ void yyerror(const char * msg){
 
 template <typename T> T GetValue(YYSTYPE token){
 	return DereferenceVoidPtr<T>(token -> GetValue());
+}
+
+inline void WriteASMProgHeader(){
+	OUTPUT << "\tAREA |" << Data.ProgramName << "|, CODE, READONLY\n";
 }

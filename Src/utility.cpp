@@ -11,11 +11,11 @@
 #include <fstream>
 #include <iostream>
 #include <cstdio>
-//#include <cstdlib>
-//#include <signal.h>
 
 //Global flags
 Flags_T Flags;
+//Global data
+Data_T Data;
 
 /**
  * Handle SIGABRT
@@ -86,7 +86,6 @@ void ParseArg(int argc, char **argv){
 				break;
 			//Other Flags
 			case 'o':	//Output file flag
-				Flags.Output = new std::ofstream(optarg);
 				Flags.OutputPath = optarg;
 				//Check for stuff
 				break;

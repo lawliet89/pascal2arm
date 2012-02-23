@@ -14,11 +14,25 @@
 /*
  * Shortcut macros
  * */
-#define OUTPUT (*Flags.Output)
+#define OUTPUT_FILE (*Flags.Output)
+#define OUTPUT Data.OutputString
 #define INPUT Flags.Input
 
 /**
- * 	Command Arguments Parsing
+ * 	Global Data storage
+ * 	For parser and lexer and code generator
+ * 	
+ * 	Including symbol table and what not.
+ * */
+
+struct Data_T{
+	std::stringstream OutputString;
+	
+	std::string ProgramName;
+};
+
+/**
+ * 	Global flags
  * */
 struct Flags_T{
 	//File output stream & name

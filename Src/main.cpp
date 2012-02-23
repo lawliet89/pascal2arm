@@ -2,10 +2,11 @@
 #include <signal.h>
 #include "utility.h"
 #include "functions.h"
-#include <climits>
+#include <fstream>
 
 //Flags - declared in utility.cpp
 extern Flags_T Flags;
+extern Data_T Data;	//Utility.cpp
 extern unsigned LexerCharCount, LexerLineCount;
 
 int main(int argc, char **argv){
@@ -17,15 +18,20 @@ int main(int argc, char **argv){
 		std::cout << "Error reading '" << Flags.InputPath << "'" << std::endl;
 		return 1;
 	}
-	if (OUTPUT.fail()){
-		std::cout << "Error writing to '" << Flags.OutputPath << "'" << std::endl;
-		return 1;
-	}
+
 	
 	//Initialise Lexer
 	LexerInit();
-	
+	//Parse
 	yyparse();
+	
+	if (Flags.OutputPath.compare("std::cout"))
+		Flags.Output = new std::ofstream(Flags.OutputPath.c_str(), std::ios_base::out | std::ios_base::trunc);
+	
+	if (OUTPUT_FILE.fail()){
+		std::cout << "Error writing to '" << Flags.OutputPath << "'" << std::endl;
+		return 1;
+	}	
 	
 	/*int lex;
 	do{
@@ -34,6 +40,8 @@ int main(int argc, char **argv){
 	} while(lex);
 	
 	std::cout << "Syntax okay" << std::endl;*/
+	
+	OUTPUT_FILE << OUTPUT.str();
 	
 	return 0;
 }

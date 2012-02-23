@@ -100,7 +100,8 @@ $(GEN_DIR)token.o: token.cpp token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-
+functions.h: token.h
+	
 #Tokens specialisation header generation	
 token.h: $(GEN_DIR)all.h $(BISON_HEADER)
 #	@echo "Regenerating all.h"
