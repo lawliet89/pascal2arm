@@ -29,7 +29,6 @@ extern Flags_T Flags;		//In utility.cpp
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
 
 void yyerror(const char *msg);
-inline void ParserCleanCurrent();
 template <typename T> T GetValue(YYSTYPE token);
 }
 
@@ -79,12 +78,9 @@ template <typename T> T GetValue(YYSTYPE token);
 //%define parse.lac full 
 /* %define lr.default-reductions consistent */
 
-%initial-action{
-	CurrentToken = NULL;
-};
 %%
 
-Sentence: Program  Y_EOF { ParserCleanCurrent(); YYACCEPT; }
+Sentence: Program  Y_EOF { CurrentToken.reset(); YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
@@ -129,7 +125,7 @@ BlockProcFuncDeclaration: ProcList
 
 /* Generic Stuff */
 Identifier: V_IDENTIFIER {
-				$$ = new Token(yylval-> GetStrValue(), Identifier);
+				$$.reset(new Token(yylval-> GetStrValue(), Identifier));
 			}
 	;
 
@@ -254,18 +250,18 @@ PointerType: '^' Type
 
 /* Values */
 Signed_Int: '+' V_INT {  
-			$$ = new Token_Int(GetValue<long>(yylval), Signed_Int);
+			$$.reset(new Token_Int(GetValue<long>(yylval), Signed_Int));
 		}
 	| '-' V_INT { 
-			$$ = new Token_Int(GetValue<long>(yylval) * -1, Signed_Int);   
+			$$.reset(new Token_Int(GetValue<long>(yylval) * -1, Signed_Int));   
 		}
 	;
 	
 Signed_Real: '+' V_REAL {
-			$$ = new Token_Int(GetValue<double>(yylval), Signed_Real);
+			$$.reset(new Token_Int(GetValue<double>(yylval), Signed_Real));
 			}
 	| '-' V_REAL{
-			$$ = new Token_Int(GetValue<double>(yylval)*-1, Signed_Real);
+			$$.reset(new Token_Int(GetValue<double>(yylval)*-1, Signed_Real));
 			}
 	;
 ;
@@ -375,15 +371,15 @@ IndexList: IndexList ',' Expression
 	| Expression
 	;
 
-UnsignedConstant: V_REAL	{ $$ = new Token_Real(GetValue<double>(yylval), (int) V_REAL); }
-		| V_INT		{ $$ = new Token_Int(GetValue<int>(yylval), (int) V_INT); }
-		| V_STRING	{ $$ = new Token(yylval -> GetStrValue(), (int) V_STRING); }
-		| V_CHAR	{ $$ = new Token(yylval -> GetStrValue(), (int) V_CHAR); }
+UnsignedConstant: V_REAL	{ $$.reset(new Token_Real(GetValue<double>(yylval), (int) V_REAL)); }
+		| V_INT		{ $$.reset(new Token_Int(GetValue<int>(yylval), (int) V_INT)); }
+		| V_STRING	{ $$.reset(new Token(yylval -> GetStrValue(), (int) V_STRING)); }
+		| V_CHAR	{ $$.reset(new Token(yylval -> GetStrValue(), (int) V_CHAR)); }
 		/* | Identifier */
-		| V_NIL		{ $$ = new Token("NIL", (int) V_NIL); }
-		| I_TRUE	{ $$ = new Token("TRUE", (int) I_TRUE); }
-		| I_FALSE	{ $$ = new Token("FALSE", (int) I_FALSE); }
-		| I_MAXINT	{ $$ = new Token_Int(2147483647, (int) V_INT); }
+		| V_NIL		{ $$.reset(new Token("NIL", (int) V_NIL)); }
+		| I_TRUE	{ $$.reset(new Token("TRUE", (int) I_TRUE)); }
+		| I_FALSE	{ $$.reset(new Token("FALSE", (int) I_FALSE)); }
+		| I_MAXINT	{ $$.reset(new Token_Int(2147483647, (int) V_INT)); }
 		;
 SignedConstant: Signed_Int
 		| Signed_Real
@@ -491,12 +487,6 @@ void yyerror(const char * msg){
 	HandleError(text.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
 }
 
-inline void ParserCleanCurrent(){
-	if (CurrentToken != NULL){
-		delete CurrentToken;
-		CurrentToken = NULL;
-	}
-}
 template <typename T> T GetValue(YYSTYPE token){
 	return DereferenceVoidPtr<T>(token -> GetValue());
 }

@@ -29,7 +29,6 @@ void LexerConsumeInvalid();
 
 //Inline functions
 inline void LexerAddCharCount();	//Add count to char
-inline void LexerCleanCurrent();	//Clean up any memory leaks
 %}
 %option yylineno
 %option noyywrap
@@ -135,21 +134,21 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 '{CHAR}'	|
 "#"{DIGIT}+	|
 "^"{LETTER}	{LexerAddCharCount(); 
-			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext, (int) V_CHAR);
+			
+			CurrentToken.reset(new Token(yytext, (int) V_CHAR));
 			return V_CHAR; 
 			}
 
 {STRING}	{LexerAddCharCount(); 
-			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext,(int) V_STRING);
+			
+			CurrentToken.reset(new Token(yytext,(int) V_STRING));
 			return V_STRING; 
 			}
 		
 {IDENTIFIER}  { //Identifier
 			LexerAddCharCount(); 
-			LexerCleanCurrent(); 
-			CurrentToken = new Token(yytext,(int) V_IDENTIFIER);
+			
+			CurrentToken.reset(new Token(yytext,(int) V_IDENTIFIER));
 			return V_IDENTIFIER; }
 
 
@@ -158,8 +157,8 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {DIGIT}+{E}{SIGNED_NUMBER} |
 {FLOAT}{E}{SIGNED_NUMBER} {
 				LexerAddCharCount(); 
-				LexerCleanCurrent(); 
-				CurrentToken = new Token_Real(yytext, (int) V_REAL);
+				
+				CurrentToken.reset(new Token_Real(yytext, (int) V_REAL));
 				return V_REAL;
 			}
 
@@ -167,9 +166,9 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 		
 {DIGIT}+	{
 			LexerAddCharCount(); 
-			LexerCleanCurrent(); 
 			
-			CurrentToken = new Token_Int(yytext,(int) V_INT); 
+			
+			CurrentToken.reset(new Token_Int(yytext,(int) V_INT)); 
 			return V_INT;
 		}
 	
@@ -215,7 +214,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 	}
 	
 <<EOF>> {
-		LexerCleanCurrent();
+		
 		if (LexerSyntaxError){
 			HandleError("There are syntax errors. Compilation cannot proceed.", E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
 			return Y_FATAL_ERROR;
@@ -233,7 +232,7 @@ void LexerInit(){
 	LexerCharCount = 1;
 	LexerLineCount = 1;
 	
-	CurrentToken = NULL;
+	//CurrentToken = NULL;
 	LexerSyntaxError = false;
 	yydebug = 1;
 }
@@ -295,7 +294,7 @@ void LexerConsumeComments(const char *delimiter){
 }
 
 void LexerConsumeInvalid(){
-	LexerCleanCurrent();
+
 	//Eat a whole word and then report failure
 	std::stringstream msg;
 	char c = yytext[0];
@@ -335,13 +334,4 @@ void LexerConsumeInvalid(){
 //Inline functions
 inline void LexerAddCharCount(){
 	LexerCharCount += strlen(yytext);
-}
-
-inline void LexerCleanCurrent(){
-
-	if (CurrentToken != NULL){
-		delete CurrentToken;
-		CurrentToken = NULL;
-	}
-
 }

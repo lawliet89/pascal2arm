@@ -4,7 +4,7 @@
 #include <string>
 
 class Token;
-#define YYSTYPE Token *
+#define YYSTYPE std::shared_ptr<Token>
 
 
 /*

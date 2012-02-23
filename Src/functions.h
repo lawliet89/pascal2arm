@@ -13,6 +13,7 @@
 
 // FLEX and Bison Specific
 #if defined IN_BISON || defined IN_FLEX
+#include <memory>
 #include "token.h"	//Declares YYTYPE and includes "parser.h"
 #endif
 
