@@ -19,10 +19,12 @@
 #include <new>
 #define IN_BISON
 #include "../functions.h"	//See Prologue alternatives: http://www.gnu.org/software/bison/manual/bison.html#Prologue-Alternatives
+#include "lexer.h"
 }
 
 %code{
 #include "../utility.h"
+#include "../op.h"
 #define CurrentToken yylval
 
 extern Flags_T Flags;		//In utility.cpp
@@ -31,7 +33,6 @@ extern Data_T Data;	//Utility.cpp
 
 //Parser functions declaration
 void yyerror(const char *msg);
-template <typename T> T GetValue(YYSTYPE token);
 inline void WriteASMProgHeader();
 
 }
@@ -496,10 +497,6 @@ void yyerror(const char * msg){
 	//text << "(" << yylloc.first_line << "-" << yylloc.last_line << ":" << yylloc.first_column;
 	//text << "-" << yylloc.last_column << ")";
 	HandleError(text.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
-}
-
-template <typename T> T GetValue(YYSTYPE token){
-	return DereferenceVoidPtr<T>(token -> GetValue());
 }
 
 inline void WriteASMProgHeader(){

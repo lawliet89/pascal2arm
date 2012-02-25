@@ -2,6 +2,7 @@
 #include <signal.h>
 #include "utility.h"
 #include "functions.h"
+#include "op.h"
 #include <fstream>
 
 //Flags - declared in utility.cpp

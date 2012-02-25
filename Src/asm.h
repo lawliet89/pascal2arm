@@ -17,6 +17,7 @@ class AsmFile;
 class AsmLine;	//Lines of code
 class AsmOp;	//Operators 
 class AsmLabel;	//Labels
+class AsmRegister;	//State of the registers and data - used when generating code
 /*
  * 	Assembly file class
  * 
@@ -30,7 +31,7 @@ public:
 	AsmFile operator=(const AsmFile &obj);
 	
 	
-private:
+protected:
 	//Lines
 	std::vector<AsmLine> CodeLines;		//Lines for normal program code
 	std::vector<AsmLine> DataLines;		//Lines for data declaration
@@ -42,9 +43,11 @@ private:
 	//std::vector<std::shared_ptr<Symbol> > SymbolList;		//Storage of all symbols
 	//std::vector<std::shared_ptr<Scope> > ScopeList;		//List of all scopes
 	//std::vector<std::shared_ptr<ScopeStack> > ScopeStackList;	//List of scope stacks
+	
+	//AsmRegister Registers;		//State of registers- used when generating code
 };
 
-/*
+/**
  * 	Assembly line class
  * 		Wrapper class
  * 		Cannot be instantiated by anything other than AsmFile
@@ -130,10 +133,10 @@ protected:
 	
 	std::shared_ptr<AsmLabel> Label;
 	
-	AsmOp Rd, Rm, Rn;
+	//AsmOp Rd, Rm, Rn;
 };
 
-/*
+/**
  * 	Assembly operators
  * 		Wrapper class
  * 		Cannot be instantiated by anything other than AsmFile
@@ -173,11 +176,21 @@ protected:
 	
 };
 
-//List of labels linked to lines and symbols and scope
+/** AsmLabel
+ *	List of labels linked to lines and symbols and scope**/
 class AsmLabel{
-	
+public:
+	friend class AsmFile;
 protected:
 	std::shared_ptr<Symbol> Sym;	//Symbol associated, if any
+};
+
+/** AsmRegister
+ * 
+ * 
+ * */
+class AsmRegister{
+	
 };
 
 #endif

@@ -2,9 +2,8 @@
 #define TokenH
 
 #include <string>
-
-class Token;
-#define YYSTYPE std::shared_ptr<Token>
+#include <memory>
+#include "utility.h"
 
 
 /*
@@ -39,18 +38,28 @@ protected:
 };
 
 /**
+ * 	Utility Function
+ * 
+ * */
+
+template <typename T> T GetValue(std::shared_ptr<Token> token){
+	return DereferenceVoidPtr<T>(token -> GetValue());
+}
+
+template <typename T> T GetValue(Token *token){
+	return DereferenceVoidPtr<T>(token -> GetValue());
+}
+
+/**
  * 	Non terminal symbols definition
  * 
  * */
 
 #define Signed_Int -1
 #define Signed_Real -2
-
 #define Identifier -3
 
 
-#if defined IN_BISON || defined IN_FLEX
 #include "Gen/all.h"	//All specialisations
-#endif
 
 #endif

@@ -11,6 +11,8 @@
 //Because FLEX generated CPP files are in Gen/ folder, ../ is required
 #include "../functions.h"
 #include "../utility.h"
+#include "../op.h"
+#include "parser.h"
 
 
 extern Flags_T Flags;		//In utility.cpp
