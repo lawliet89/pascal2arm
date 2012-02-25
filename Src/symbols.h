@@ -29,7 +29,7 @@ public:
 		Variable,
 		Function,
 		Procedure, 
-		Type
+		Typename
 	};
 	
 protected:	//Consturctor is protected so that no one but AsmFile can instantiate
