@@ -23,11 +23,13 @@ class Symbol{
 public:
 	friend class AsmFile;
 	
+	//Type of symbols
 	enum Type_T{
 		Constant,
 		Variable,
 		Function,
-		Procedure		
+		Procedure, 
+		Type
 	};
 	
 protected:	//Consturctor is protected so that no one but AsmFile can instantiate
