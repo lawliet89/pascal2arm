@@ -45,6 +45,9 @@ protected:
 	//std::vector<std::shared_ptr<ScopeStack> > ScopeStackList;	//List of scope stacks
 	
 	//AsmRegister Registers;		//State of registers- used when generating code
+	
+	//Symbols
+	
 };
 
 /**
