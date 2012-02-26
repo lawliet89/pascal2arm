@@ -5,7 +5,8 @@
 #include <memory>
 #include "utility.h"
 
-
+//Forward declaration
+class Symbol;
 /*
  * Token base class that can be derived for the various data types
  * 
@@ -32,9 +33,14 @@ public:
 	//where T is the intended type
 	virtual const void * GetValue() const { return (void *) &StrValue; }
 	virtual const void * operator()() const { return (void *) &StrValue; }
+	
+	void AssignSymbol(std::shared_ptr<Symbol> symbol){ Sym = symbol; }
+	std::shared_ptr<Symbol> GetSymbol(){ return Sym; }
+	
 protected:
 	std::string StrValue;
 	int type;
+	std::shared_ptr<Symbol> Sym;
 };
 
 /**

@@ -26,16 +26,15 @@ class AsmFile{
 public:
 	//OCCF
 	AsmFile();
-	~AsmFile();	//Destroy all the pointers
+	~AsmFile(); //Destroy all the pointers
 	AsmFile(const AsmFile &obj);
 	AsmFile operator=(const AsmFile &obj);
-	
-	
+		
 protected:
 	//Lines
-	std::vector<AsmLine> CodeLines;		//Lines for normal program code
-	std::vector<AsmLine> DataLines;		//Lines for data declaration
-	std::vector<AsmLine> FunctionLines;	//Lines for procedures and functions
+	std::vector<std::shared_ptr<AsmLine> > CodeLines;		//Lines for normal program code
+	std::vector<std::shared_ptr<AsmLine> > DataLines;		//Lines for data declaration
+	std::vector<std::shared_ptr<AsmLine> > FunctionLines;	//Lines for procedures and functions
 	
 	//Storage of labels
 	//std::vector<std::shared_ptr<AsmLabel> > LabelList;		//List of labels
@@ -62,8 +61,8 @@ public:
 	friend class AsmFile;
 	
 	
-	/*
-	 * 	Type definition
+	/**
+	 * 	Types definition
 	 */
 	
 	enum OpType_T{
@@ -123,12 +122,14 @@ public:
 		//IB, IA, DB, DA	//probably won't use
 	};
 	
-	
-	//Lookup table method to translate enum int codes to string
-	//std::string TranslateStr(Qualifier_T);
-	//Overloaded of course
+	/** Public Methods **/
+	~AsmLine();
+	AsmLine(const AsmLine &obj);
+	AsmLine operator=(const AsmLine &obj);
+
 	
 protected:
+	/** Data Members **/
 	OpCode_T OpCode;
 	CC_T Condition;
 	Qualifier_T Qualifier;
@@ -137,6 +138,9 @@ protected:
 	std::shared_ptr<AsmLabel> Label;
 	
 	//AsmOp Rd, Rm, Rn;
+	
+	/** Constructor Protected **/
+	AsmLine();
 };
 
 /**
@@ -186,6 +190,7 @@ public:
 	friend class AsmFile;
 protected:
 	std::shared_ptr<Symbol> Sym;	//Symbol associated, if any
+	std::shared_ptr<AsmLine> Line;	//Associated Line
 };
 
 /** AsmRegister

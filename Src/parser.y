@@ -20,6 +20,7 @@
 #define IN_BISON
 #include "../functions.h"	//See Prologue alternatives: http://www.gnu.org/software/bison/manual/bison.html#Prologue-Alternatives
 #include "lexer.h"
+#include "../asm.h"
 }
 
 %code{
@@ -30,6 +31,9 @@
 extern Flags_T Flags;		//In utility.cpp
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
 extern Data_T Data;	//Utility.cpp
+
+//ADT for program
+AsmFile Program;
 
 //Parser functions declaration
 void yyerror(const char *msg);
@@ -85,18 +89,18 @@ inline void WriteASMProgHeader();
 
 %%
 
-Sentence: Program Y_EOF { CurrentToken.reset(); OUTPUT << "\tEND"; YYACCEPT; }
+Sentence: Program Y_EOF { CurrentToken.reset(); /* OUTPUT << "\tEND";*/ YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
 Program: {
 		//No program name?
-		Data.ProgramName = "Pascal";
-		WriteASMProgHeader();
+		//Data.ProgramName = "Pascal";
+		//WriteASMProgHeader();
 		
 	} Block '.'
 	| ProgramHeader ';' {
-		WriteASMProgHeader();
+		//WriteASMProgHeader();
 	} Block '.'
 	/* UsesBlock if we are implementing units */
 	;

@@ -96,7 +96,7 @@ $(BISON_CPP) $(BISON_HEADER): $(BISON_SRC)
 	@echo "Generating parser"
 	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_FLAGS) $(BISON_SRC)
 	
-$(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) functions.h utility.h token.h op.h
+$(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) functions.h utility.h token.h op.h asm.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	

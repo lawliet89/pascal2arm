@@ -236,7 +236,7 @@ void LexerInit(){
 	
 	//CurrentToken = NULL;
 	LexerSyntaxError = false;
-	yydebug = 1;
+	//yydebug = 1;
 }
 
 //Lexer Functions
