@@ -2,10 +2,12 @@
 #define ASMH
 #include <vector>
 #include <string>
+#include <sstream>
 #include <fstream>
 #include <memory>	//C++11
-//#include <map>
+#include <map>
 #include "symbols.h"
+#include "define.h"
 
 /**
  * 
@@ -29,6 +31,15 @@ public:
 	~AsmFile(); //Destroy all the pointers
 	AsmFile(const AsmFile &obj);
 	AsmFile operator=(const AsmFile &obj);
+	
+	/** Symbols Related Methods **/
+	//Creates symbol. Throws an integer exception on problems
+	std::shared_ptr<Symbol> CreateSymbol(Symbol::Type_T type, std::shared_ptr<Token> value, std::string id) throw(int);
+	//Check if symbol with id exists - true if exists, false otherwise
+	bool CheckSymbol(std::string id);
+	
+	//Generate Code
+	void GenerateCode(std::stringstream &output);
 		
 protected:
 	//Lines
@@ -37,15 +48,14 @@ protected:
 	std::vector<std::shared_ptr<AsmLine> > FunctionLines;	//Lines for procedures and functions
 	
 	//Storage of labels
-	//std::vector<std::shared_ptr<AsmLabel> > LabelList;		//List of labels
+	//std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
 	
-	//std::vector<std::shared_ptr<Symbol> > SymbolList;		//Storage of all symbols
+	std::map<std::string, std::shared_ptr<Symbol> > SymbolList;		//Storage of all symbols
 	//std::vector<std::shared_ptr<Scope> > ScopeList;		//List of all scopes
 	//std::vector<std::shared_ptr<ScopeStack> > ScopeStackList;	//List of scope stacks
 	
 	//AsmRegister Registers;		//State of registers- used when generating code
-	
-	//Symbols
+		
 	
 };
 
@@ -200,5 +210,4 @@ protected:
 class AsmRegister{
 	
 };
-
 #endif

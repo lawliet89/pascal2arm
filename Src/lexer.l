@@ -218,7 +218,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 <<EOF>> {
 		
 		if (LexerSyntaxError){
-			HandleError("There are syntax errors. Compilation cannot proceed.", E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
+			HandleError("There are syntax error(s). Compilation cannot proceed.", E_SYNTAX, E_FATAL, LexerLineCount, LexerCharCount);
 			return Y_FATAL_ERROR;
 		}
 		else{
@@ -226,18 +226,6 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 		}
 	}
 %%
-
-//Initialise Lexer
-void LexerInit(){
-	//Setup yyin
-	yyin = INPUT;
-	LexerCharCount = 1;
-	LexerLineCount = 1;
-	
-	//CurrentToken = NULL;
-	LexerSyntaxError = false;
-	//yydebug = 1;
-}
 
 //Lexer Functions
 void LexerConsumeComments(const char *delimiter){
@@ -323,8 +311,7 @@ void LexerConsumeInvalid(){
 
 	if (Flags.ShowHints)
 		msg << "\n\tNote: Are you trying to define an identifier? An identifier can only begin with alphabets and can contain only numbers and alphabets.";
-	
-	LexerSyntaxError = true;
+
 	ErrorLevel_T level = EOFError == true ? E_FATAL : E_ERROR;
 	
 	HandleError(msg.str().c_str(), E_SYNTAX, level, LexerLineCount, LexerCharCount-charCount+1);

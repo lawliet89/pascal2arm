@@ -17,8 +17,8 @@ public:
 	//OCCF
 	
 	//Constructor
-	Token(const char *StrValue, int type);	//Type is the token type as defined by parser.h (generated from parser.y)
-	Token(std::string StrValue, int type);	
+	Token(const char *StrValue, int type, bool IsConstant=true);	//Type is the token type as defined by parser.h (generated from parser.y)
+	Token(std::string StrValue, int type, bool IsConstant=true);	
 	virtual ~Token(){ }				//Destructor
 	Token(const Token &obj);		//Copy Constructor
 	virtual Token operator=(const Token &obj);	//Assignment operator
@@ -37,10 +37,17 @@ public:
 	void AssignSymbol(std::shared_ptr<Symbol> symbol){ Sym = symbol; }
 	std::shared_ptr<Symbol> GetSymbol(){ return Sym; }
 	
+	bool CheckIsConstant() const { return IsConstant; }
+	unsigned GetLine() const { return line; }
+	unsigned GetColumn() const { return column; }
 protected:
 	std::string StrValue;
 	int type;
-	std::shared_ptr<Symbol> Sym;
+	std::shared_ptr<Symbol> Sym;	//Associated symbol, if any
+	bool IsConstant;		//Is this token a constant?
+	
+	//Record down the line and column automatically
+	int line, column;
 };
 
 /**
@@ -56,15 +63,7 @@ template <typename T> T GetValue(Token *token){
 	return DereferenceVoidPtr<T>(token -> GetValue());
 }
 
-/**
- * 	Non terminal symbols definition
- * 
- * */
-
-#define Signed_Int -1
-#define Signed_Real -2
-#define Identifier -3
-
+#include "define.h"
 
 #include "Gen/all.h"	//All specialisations
 

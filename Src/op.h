@@ -45,6 +45,10 @@ struct Flags_T{
 	
 	bool ShowHints;
 	
+	//Skeleton Assembly Files location
+	std::string AsmHeaderPath;
+	std::string AsmStdLibPath;	//Standard libary ASM file
+	
 };	//There will be one object - Flags - defined in utility.cpp
 
 //Parse arguments and initialise flags

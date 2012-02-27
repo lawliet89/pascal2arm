@@ -3,6 +3,8 @@ PROGRAM HelloWorld;
 VAR
 	test: integer;
 	float: real;
+	
+	testing, testing: integer;
 
 BEGIN
 	Writeln('Hello World');

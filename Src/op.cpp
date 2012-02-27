@@ -17,6 +17,10 @@ Flags_T Flags;
 //Global data
 Data_T Data;
 
+extern bool LexerSyntaxError, ParseError; 	//lexer.l and parser.y
+extern unsigned LexerCharCount, LexerLineCount;
+extern FILE *yyin;	
+
 /**
  * Handle SIGABRT
  * 
@@ -63,6 +67,11 @@ void ParseArg(int argc, char **argv){
 	Flags.OutputPath = "std::cout";
 	
 	Flags.ShowHints = false;
+	
+	Flags.AsmHeaderPath = "Asm/header.s";		//TODO-Handle later
+	Flags.AsmStdLibPath = "Asm/stdlib.s";
+	
+	/** Handle Args **/
 	
 	while (1){		//TODO - Deal with no arguments & options
 		//Index of the option in the long_options array
@@ -152,9 +161,14 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 	switch(ErrorClass){
 		case E_SYNTAX:
 			std::cout << "Syntax Error - ";
+			LexerSyntaxError = true;
 			break;
 		case E_PARSE:
 			std::cout << "Parse Error - ";
+			ParseError = true;
+			break;
+		default:
+			std::cout << "Error - ";
 	}
 	
 	std::cout << message;
@@ -163,4 +177,17 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 
 	if (level == E_FATAL)
 		abort();
+}
+
+//Initialise Lexer and parser
+void LexerInit(){
+	//Setup yyin
+	yyin = INPUT;
+	LexerCharCount = 1;
+	LexerLineCount = 1;
+	
+	//CurrentToken = NULL;
+	LexerSyntaxError = false;
+	ParseError = false;
+	//yydebug = 1;
 }

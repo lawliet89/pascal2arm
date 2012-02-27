@@ -1,11 +1,13 @@
 #include "real.h"
 #include "../utility.h"
 
-Token_Real::Token_Real(char const *StrValue, int type) : Token(StrValue, type), value(FromString<double>(StrValue)){
+Token_Real::Token_Real(char const *StrValue, int type, bool IsConstant) : 
+Token(StrValue, type, IsConstant), value(FromString<double>(StrValue)){
 	//...
 }
 
-Token_Real::Token_Real(std::string StrValue, int type) : Token(StrValue, type), value(FromString<double>(StrValue)){
+Token_Real::Token_Real(std::string StrValue, int type, bool IsConstant) : 
+Token(StrValue, type, IsConstant), value(FromString<double>(StrValue)){
 	//...
 }
 

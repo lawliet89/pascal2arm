@@ -1,11 +1,13 @@
 #include "int.h"
 #include "../utility.h"
 
-Token_Int::Token_Int(const char *StrValue, int type) : Token(StrValue, type), value(FromString<int>(StrValue)){
+Token_Int::Token_Int(const char *StrValue, int type, bool IsConstant) : 
+	Token(StrValue, type, IsConstant), value(FromString<int>(StrValue)){
 	//...
 }
 
-Token_Int::Token_Int(std::string StrValue, int type) : Token(StrValue, type), value(FromString<int>(StrValue)){
+Token_Int::Token_Int(std::string StrValue, int type, bool IsConstant) : 
+Token(StrValue, type, IsConstant), value(FromString<int>(StrValue)){
 	//...
 }
 

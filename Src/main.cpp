@@ -7,7 +7,7 @@
 
 //Flags - declared in utility.cpp
 extern Flags_T Flags;
-extern Data_T Data;	//Utility.cpp
+extern Data_T Data;	//Op.cpp
 extern unsigned LexerCharCount, LexerLineCount;
 
 int main(int argc, char **argv){

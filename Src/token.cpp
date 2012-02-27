@@ -1,18 +1,20 @@
 #include "token.h"
+extern unsigned LexerCharCount, LexerLineCount;	//lexer.l
 
 //Constructors
-Token::Token(const char *StrValue, int type): StrValue(StrValue), type(type){
-	//...
-}
-Token::Token(std::string StrValue, int type): StrValue(StrValue), type(type){
-	//...
-}
-
+Token::Token(const char *StrValue, int type, bool IsConstant): 
+	StrValue(StrValue), type(type), IsConstant(IsConstant),
+	line(LexerLineCount), column(LexerCharCount)
+{}
+Token::Token(std::string StrValue, int type, bool IsConstant): 
+	StrValue(StrValue), type(type), IsConstant(IsConstant),
+	line(LexerLineCount), column(LexerCharCount)
+	{}
 //Copy constructor
-Token::Token (const Token &obj){
-	StrValue = obj.StrValue;
-	type = obj.type;
-}
+Token::Token (const Token &obj):
+	StrValue(obj.StrValue), type(obj.type), IsConstant(obj.IsConstant),
+	line(obj.line), column(obj.column)
+{}
 
 //Assignment operator
 Token Token::operator=(const Token &obj){
@@ -20,6 +22,9 @@ Token Token::operator=(const Token &obj){
 	if (&obj != this){
 		StrValue = obj.StrValue;
 		type = obj.type;
+		IsConstant = obj.IsConstant;
+		line = obj.line;
+		column = obj.column;
 	}
 	
 	return *this;

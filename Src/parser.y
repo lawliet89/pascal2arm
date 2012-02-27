@@ -34,6 +34,7 @@ extern Data_T Data;	//Utility.cpp
 
 //ADT for program
 AsmFile Program;
+bool ParseError;
 
 //Parser functions declaration
 void yyerror(const char *msg);
@@ -89,7 +90,12 @@ inline void WriteASMProgHeader();
 
 %%
 
-Sentence: Program Y_EOF { CurrentToken.reset(); /* OUTPUT << "\tEND";*/ YYACCEPT; }
+Sentence: Program Y_EOF { CurrentToken.reset(); 
+			if (ParseError){
+				HandleError("There are parse error(s). Compilation cannot proceed.", E_GENERIC, E_FATAL);
+			}
+			Program.GenerateCode(OUTPUT);
+			YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
@@ -146,7 +152,24 @@ Identifier: V_IDENTIFIER {
 	;
 
 IdentifierList: IdentifierList ',' Identifier
-		| Identifier
+			{
+				$$ = $1;
+				try{
+					dynamic_cast<Token_IDList*>($$.get()) -> AddID($3);
+				}
+				catch (int e){
+					if (e == ASM_SymbolExists){
+						std::stringstream msg;
+						msg << "Identifier '" << $3 -> GetStrValue();
+						msg << "' has already been declared.";	
+						
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, LexerLineCount, LexerCharCount);
+					}
+				}
+			}
+		| Identifier {
+				$$.reset(new Token_IDList(yylval -> GetStrValue()));
+				}
 		;
 
 LabelDeclaration: LabelDeclaration ',' K_LABEL V_INT
@@ -171,7 +194,7 @@ VarList:	VarList VarDeclaration
 		| VarDeclaration
 		;
 
-VarDeclaration:	IdentifierList ':' Type '=' Expression ';'
+VarDeclaration:	IdentifierList ':' Type '=' Expression ';'	/* Add to Data declaration? */
 		| IdentifierList ':' Type ';'
 		;
 

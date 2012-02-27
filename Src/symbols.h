@@ -50,6 +50,7 @@ protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	/** Methods **/
 	//OCCF
 	Symbol(Type_T type, std::shared_ptr<Token> value, std::string id);
+	void SetReserved(){ Reserved = true; }	//Only AsmFile can define reserved
 
 	
 	/** Data Members **/
@@ -57,6 +58,7 @@ protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	//bool IDUser;		//Whether ID is user defined
 	Type_T Type;
 	std::shared_ptr<Token> Value;	//Token storing the value
+	bool Reserved;		//Reserved symbol
 };
 
 #endif

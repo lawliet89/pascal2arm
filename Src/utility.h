@@ -9,6 +9,11 @@
 #include <string>
 #include <sstream>
 
+//Utility functions
+
+std::string ReadFile(const char* path); //Read a text file to a string
+
+
 template<typename T> std::string ToString(T input){
 	std::stringstream output;
 	output << input;

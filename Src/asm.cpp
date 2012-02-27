@@ -1,4 +1,10 @@
 #include "asm.h"
+#include "utility.h"
+#include "op.h"
+#include <iostream>
+
+extern Flags_T Flags;
+extern Data_T Data;	//Op.cpp
 
 /**
  * 	AsmFile
@@ -6,7 +12,9 @@
 
 //Constructor
 AsmFile::AsmFile(){
-	//Initialise lines - maybe procedure to the default ones?
+	//Create reserved symbols - TODO
+	
+	
 	
 }
 
@@ -31,6 +39,42 @@ AsmFile AsmFile::operator=(const AsmFile &obj){
 		FunctionLines = obj.FunctionLines;	
 	}
 	return *this;
+}
+
+//Create Symbol
+std::shared_ptr<Symbol> AsmFile::CreateSymbol(Symbol::Type_T type, std::shared_ptr<Token> value, std::string id) throw(int){
+	if (CheckSymbol(id))
+		throw ASM_SymbolExists;
+	std::shared_ptr<Symbol> ptr( new Symbol (type, value, id));
+	
+	SymbolList[id] = ptr;
+	return ptr;
+	
+}
+
+//Check if symbol with id exists - true if exists, false otherwise
+bool AsmFile::CheckSymbol(std::string id){
+	std::map<std::string, std::shared_ptr<Symbol> >::iterator it;
+	it = SymbolList.find(id);
+	
+	if (it == SymbolList.end())
+		return false;
+	else
+		return true;
+}
+
+//Generate Code
+void AsmFile::GenerateCode(std::stringstream &output){
+	
+	try{
+		output << ReadFile(Flags.AsmHeaderPath.c_str());
+	}
+	catch(...){
+		HandleError("Header file for assembly does not exist.", E_GENERIC, E_FATAL);
+	}
+	//User data variables etc.
+	//Std Libary
+	output << ReadFile(Flags.AsmStdLibPath.c_str());
 }
 
 /**
