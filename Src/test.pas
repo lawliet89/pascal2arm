@@ -4,7 +4,7 @@ VAR
 	test: integer;
 	float: real;
 	
-	testing, testing: integer;
+	//testing, testing: integer;
 
 BEGIN
 	Writeln('Hello World');
