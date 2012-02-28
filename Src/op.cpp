@@ -14,8 +14,8 @@
 
 //Global flags
 Flags_T Flags;
-//Global data
-Data_T Data;
+//Output String
+std::stringstream OutputString;
 
 extern bool LexerSyntaxError, ParseError; 	//lexer.l and parser.y
 extern unsigned LexerCharCount, LexerLineCount;

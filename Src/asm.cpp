@@ -4,7 +4,7 @@
 #include <iostream>
 
 extern Flags_T Flags;
-extern Data_T Data;	//Op.cpp
+extern std::stringstream OutputString;		//op.cpp
 
 /**
  * 	AsmFile

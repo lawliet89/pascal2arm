@@ -17,20 +17,24 @@
 #include <iostream>
 #include <sstream>
 #include <new>
+#include <memory>
 #define IN_BISON
-#include "../functions.h"	//See Prologue alternatives: http://www.gnu.org/software/bison/manual/bison.html#Prologue-Alternatives
+#include "../compiler.h"	//See Prologue alternatives: http://www.gnu.org/software/bison/manual/bison.html#Prologue-Alternatives
 #include "lexer.h"
 #include "../asm.h"
+#include "../utility.h"
+#include "../op.h"
+#include "../define.h"
+#include "../token.h"
+#include "all.h"	//All specialisations
 }
 
 %code{
-#include "../utility.h"
-#include "../op.h"
 #define CurrentToken yylval
 
-extern Flags_T Flags;		//In utility.cpp
+extern Flags_T Flags;		//In op.cpp
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l
-extern Data_T Data;	//Utility.cpp
+extern std::stringstream OutputString;		//op.cpp
 
 //ADT for program
 AsmFile Program;
@@ -38,7 +42,6 @@ bool ParseError;
 
 //Parser functions declaration
 void yyerror(const char *msg);
-inline void WriteASMProgHeader();
 
 }
 
@@ -88,6 +91,12 @@ inline void WriteASMProgHeader();
 //%define parse.lac full 
 /* %define lr.default-reductions consistent */
 
+%initial-action
+     {
+	//Initialise Lexer
+	LexerInit();
+     };
+
 %%
 
 Sentence: Program Y_EOF { CurrentToken.reset(); 
@@ -112,9 +121,9 @@ Program: {
 	;
 	
 /* Program Headers */
-ProgramHeader:	K_PROGRAM Identifier 	{ Data.ProgramName = $2 -> GetStrValue(); }
-		| K_PROGRAM Identifier '('')' { Data.ProgramName = $2 -> GetStrValue(); }
-		| K_PROGRAM Identifier '(' FileIdentifierList ')' { Data.ProgramName = $2 -> GetStrValue(); } 
+ProgramHeader:	K_PROGRAM Identifier 	/*throw away */
+		| K_PROGRAM Identifier '('')' /*throw away */
+		| K_PROGRAM Identifier '(' FileIdentifierList ')' /*throw away */
 		;
 
 FileIdentifierList: FileIdentifierList ',' FileIdentifier
@@ -537,8 +546,4 @@ void yyerror(const char * msg){
 	//text << "(" << yylloc.first_line << "-" << yylloc.last_line << ":" << yylloc.first_column;
 	//text << "-" << yylloc.last_column << ")";
 	HandleError(text.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
-}
-
-inline void WriteASMProgHeader(){
-	OUTPUT << "\tAREA |" << Data.ProgramName << "|, CODE, READONLY\n";
 }

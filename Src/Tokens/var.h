@@ -3,6 +3,7 @@
 #include <memory>
 #include "../token.h"
 #include "../symbols.h"
+#include "../define.h"
 
 //Forward declaration
 class AsmFile;

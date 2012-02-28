@@ -73,7 +73,7 @@ $(PROGRAM): $(OBJ_LIST)
 	@$(COMPILER) $(CXXFLAGS) -o $(PROGRAM) $^
 	@echo "Make complete."
 	
-$(GEN_DIR)main.o: main.cpp utility.h functions.h  op.h
+$(GEN_DIR)main.o: main.cpp utility.h compiler.h  op.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
@@ -85,7 +85,7 @@ $(GEN_DIR)op.o: op.cpp op.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-$(GEN_DIR)lexer.o: $(FLEX_CPP) $(BISON_HEADER) functions.h utility.h token.h op.h
+$(GEN_DIR)lexer.o: $(FLEX_CPP) $(BISON_HEADER) compiler.h utility.h op.h define.h token.h $(GEN_DIR)all.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
@@ -97,7 +97,7 @@ $(BISON_CPP) $(BISON_HEADER): $(BISON_SRC)
 	@echo "Generating parser"
 	@$(BISON) --defines=$(BISON_HEADER) --output=$(BISON_CPP) $(BISON_FLAGS) $(BISON_SRC)
 	
-$(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) functions.h utility.h token.h op.h asm.h
+$(GEN_DIR)parser.o: $(BISON_CPP) $(FLEX_HEADER) compiler.h  asm.h utility.h op.h define.h token.h $(GEN_DIR)all.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
@@ -113,17 +113,14 @@ $(GEN_DIR)symbols.o: symbols.cpp symbols.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 
-functions.h: token.h
-	@touch $@
 asm.h: symbols.h define.h
 	@touch $@
-symbols.h: utility.h
+symbols.h: utility.h token.h
 	@touch $@
 
 #Tokens specialisation header generation	
-token.h: $(GEN_DIR)all.h $(BISON_HEADER) define.h
+token.h: utility.h
 	@touch $@
-#	@echo "Regenerating all.h"
 
 $(GEN_DIR)all.h: $(GEN_DIR)all_gen $(wildcard Tokens/*.h) 
 	@echo "Regenerating all.h"
@@ -142,15 +139,15 @@ $(GEN_DIR)real.o: Tokens/real.cpp Tokens/real.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	
-$(GEN_DIR)idList.o: Tokens/idList.cpp Tokens/idList.h token.h
+$(GEN_DIR)idList.o: Tokens/idList.cpp Tokens/idList.h token.h define.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	
-$(GEN_DIR)var.o: Tokens/var.cpp Tokens/var.h token.h
+$(GEN_DIR)var.o: Tokens/var.cpp Tokens/var.h token.h define.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	
-$(GEN_DIR)varList.o: Tokens/varList.cpp Tokens/varList.h token.h Tokens/var.h
+$(GEN_DIR)varList.o: Tokens/varList.cpp Tokens/varList.h token.h Tokens/var.h define.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	

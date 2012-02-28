@@ -1,6 +1,7 @@
 #ifndef IdListH
 #define IdListH
 #include "../token.h"
+#include "../define.h"
 #include <set>
 #include <string>
 #include <memory>
@@ -18,6 +19,8 @@ public:
 	
 	const void * GetValue() const { return (void *) &list; }
 	const void * operator()() const { return (void *) &list; }
+	
+	const std::set <std::string> GetList() const { return list; }
 	
 	void AddID(std::string id) throw(int);
 	void AddID(std::shared_ptr<Token> token) throw(int);

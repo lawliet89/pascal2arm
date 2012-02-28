@@ -1,15 +1,13 @@
 /*******************************************************************************
  * 
- * Define some basic macros and functions for bison and flex
+ * Define some basic macros and functions for bison and flex interface
  * 
  ******************************************************************************/
 
-#ifndef FunctionsH
-#define FunctionsH
+#ifndef CompilerH
+#define CompilerH
 
 #include <memory>
-#include "token.h"
-
 #define YYSTYPE std::shared_ptr<Token>
 #define YY_DECL int yylex(void)
 
@@ -23,4 +21,4 @@ YY_DECL; 	//Flex
 void LexerInit();	//Defined in lexer.l
 
 
-#endif /* FunctionsH */
+#endif /* CompilerH */

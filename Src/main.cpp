@@ -1,13 +1,14 @@
 #include <iostream>
 #include <signal.h>
-#include "utility.h"
-#include "functions.h"
-#include "op.h"
 #include <fstream>
+#include "utility.h"
+#include "compiler.h"
+#include "op.h"
+
 
 //Flags - declared in utility.cpp
 extern Flags_T Flags;
-extern Data_T Data;	//Op.cpp
+extern std::stringstream OutputString;		//op.cpp
 extern unsigned LexerCharCount, LexerLineCount;
 
 int main(int argc, char **argv){
@@ -20,9 +21,6 @@ int main(int argc, char **argv){
 		return 1;
 	}
 
-	
-	//Initialise Lexer
-	LexerInit();
 	//Parse
 	yyparse();
 	

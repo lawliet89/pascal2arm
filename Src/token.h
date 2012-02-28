@@ -63,8 +63,4 @@ template <typename T> T GetValue(Token *token){
 	return DereferenceVoidPtr<T>(token -> GetValue());
 }
 
-#include "define.h"
-
-#include "Gen/all.h"	//All specialisations
-
 #endif

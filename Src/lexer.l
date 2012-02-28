@@ -9,11 +9,13 @@
 #define IN_FLEX
 
 //Because FLEX generated CPP files are in Gen/ folder, ../ is required
-#include "../functions.h"
+#include "../compiler.h"
 #include "../utility.h"
 #include "../op.h"
+#include "../define.h"
+#include "../token.h"
+#include "all.h"	//All specialisations
 #include "parser.h"
-
 
 extern Flags_T Flags;		//In utility.cpp
 extern YYSTYPE yylval;		//In parser.cpp (generated)
