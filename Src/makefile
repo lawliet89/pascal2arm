@@ -31,7 +31,8 @@ DEBUG_BUILD := true
 BISON_DEBUG := true
 
 OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o \
-$(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o
+$(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o \
+$(GEN_DIR)varList.o
 
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
@@ -146,6 +147,10 @@ $(GEN_DIR)idList.o: Tokens/idList.cpp Tokens/idList.h token.h
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	
 $(GEN_DIR)var.o: Tokens/var.cpp Tokens/var.h token.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
+	
+$(GEN_DIR)varList.o: Tokens/varList.cpp Tokens/varList.h token.h Tokens/var.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	

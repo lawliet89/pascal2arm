@@ -2,19 +2,19 @@
 
 //Constructors
 Token_IDList::Token_IDList(char const *StrValue):
-	Token(StrValue, Identifier,true)
+	Token(StrValue, _Identifier,true)
 {
 	list.insert(std::string(StrValue));
 }
 
 Token_IDList::Token_IDList(std::string StrValue):
-Token(StrValue, Identifier,true)
+Token(StrValue, _Identifier,true)
 {
 	list.insert(StrValue);
 }
 
 Token_IDList::Token_IDList(std::shared_ptr<Token> token):
-Token(StrValue, Identifier,true)
+Token(StrValue, _Identifier,true)
 {
 	list.insert(token->GetStrValue());
 }

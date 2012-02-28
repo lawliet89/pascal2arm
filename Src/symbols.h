@@ -13,8 +13,6 @@
 //Forward declaration
 class AsmFile;	//Declared in asm.h - forward delcared so that we can define friend relations
 class Symbol; //Symbols definition
-class Scope; //Scopes
-class ScopeStack; //Scope Stack
 
 /*
  * Symbols

@@ -147,7 +147,7 @@ BlockProcFuncDeclaration: ProcList
 
 /* Generic Stuff */
 Identifier: V_IDENTIFIER {
-				$$.reset(new Token(yylval-> GetStrValue(), Identifier));
+				$$.reset(new Token(yylval-> GetStrValue(), _Identifier));
 			}
 	;
 
@@ -257,7 +257,7 @@ StructuredType: ArrayType
 ArrayType: Packness K_ARRAY ArraySize K_OF Type
 	;
 
-Packness: K_PACKED
+Packness: K_PACKED		/* Maybe not implementing at all */
 		| 
 		;
 
@@ -289,18 +289,18 @@ PointerType: '^' Type
 
 /* Values */
 Signed_Int: '+' V_INT {  
-			$$.reset(new Token_Int(GetValue<long>(yylval), Signed_Int));
+			$$.reset(new Token_Int(GetValue<long>(yylval), _Signed_Int));
 		}
 	| '-' V_INT { 
-			$$.reset(new Token_Int(GetValue<long>(yylval) * -1, Signed_Int));   
+			$$.reset(new Token_Int(GetValue<long>(yylval) * -1, _Signed_Int));   
 		}
 	;
 	
 Signed_Real: '+' V_REAL {
-			$$.reset(new Token_Int(GetValue<double>(yylval), Signed_Real));
+			$$.reset(new Token_Int(GetValue<double>(yylval), _Signed_Real));
 			}
 	| '-' V_REAL{
-			$$.reset(new Token_Int(GetValue<double>(yylval)*-1, Signed_Real));
+			$$.reset(new Token_Int(GetValue<double>(yylval)*-1, _Signed_Real));
 			}
 	;
 ;
@@ -387,6 +387,7 @@ Factor: '(' Expression ')'
 	| UnsignedConstant
 	| OP_NOT Factor
 	| SignedConstant
+	| SetConstructors
 	/* Set, value typecast, address factor ?? */
 	;
 VarRef: SimpleVarReference VarQualifier
@@ -432,6 +433,18 @@ ActualParamList: ActualParamList ',' Expression
 		| Expression
 		|
 		;
+		
+SetConstructors: '[' SetGroupList ']'
+		| '[' ']'
+		;
+
+SetGroupList: SetGroupList ',' SetGroup
+		| SetGroup
+		;
+		
+SetGroup: Expression OP_DOTDOT Expression
+	| Expression
+	;
 
 /* Statements */
 CompoundStatement: K_BEGIN StatementList K_END
