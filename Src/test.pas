@@ -5,6 +5,8 @@ VAR
 	float: real;
 	
 	//testing, testing: integer;
+	
+	//huh, huh, huh, huh : boolean;
 
 BEGIN
 	Writeln('Hello World');

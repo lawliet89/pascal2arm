@@ -17,6 +17,8 @@
 #define _Signed_Real -2
 #define _Identifier -3
 #define _Variable -4
+#define _IdentifierList -5
+#define _VarList -6
 
 /**
  * 
