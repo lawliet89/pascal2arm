@@ -12,7 +12,7 @@ class Symbol;
  * 
  * */
 
-class Token{		//Base class is sufficient for normal strings
+class Token{		//Base class is sufficient for normal strings. Does not contain ID field
 public:
 	//OCCF
 	

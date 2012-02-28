@@ -1,6 +1,7 @@
 #ifndef TokenVar
 #define TokenVar
 #include <memory>
+#include <string>
 #include "../token.h"
 #include "../symbols.h"
 #include "../define.h"
@@ -47,7 +48,7 @@ public:
 	//ID
 	std::string GetID() const { return GetStrValue(); }
 	
-	//Type
+	//Type - TODO Use Token_Type
 	int GetPrimaryType() const{ return PrimaryType; }
 	int GetSecondaryType() const{ return SecondaryType; }
 	
@@ -59,6 +60,7 @@ public:
 	const Symbol* GetSymbol() const{ return Sym.get(); }
 	
 protected:
+	std::string id;
 	std::shared_ptr<Token> value;
 	int PrimaryType, SecondaryType;
 	std::shared_ptr<Symbol> Sym;	//Associated Symbol

@@ -8,10 +8,12 @@
 
 /**
 *	Symbols function and classes
+* 		- Note: IDs are always stored in lowercase because Pascal is not case sensitive
 *
 **/
 //Forward declaration
 class AsmFile;	//Declared in asm.h - forward delcared so that we can define friend relations
+class AsmBlock;
 class Symbol; //Symbols definition
 
 /*
@@ -37,17 +39,30 @@ public:
 	Symbol(const Symbol &obj);
 	Symbol operator=(const Symbol &obj);	
 
-	std::shared_ptr<Token> GetToken() const{ return Value; }
+	Token *GetToken() { return Value.get(); }
+	
+	template <typename T> T GetTokenDerived(){
+		return dynamic_cast<T> (Value.get());
+	}
+	/*
 	template <typename T> T GetValue(){
 		return DereferenceVoidPtr<T>(Value -> GetValue());
 		
 	}
+	*/
 	
+	void SetToken(std::shared_ptr<Token> token){
+		Value = token;
+	}
+	
+	void SetBlock(std::shared_ptr<AsmBlock> block){
+		Block = block;
+	}
 	
 protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	/** Methods **/
 	//OCCF
-	Symbol(Type_T type, std::shared_ptr<Token> value, std::string id);
+	Symbol(Type_T type, std::string id, std::shared_ptr<Token> value=nullptr, std::shared_ptr<AsmBlock> block=nullptr);
 	void SetReserved(){ Reserved = true; }	//Only AsmFile can define reserved
 
 	
@@ -57,6 +72,7 @@ protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	Type_T Type;
 	std::shared_ptr<Token> Value;	//Token storing the value
 	bool Reserved;		//Reserved symbol
+	std::shared_ptr<AsmBlock> Block;	
 };
 
 #endif

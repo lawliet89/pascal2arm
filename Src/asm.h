@@ -6,6 +6,8 @@
 #include <fstream>
 #include <memory>	//C++11
 #include <map>
+#include "token.h"
+#include "Gen/all.h"
 #include "symbols.h"
 #include "define.h"
 
@@ -20,6 +22,7 @@ class AsmLine;	//Lines of code
 class AsmOp;	//Operators 
 class AsmLabel;	//Labels
 class AsmRegister;	//State of the registers and data - used when generating code
+class AsmBlock;
 /*
  * 	Assembly file class
  * 
@@ -34,9 +37,16 @@ public:
 	
 	/** Symbols Related Methods **/
 	//Creates symbol. Throws an integer exception on problems
-	std::shared_ptr<Symbol> CreateSymbol(Symbol::Type_T type, std::shared_ptr<Token> value, std::string id) throw(int);
+	std::shared_ptr<Symbol> CreateSymbol(Symbol::Type_T type, std::string id, std::shared_ptr<Token> value=nullptr, std::shared_ptr<AsmBlock> block=nullptr) throw(int);
+	
 	//Check if symbol with id exists - true if exists, false otherwise
 	bool CheckSymbol(std::string id);
+	
+	//Create Type symbol
+	std::shared_ptr<Symbol> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(int);
+	
+	//Create variable symbols from Identifier List Tokens
+	void CreateVarSymbolsFromList(const Token_IDList &list, int PrimaryType, int SecondaryType, std::shared_ptr<Token> value=nullptr) throw(int);
 	
 	//Generate Code
 	void GenerateCode(std::stringstream &output);
@@ -50,13 +60,13 @@ protected:
 	//Storage of labels
 	//std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
 	
+	//Symbols storage
 	std::map<std::string, std::shared_ptr<Symbol> > SymbolList;		//Storage of all symbols
-	//std::vector<std::shared_ptr<Scope> > ScopeList;		//List of all scopes
-	//std::vector<std::shared_ptr<ScopeStack> > ScopeStackList;	//List of scope stacks
+	std::map<std::string, std::shared_ptr<Symbol> > TypeList;
 	
 	//AsmRegister Registers;		//State of registers- used when generating code
 		
-	
+	//Storage of blocks
 };
 
 /**
@@ -208,6 +218,13 @@ protected:
  * 
  * */
 class AsmRegister{
+	
+};
+
+/** AsmBlock
+ * 
+ * */
+class AsmBlock{
 	
 };
 #endif

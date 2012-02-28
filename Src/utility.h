@@ -12,8 +12,10 @@
 //Utility functions
 
 std::string ReadFile(const char* path); //Read a text file to a string
+//Convert a string to lower case
+std::string StringToLower(std::string str);
 
-
+//Convert from types to string using the ios insertion and extraction operators
 template<typename T> std::string ToString(T input){
 	std::stringstream output;
 	output << input;

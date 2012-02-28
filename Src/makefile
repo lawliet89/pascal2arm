@@ -31,8 +31,8 @@ DEBUG_BUILD := true
 BISON_DEBUG := true
 
 OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o \
-$(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o 
-
+$(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o \
+$(GEN_DIR)type.o
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
 #-------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ $(GEN_DIR)token.o: token.cpp token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-$(GEN_DIR)asm.o: asm.cpp asm.h symbols.h
+$(GEN_DIR)asm.o: asm.cpp asm.h symbols.h utility.h 
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 
@@ -112,7 +112,7 @@ $(GEN_DIR)symbols.o: symbols.cpp symbols.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 
-asm.h: symbols.h define.h
+asm.h: symbols.h define.h token.h $(GEN_DIR)all.h
 	@touch $@
 symbols.h: utility.h token.h
 	@touch $@
@@ -143,6 +143,10 @@ $(GEN_DIR)idList.o: Tokens/idList.cpp Tokens/idList.h token.h define.h
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	
 $(GEN_DIR)var.o: Tokens/var.cpp Tokens/var.h token.h define.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
+
+$(GEN_DIR)type.o: Tokens/type.cpp Tokens/type.h token.h define.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	

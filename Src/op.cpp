@@ -168,7 +168,8 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 			ParseError = true;
 			break;
 		default:
-			std::cout << "Error - ";
+			//std::cout << "Error - ";
+			break;
 	}
 	
 	std::cout << message;

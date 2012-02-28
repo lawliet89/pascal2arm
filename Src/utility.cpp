@@ -1,7 +1,7 @@
 #include "utility.h"
 #include <fstream>
 #include <streambuf>
-
+#include <algorithm>
 
 //http://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
 std::string ReadFile(const char* path){
@@ -19,5 +19,12 @@ std::string ReadFile(const char* path){
 	str.assign((std::istreambuf_iterator<char>(file)),
 		   std::istreambuf_iterator<char>());
 	
+	return str;
+}
+
+//http://notfaq.wordpress.com/2007/08/04/cc-convert-string-to-upperlower-case/
+std::string StringToLower(std::string str){
+	std::transform(str.begin(), str.end(),
+		       str.begin(), ::tolower);
 	return str;
 }

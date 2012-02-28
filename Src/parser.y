@@ -170,8 +170,11 @@ IdentifierList: IdentifierList ',' Identifier
 					if (e == ASM_SymbolExists){
 						std::stringstream msg;
 						msg << "Identifier '" << $3 -> GetStrValue();
-						msg << "' has already been declared.";	
+						msg << "' has already been declared previously.";	
 						
+						if (Flags.ShowHints){
+							msg << " It was probably previously declared on the same line.";
+						}
 						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, LexerLineCount, LexerCharCount);
 					}
 				}
@@ -204,8 +207,11 @@ VarList:	VarList VarDeclaration
 		;
 
 VarDeclaration:	IdentifierList ':' Type '=' Expression ';'	/* Add to Data declaration? */
-		| IdentifierList ':' Type ';'
-		;
+		| IdentifierList ':' Type ';' {
+			
+			
+			
+		};
 
 ProcList: ProcList ProcDeclaration
 	| ProcDeclaration
@@ -463,7 +469,9 @@ StatementList:   StatementList ';' Statement
 		| Statement
 		;
 
-StatementLabel: V_INT ':' 
+StatementLabel: V_INT ':' {
+			HandleError("Labels are unsupported and are discarded.", E_GENERIC, E_NOTICE,LexerLineCount, LexerCharCount); 
+		}
 		| ;
 
 Statement: StatementLabel SimpleStatement

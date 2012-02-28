@@ -1,7 +1,7 @@
 #include "var.h"
 
 Token_Var::Token_Var(std::string id):
-	Token(id, _Variable, false)
+	Token(StringToLower(id), _Variable, false)
 {
 	//...
 }
