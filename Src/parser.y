@@ -483,7 +483,7 @@ StatementList:   StatementList ';' Statement
 		;
 
 StatementLabel: V_INT ':' {
-			HandleError("Labels are unsupported and are discarded.", E_GENERIC, E_NOTICE,LexerLineCount, LexerCharCount); 
+			HandleError("Labels are unsupported and are discarded.", E_GENERIC, E_WARNING,LexerLineCount, LexerCharCount); 
 		}
 		| ;
 

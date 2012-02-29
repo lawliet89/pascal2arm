@@ -73,7 +73,7 @@ protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	Type_T Type;
 	std::shared_ptr<Token> Value;	//Token storing the value
 	bool Reserved;		//Reserved symbol
-	std::shared_ptr<AsmBlock> Block;	
+	std::shared_ptr<AsmBlock> Block;	//Block in which symbol was defined
 };
 
 #endif

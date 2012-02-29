@@ -69,8 +69,13 @@ protected:
 	std::map<std::string, std::shared_ptr<Symbol> > TypeList;
 	
 	//AsmRegister Registers;		//State of registers- used when generating code
-		
+	
 	//Storage of blocks
+	std::map<int, std::shared_ptr<AsmBlock> > BlockList; 
+	
+	//Context related - use iterators to handle removing and adding of stuff during context switch
+	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
+	std::vector<std::shared_ptr<Symbol> > SymbolStack;	
 };
 
 /**
@@ -219,7 +224,7 @@ protected:
 
 /** AsmRegister
  * 
- * 
+ * State of registers during run time generation
  * */
 class AsmRegister{
 	
@@ -229,6 +234,22 @@ class AsmRegister{
  * 
  * */
 class AsmBlock{
+public:
 	
+	//According to Free Pascal, only Blocks and Record define scopes.
+	//Further spefic to the three types of block scopes
+	enum Type_T{
+		Global,
+		Procedure,
+		Function,
+		Record
+	};
+	
+	//OCCF
+	
+	
+protected:
+	Type_T Type;		//Type of block & scope
+	std::map<std::string, std::shared_ptr<Symbol> > SymbolList; 	//Associated map of symbols
 };
 #endif
