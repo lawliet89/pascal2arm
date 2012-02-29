@@ -39,8 +39,9 @@ public:
 	Symbol(const Symbol &obj);
 	Symbol operator=(const Symbol &obj);	
 
+	std::shared_ptr<Token> GetValue(){ return Value; }
 	Token *GetToken() { return Value.get(); }
-	
+
 	template <typename T> T GetTokenDerived(){
 		return dynamic_cast<T> (Value.get());
 	}

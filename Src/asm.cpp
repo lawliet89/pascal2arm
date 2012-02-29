@@ -92,6 +92,7 @@ bool AsmFile::CheckSymbol(std::string id){
 		return true;
 }
 
+//Create type symbol
 //Will return to caller for caller to set additional parameters
 //i.e. sym -> GetTokenDerived<Token_Type *>()
 std::shared_ptr<Symbol> AsmFile::CreateTypeSymbol(std::string id, Token_Type::P_Type pri, int sec) throw(int){
@@ -103,6 +104,19 @@ std::shared_ptr<Symbol> AsmFile::CreateTypeSymbol(std::string id, Token_Type::P_
 	TypeList[id] = sym;
 	
 	return sym;
+}
+
+std::shared_ptr<Symbol> AsmFile::GetTypeSymbol(std::string id) throw(int){
+	//TODO Check symbol stack
+	id = StringToLower(id);	//Case insensitive
+	std::map<std::string, std::shared_ptr<Symbol> >::iterator it;
+	it = TypeList.find(id);
+	
+	if (it == TypeList.end())
+		throw Asm_SymbolNotExists;
+	else{
+		return (*it).second;
+	}
 }
 
 //Create symbol from list

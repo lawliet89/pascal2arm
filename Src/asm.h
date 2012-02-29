@@ -44,10 +44,14 @@ public:
 	
 	//Create Type symbol
 	std::shared_ptr<Symbol> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(int);
+	std::shared_ptr<Symbol> GetTypeSymbol(std::string id) throw(int);
 	
 	//Create variable symbols from Identifier List Tokens
 	void CreateVarSymbolsFromList(const Token_IDList &list, int PrimaryType, int SecondaryType, std::shared_ptr<Token> value=nullptr) throw(int);
 	
+	
+	
+	/** Code Related Methods **/
 	//Generate Code
 	void GenerateCode(std::stringstream &output);
 		

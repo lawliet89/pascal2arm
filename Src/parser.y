@@ -222,21 +222,21 @@ FuncList: FuncList FuncDeclaration
 	;
 
 /* Types */
-Type: SimpleType
-	| StringType
+Type: SimpleType { $$ = $1; }
+	| StringType 
 	| StructuredType 
 	| PointerType   
 	| TypeIdentifier
 	;
 	
-SimpleType: OrdinalType
-	| RealType
+SimpleType: OrdinalType { $$ = $1; }
+	| RealType { $$ = $1; }
 	;
 
-OrdinalType: I_INTEGER
-	| I_CHAR
-	| I_BOOLEAN
-	| EnumType
+OrdinalType: I_INTEGER	{ $$ = Program.GetTypeSymbol("integer")->GetValue(); }
+	| I_CHAR { $$ = Program.GetTypeSymbol("char")->GetValue(); }
+	| I_BOOLEAN { $$ = Program.GetTypeSymbol("boolean")->GetValue(); }
+	| EnumType { $$ = Program.GetTypeSymbol("enum")->GetValue(); } /* TODO more handling */
 	| SubrangeType
 	;
 
@@ -256,13 +256,26 @@ SubrangeValue: Identifier
 		| Signed_Int
 		;
 
-RealType: I_REAL;
+RealType: I_REAL { $$ = Program.GetTypeSymbol("real")->GetValue(); }
+		;
 
-StringType: I_STRING
-	| I_STRING '[' V_INT ']'
+StringType: I_STRING { $$ = Program.GetTypeSymbol("string")->GetValue(); }
+	| I_STRING '[' V_INT ']' //TODO
 	;
 	
-TypeIdentifier: Identifier;
+TypeIdentifier: Identifier {
+	//Possibility that type doesn't exist
+	try{
+		$$ = Program.GetTypeSymbol($1 -> GetStrValue())->GetValue(); 
+	}
+	catch (int e){
+		std::stringstream msg;
+		msg << "Unknown type '" << $1 -> GetStrValue() << "'.";
+		if (Flags.ShowHints)
+			msg << " Has the type been declared before?";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, LexerLineCount, LexerCharCount);
+	}
+};
 
 StructuredType: ArrayType
 		| RecordType
