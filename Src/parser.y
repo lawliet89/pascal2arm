@@ -108,16 +108,8 @@ Sentence: Program Y_EOF { CurrentToken.reset();
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
-Program: {
-		//No program name?
-		//Data.ProgramName = "Pascal";
-		//WriteASMProgHeader();
-		
-	} Block '.'
-	| ProgramHeader ';' {
-		//WriteASMProgHeader();
-	} Block '.'
-	/* UsesBlock if we are implementing units */
+Program: Block '.' { Program.CreateGlobalScope(); }
+	| ProgramHeader ';' Block '.' { Program.CreateGlobalScope(); }
 	;
 	
 /* Program Headers */
@@ -166,8 +158,8 @@ IdentifierList: IdentifierList ',' Identifier
 				try{
 					dynamic_cast<Token_IDList*>($$.get()) -> AddID($3);
 				}
-				catch (int e){
-					if (e == ASM_SymbolExists){
+				catch (AsmCode e){
+					if (e == SymbolExistsInCurrentBlock){
 						std::stringstream msg;
 						msg << "Identifier '" << $3 -> GetStrValue();
 						msg << "' has already been declared previously.";	

@@ -60,6 +60,10 @@ public:
 		Block = block;
 	}
 	
+	Type_T GetType() const{ return Type; }
+	std::string GetID() const {return ID; }
+	bool IsReserved() const { return Reserved; }
+	
 protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	/** Methods **/
 	//OCCF

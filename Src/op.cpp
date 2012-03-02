@@ -55,6 +55,7 @@ void ParseArg(int argc, char **argv){
 		//{"create",  required_argument, 0, 'c'},
 		{"output",    required_argument, 0, 'o'},
 		{"hint", no_argument, 0, 'H'},
+		{"pedantic", no_argument, 0 , 'p'},
 		{ NULL, no_argument, NULL, 0 }			//Not entirely sure what this is for
 	};	
 	
@@ -67,6 +68,7 @@ void ParseArg(int argc, char **argv){
 	Flags.OutputPath = "std::cout";
 	
 	Flags.ShowHints = false;
+	Flags.Pedantic = false;
 	
 	Flags.AsmHeaderPath = "Asm/header.s";		//TODO-Handle later
 	Flags.AsmStdLibPath = "Asm/stdlib.s";
@@ -100,6 +102,9 @@ void ParseArg(int argc, char **argv){
 				break;
 			case 'H':
 				Flags.ShowHints = true;
+				break;
+			case 'p':
+				Flags.Pedantic = true;
 				break;
 			case '?':
 				/* getopt_long already printed an error message. */

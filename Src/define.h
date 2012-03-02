@@ -1,13 +1,24 @@
 #ifndef DEF_H
 #define DEF_H
 
-//Macros definition
+/**
+ * Message Enum
+ * 
+ * */
 
-/** ASM Exception Codes **/
-//TODO Move to enum
-#define ASM_SymbolExists 1
-#define Asm_SymbolNotExists 2
-
+enum AsmCode{
+	SymbolExists,
+	
+	SymbolReserved,
+	SymbolExistsInCurrentBlock,
+	SymbolExistsInOuterBlock,
+	SymbolNotExists,
+	
+	SymbolCreated,
+	SymbolOccludes,
+	
+	SymbolIsNotAType
+};
 
 /**
  * 	Non terminal symbols definition

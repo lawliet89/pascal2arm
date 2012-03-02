@@ -23,8 +23,52 @@ class AsmOp;	//Operators
 class AsmLabel;	//Labels
 class AsmRegister;	//State of the registers and data - used when generating code
 class AsmBlock;
+
+/** AsmBlock
+ * 
+ * */
+class AsmBlock{
+public:
+	
+	//According to Free Pascal, only Blocks and Record define scopes.
+	//Further spefic to the three types of block scopes
+	enum Type_T{
+		Global,
+		Procedure,
+		Function,
+		Record
+	};
+	
+	//OCCF
+	AsmBlock(Type_T type);		//TODO associate with a line
+	~AsmBlock(){}
+	AsmBlock (const AsmBlock &obj);
+	AsmBlock operator=(const AsmBlock &obj);
+	
+	//Assign one symbol to the list
+	void AssignSymbol(std::shared_ptr<Symbol>) throw(AsmCode);		//Assign one symbol
+	
+	//Call the function with iterator or pointers of type iterator
+	/*
+	template <typename iterator> void AssignSymbols(iterator start, iterator end){
+		SymbolList.insert(start, end);
+	}
+	*/
+	
+	std::shared_ptr<Symbol> GetSymbol(std::string) throw(AsmCode);
+	AsmCode CheckSymbol(std::string) throw();
+	
+protected:
+	Type_T Type;		//Type of block & scope
+	//List of symbols defined in this block
+	std::map<std::string, std::shared_ptr<Symbol> > SymbolList; 
+	
+
+};
+
+
 /*
- * 	Assembly file class
+ * 	Assembly file class - the "main" class
  * 
  * */
 class AsmFile{
@@ -35,21 +79,33 @@ public:
 	AsmFile(const AsmFile &obj);
 	AsmFile operator=(const AsmFile &obj);
 	
-	/** Symbols Related Methods **/
-	//Creates symbol. Throws an integer exception on problems
-	std::shared_ptr<Symbol> CreateSymbol(Symbol::Type_T type, std::string id, std::shared_ptr<Token> value=nullptr, std::shared_ptr<AsmBlock> block=nullptr) throw(int);
+	void CreateGlobalScope();	//Create Global Scope and reserved symbols
 	
-	//Check if symbol with id exists - true if exists, false otherwise
-	bool CheckSymbol(std::string id);
+	/** Symbols Related Methods **/
+	//Creates symbol in the current scope. AsmCode gives the status
+	//Will throw SymbolReserved if the symbol to be created infringes on a reserved symbol
+	//Also throws SymbolExistsInCurrentBlock if it is already defined in the current block
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateSymbol(Symbol::Type_T type, std::string id, std::shared_ptr<Token> value=nullptr) throw(AsmCode);
+	
+	//Check if symbol with id that is accessible from the current scope exists. return AsmCode with appropriate information
+	AsmCode CheckSymbol(std::string id);
+	std::pair<std::shared_ptr<Symbol>, AsmCode> GetSymbol(std::string id) throw(AsmCode);	//Throws SymbolNotExists if not found
 	
 	//Create Type symbol
-	std::shared_ptr<Symbol> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(int);
-	std::shared_ptr<Symbol> GetTypeSymbol(std::string id) throw(int);
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(AsmCode);
+	std::shared_ptr<Symbol> GetTypeSymbol(std::string id) throw(AsmCode);
 	
 	//Create variable symbols from Identifier List Tokens
-	void CreateVarSymbolsFromList(const Token_IDList &list, int PrimaryType, int SecondaryType, std::shared_ptr<Token> value=nullptr) throw(int);
+	//void CreateVarSymbolsFromList(const Token_IDList &list, int PrimaryType, int SecondaryType, std::shared_ptr<Token> value=nullptr, std::shared_ptr<AsmBlock> block=nullptr) throw(AsmCode);
 	
+	/** Block Related Methods **/
+	//Block Stack
+	std::shared_ptr<AsmBlock> GetCurrentBlock(); //Current blocks
+	void PushBlock(std::shared_ptr<AsmBlock>);
+	void PopBlock();
 	
+	//Blocks
+	std::shared_ptr<AsmBlock> CreateBlock(AsmBlock::Type_T type);	//TODO Block name/ID
 	
 	/** Code Related Methods **/
 	//Generate Code
@@ -65,17 +121,18 @@ protected:
 	//std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
 	
 	//Symbols storage
-	std::map<std::string, std::shared_ptr<Symbol> > SymbolList;		//Storage of all symbols
-	std::map<std::string, std::shared_ptr<Symbol> > TypeList;
+	//std::multimap<std::string, std::shared_ptr<Symbol> > SymbolList;		//Storage of all symbols
+	//std::map<std::string, std::shared_ptr<Symbol> > TypeList;	
 	
 	//AsmRegister Registers;		//State of registers- used when generating code
 	
 	//Storage of blocks
-	std::map<int, std::shared_ptr<AsmBlock> > BlockList; 
+	std::vector<std::shared_ptr<AsmBlock> > BlockList; 
 	
 	//Context related - use iterators to handle removing and adding of stuff during context switch
+	//Maybe stack?
 	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
-	std::vector<std::shared_ptr<Symbol> > SymbolStack;	
+	//std::vector<std::shared_ptr<Symbol> > SymbolStack;	
 };
 
 /**
@@ -228,28 +285,5 @@ protected:
  * */
 class AsmRegister{
 	
-};
-
-/** AsmBlock
- * 
- * */
-class AsmBlock{
-public:
-	
-	//According to Free Pascal, only Blocks and Record define scopes.
-	//Further spefic to the three types of block scopes
-	enum Type_T{
-		Global,
-		Procedure,
-		Function,
-		Record
-	};
-	
-	//OCCF
-	
-	
-protected:
-	Type_T Type;		//Type of block & scope
-	std::map<std::string, std::shared_ptr<Symbol> > SymbolList; 	//Associated map of symbols
 };
 #endif

@@ -30,7 +30,7 @@ struct Flags_T{
 	FILE *Input;		//Required by yylex() to be FILE *
 	std::string InputPath;
 	
-	bool ShowHints;
+	bool ShowHints, Pedantic;	//Show hints and be pedantic
 	
 	//Skeleton Assembly Files location
 	std::string AsmHeaderPath;

@@ -22,8 +22,8 @@ public:
 	
 	const std::set <std::string> GetList() const { return list; }
 	
-	void AddID(std::string id) throw(int);
-	void AddID(std::shared_ptr<Token> token) throw(int);
+	void AddID(std::string id) throw(AsmCode);
+	void AddID(std::shared_ptr<Token> token) throw(AsmCode);
 	
 	
 protected:
