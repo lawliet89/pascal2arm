@@ -365,13 +365,7 @@ ProcDeclaration: ProcHeader ';' SubroutineBlock ';'{
 		;
 
 ProcHeader: K_PROCEDURE Identifier FormalParamList{
-			//Create token value for procedure. Create a symbol. Create a block And link accordingly
-
-			//Create block
-			std::shared_ptr<AsmBlock> block = Program.CreateBlock(AsmBlock::Procedure);
-			
-			//Push block
-			Program.PushBlock(block);
+			Program.CreateProcSymbol($2 -> GetStrValue());
 		};
 
 FuncDeclaration: FuncHeader ';' SubroutineBlock ';'

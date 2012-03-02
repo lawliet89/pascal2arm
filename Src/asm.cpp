@@ -243,6 +243,17 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 		
 }
 
+//Create Procedure Symbol
+std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcSymbol(std::string ID){
+//Create token value for procedure. Create a symbol. Create a block And link accordingly
+	std::shared_ptr<Token_Func> tok(new Token_Func(ID, Token_Func::Procedure));
+	
+	//Create block
+	std::shared_ptr<AsmBlock> block = CreateBlock(AsmBlock::Procedure);
+	//Push block
+	PushBlock(block);
+}
+
 //Generate Code
 void AsmFile::GenerateCode(std::stringstream &output){
 	

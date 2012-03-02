@@ -103,6 +103,9 @@ public:
 	//Create variable symbols from Identifier List Tokens
 	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> value=nullptr);
 	
+	//Function and procedures
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcSymbol(std::string ID); //Create for the current block
+	
 	/** Block Related Methods **/
 	//Block Stack
 	std::shared_ptr<AsmBlock> GetCurrentBlock(); //Current blocks
