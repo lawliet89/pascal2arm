@@ -3,12 +3,8 @@ PROGRAM HelloWorld;
 VAR
 	test: integer;
 	float: real;
-	
-	//testing, testing: integer;
-	//huh, huh, huh, huh : boolean;
 
-	//testing : unknown;
-
+//PRINT SYMBOL
 BEGIN
 	Writeln('Hello World');
 	test := 5 * 6 + 5;

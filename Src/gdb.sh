@@ -1,1 +1,1 @@
-gdb --args ./a -H -p test.pas
+gdb --args ./a -H -p -o Output/test.s test.pas

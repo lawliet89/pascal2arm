@@ -1,1 +1,1 @@
-valgrind --leak-check=full ./a test.pas
+valgrind --leak-check=full ./a -H -p -o Output/test.s test.pas

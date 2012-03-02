@@ -1,22 +1,10 @@
 #include "idList.h"
 
 //Constructors
-Token_IDList::Token_IDList(char const *StrValue):
-	Token(StrValue, _IdentifierList,true)
-{
-	list.insert(std::string(StrValue));
-}
-
-Token_IDList::Token_IDList(std::string StrValue):
-Token(StrValue, _IdentifierList,true)
-{
-	list.insert(StrValue);
-}
-
 Token_IDList::Token_IDList(std::shared_ptr<Token> token):
-Token(StrValue, _IdentifierList,true)
+Token(token->GetStrValue(), _IdentifierList,true)
 {
-	list.insert(token->GetStrValue());
+	list[token->GetStrValue()] = token;
 }
 
 Token_IDList::Token_IDList(const Token_IDList &obj):
@@ -34,13 +22,10 @@ Token_IDList Token_IDList::operator=(const Token_IDList &obj){
 }
 
 //AddID
-void Token_IDList::AddID(std::string id) throw(AsmCode){
-	std::pair< std::set<std::string>::iterator, bool> result;
-	result = list.insert(id);
+void Token_IDList::AddID(std::shared_ptr<Token> token) throw(AsmCode){
+	std::pair< std::map <std::string, std::shared_ptr<Token> >::iterator, bool> result;
+	result = list.insert(std::pair<std::string, std::shared_ptr<Token> >(token -> GetStrValue(), token));
 	if (!result.second)
 		throw SymbolExists;
-}
-
-void Token_IDList::AddID(std::shared_ptr<Token> token) throw(AsmCode){
-	return AddID(token -> GetStrValue());
+	
 }

@@ -8,6 +8,8 @@
 		VAR_ Variables or constants
 		
 		Y_ - Internal Tokens
+
+		A_ - Compiler Action
 		
 	Non Terminals are CamelCased.
 		L_ - Internal literals
@@ -173,7 +175,7 @@ IdentifierList: IdentifierList ',' Identifier
 				}
 			}
 		| Identifier {
-				$$.reset(new Token_IDList(yylval -> GetStrValue()));
+				$$.reset(new Token_IDList($1));
 				}
 		;
 
@@ -201,9 +203,7 @@ VarList:	VarList VarDeclaration
 
 VarDeclaration:	IdentifierList ':' Type '=' Expression ';'	/* Add to Data declaration? */
 		| IdentifierList ':' Type ';' {
-			
-			
-			
+			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1),std::dynamic_pointer_cast<Token_Type>($3));
 		};
 
 ProcList: ProcList ProcDeclaration

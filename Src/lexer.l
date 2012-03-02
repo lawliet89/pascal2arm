@@ -11,6 +11,7 @@
 //Because FLEX generated CPP files are in Gen/ folder, ../ is required
 #include "../compiler.h"
 #include "../utility.h"
+#include "../asm.h"
 #include "../op.h"
 #include "../define.h"
 #include "../token.h"
@@ -20,6 +21,7 @@
 extern Flags_T Flags;		//In utility.cpp
 extern YYSTYPE yylval;		//In parser.cpp (generated)
 extern int yydebug;		// IN parser.cpp
+extern AsmFile Program;	//In parser.y
 #define CurrentToken yylval
 
 //Lexer variables
@@ -132,8 +134,9 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {O}{U}{P}{U}{T} { LexerAddCharCount(); return I_OUTPUT; }
 {S}{T}{R}{I}{N}{G} { LexerAddCharCount(); return I_STRING; }
 
-
 {F}{O}{R}{W}{A}{R}{D}  {LexerAddCharCount(); return I_FORWARD; }
+
+^"//PRINT SYMBOL"$ { LexerAddCharCount(); Program.PrintSymbols(); }
 
 '{CHAR}'	|
 "#"{DIGIT}+	|

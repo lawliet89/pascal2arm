@@ -6,6 +6,7 @@
 
 extern Flags_T Flags;
 extern std::stringstream OutputString;		//op.cpp
+extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l	- DEBUG purposes
 
 /**
  * 	AsmFile
@@ -203,25 +204,42 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::GetTypeSymbol(std::string i
 	
 	return result;
 }
-/*
-//Create symbol from list
-void AsmFile::CreateVarSymbolsFromList(const Token_IDList &listToken, int PrimaryType, int SecondaryType, std::shared_ptr<Token> value) throw(AsmCode){
-	std::set<std::string> list = listToken.GetList();
-	
-	std::set<std::string>::iterator it;
+
+//Create symbol from list - outputs pedantic errors
+void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> value){
+	std::map <std::string, std::shared_ptr<Token> > list = IDList->GetList();
+	std::map <std::string, std::shared_ptr<Token> >::iterator it;
 	
 	for (it=list.begin() ; it != list.end(); it++ ){
-		Token_Var * ptr = new Token_Var(*it);
-		ptr -> SetPrimaryType(PrimaryType);
-		ptr -> SetSecondaryType(SecondaryType);
-		ptr -> SetValue(value);
-		//TODO Handle current block
-		std::shared_ptr<Symbol> sym = CreateSymbol(Symbol::Variable, *it, std::shared_ptr<Token>(dynamic_cast<Token *>(ptr)));	
-		ptr -> SetSymbol(sym);
+		std::pair<std::string, std::shared_ptr<Token> > value;
+		value = *it;
+		Token_Var * ptr = new Token_Var(value.first, type);
+		try{
+			std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, value.first, std::shared_ptr<Token>(dynamic_cast<Token *>(ptr)));	
+			ptr -> SetSymbol(sym.first);		
+			
+			if (Flags.Pedantic && sym.second == SymbolExistsInOuterBlock){
+				std::stringstream msg;
+				msg << "Variable '" << value.first << "' occludes another symbol defined in an outer scope.";
+				HandleError(msg.str().c_str(), E_GENERIC, E_WARNING, value.second -> GetLine(), value.second->GetColumn());
+			}
+		}
+		catch (AsmCode e){
+			if (e == SymbolReserved){
+				std::stringstream msg;
+				msg << "'" << value.first << "' is a reserved keyword.";
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, value.second -> GetLine(), value.second->GetColumn());
+			}
+			else if (e == SymbolExistsInCurrentBlock){
+				std::stringstream msg;
+				msg << "'" << value.first << "' has already been declared in this block.";
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, value.second -> GetLine(), value.second->GetColumn());
+			}
+		}
 	}
 		
 }
-*/
+
 //Generate Code
 void AsmFile::GenerateCode(std::stringstream &output){
 	
@@ -234,6 +252,29 @@ void AsmFile::GenerateCode(std::stringstream &output){
 	//User data variables etc.
 	//Std Libary
 	output << ReadFile(Flags.AsmStdLibPath.c_str());
+}
+
+/** Compiler Debugging Methods **/
+void AsmFile::PrintSymbols(){
+	std::cout << "Printing Symbols (" << LexerLineCount << ")\n";
+	
+	std::pair<std::shared_ptr<Symbol>, AsmCode> result;
+	std::shared_ptr<AsmBlock> working;
+	std::vector<std::shared_ptr<AsmBlock> >::reverse_iterator it;
+	
+	int depth = 0;
+	
+	for (it = BlockStack.rbegin(); it < BlockStack.rend(); it++, depth--){
+		std::cout << "Block Depth " << depth << ":\n";
+		working = *it;
+		std::map<std::string, std::shared_ptr<Symbol> > list = (*it) -> GetList();
+		std::map<std::string, std::shared_ptr<Symbol> >::iterator iterator;
+		for (iterator = list.begin(); iterator != list.end(); iterator++){
+			std::shared_ptr<Symbol> value = (*iterator).second;
+			std::cout << "\t" << value->GetID() << " - " << int(value->GetType()) << "\n";
+		}
+	}
+	std::cout << std::endl;
 }
 
 /**

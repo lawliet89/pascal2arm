@@ -2,15 +2,13 @@
 #define IdListH
 #include "../token.h"
 #include "../define.h"
-#include <set>
+#include <map>
 #include <string>
 #include <memory>
 
 class Token_IDList: public Token{
 public:
 	//OCCF
-	Token_IDList(char const *StrValue);
-	Token_IDList(std::string StrValue);
 	Token_IDList(std::shared_ptr<Token> token);
 	
 	~Token_IDList() { }
@@ -20,14 +18,13 @@ public:
 	const void * GetValue() const { return (void *) &list; }
 	const void * operator()() const { return (void *) &list; }
 	
-	const std::set <std::string> GetList() const { return list; }
+	std::map <std::string, std::shared_ptr<Token> > GetList() { return list; }
 	
-	void AddID(std::string id) throw(AsmCode);
 	void AddID(std::shared_ptr<Token> token) throw(AsmCode);
 	
 	
 protected:
-	std::set <std::string> list;		//TODO store as tokens so as to find previous declaration location?
+	std::map <std::string, std::shared_ptr<Token> > list;		//TODO store as tokens so as to find previous declaration location?
 	
 };
 

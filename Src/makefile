@@ -84,7 +84,7 @@ $(GEN_DIR)op.o: op.cpp op.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
-$(GEN_DIR)lexer.o: $(FLEX_CPP) $(BISON_HEADER) compiler.h utility.h op.h define.h token.h $(GEN_DIR)all.h
+$(GEN_DIR)lexer.o: $(FLEX_CPP) $(BISON_HEADER) compiler.h utility.h op.h define.h token.h $(GEN_DIR)all.h asm.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	

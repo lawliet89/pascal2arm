@@ -48,15 +48,10 @@ public:
 	//Assign one symbol to the list
 	void AssignSymbol(std::shared_ptr<Symbol>) throw(AsmCode);		//Assign one symbol
 	
-	//Call the function with iterator or pointers of type iterator
-	/*
-	template <typename iterator> void AssignSymbols(iterator start, iterator end){
-		SymbolList.insert(start, end);
-	}
-	*/
-	
+	//Getters
 	std::shared_ptr<Symbol> GetSymbol(std::string) throw(AsmCode);
 	AsmCode CheckSymbol(std::string) throw();
+	std::map<std::string, std::shared_ptr<Symbol> > GetList(){ return SymbolList; }
 	
 protected:
 	Type_T Type;		//Type of block & scope
@@ -96,7 +91,7 @@ public:
 	std::pair<std::shared_ptr<Symbol>, AsmCode> GetTypeSymbol(std::string id) throw(AsmCode); //Throws SymbolNotExists if not found
 	
 	//Create variable symbols from Identifier List Tokens
-	//void CreateVarSymbolsFromList(const Token_IDList &list, int PrimaryType, int SecondaryType, std::shared_ptr<Token> value=nullptr, std::shared_ptr<AsmBlock> block=nullptr) throw(AsmCode);
+	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> value=nullptr);
 	
 	/** Block Related Methods **/
 	//Block Stack
@@ -110,7 +105,10 @@ public:
 	/** Code Related Methods **/
 	//Generate Code
 	void GenerateCode(std::stringstream &output);
-		
+	
+	/** Compiler Debug Methods **/
+	void PrintSymbols();
+	
 protected:
 	//Lines
 	std::vector<std::shared_ptr<AsmLine> > CodeLines;		//Lines for normal program code

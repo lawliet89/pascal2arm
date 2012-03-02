@@ -5,35 +5,16 @@
 #include "../token.h"
 #include "../symbols.h"
 #include "../define.h"
+#include "type.h"
 
 //Forward declaration
 class AsmFile;
-
-/** Types **/
-/*
- Primary Type (mutually exclusive):
-	- Integer
-	- Real
-	- Boolean
-	- Record
-	- Enum
-	- Char
-	- String
-	- File
-	- Set
-
- Secondary Type (not mutually exclusive):
-	- Subrange
-	- Array
-	- Pointer
- * 
- */
 
 class Token_Var: public Token{
 public:
 	friend class AsmFile;
 	//OCCF
-	Token_Var(std::string id);
+	Token_Var(std::string id, std::shared_ptr<Token_Type> type);
 	Token_Var(const Token_Var &obj);
 	
 	~Token_Var() { }
@@ -48,13 +29,9 @@ public:
 	//ID
 	std::string GetID() const { return GetStrValue(); }
 	
-	//Type - TODO Use Token_Type
-	int GetPrimaryType() const{ return PrimaryType; }
-	int GetSecondaryType() const{ return SecondaryType; }
-	
-	//This is because of Pascal's Syntax
-	void SetPrimaryType(int pri){ PrimaryType = pri; }
-	void SetSecondaryType(int sec){ SecondaryType = sec; }
+	//Type
+	void SetType(std::shared_ptr<Token_Type> type){ Type = type; }
+	std::shared_ptr<Token_Type> GetType(){ return Type; }
 	
 	//Symbol
 	const Symbol* GetSymbol() const{ return Sym.get(); }
@@ -62,7 +39,7 @@ public:
 protected:
 	std::string id;
 	std::shared_ptr<Token> value;
-	int PrimaryType, SecondaryType;
+	std::shared_ptr<Token_Type> Type;
 	std::shared_ptr<Symbol> Sym;	//Associated Symbol
 	
 	//Only AsmFile can set the symbol
