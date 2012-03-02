@@ -61,6 +61,7 @@ public:
 	}
 	
 	Type_T GetType() const{ return Type; }
+	std::shared_ptr<AsmBlock> GetBlock(){ return Block; }
 	std::string GetID() const {return ID; }
 	bool IsReserved() const { return Reserved; }
 	

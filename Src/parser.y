@@ -335,6 +335,7 @@ Constant: Identifier
 
 /* Prodcedures and functions */
 FormalParamList: '(' FormalParam ')'
+				|
 		;
 
 FormalParam:  FormalParam ';' ParamDeclaration 
@@ -357,17 +358,27 @@ SubroutineBlock: Block
 		| I_FORWARD
 		;
 
-ProcDeclaration: ProcHeader ';' SubroutineBlock ';'
+ProcDeclaration: ProcHeader ';' SubroutineBlock ';'{
+				//Pop Block
+				Program.PopBlock();
+			}
 		;
 
-ProcHeader: K_PROCEDURE Identifier FormalParamList
-	;
+ProcHeader: K_PROCEDURE Identifier FormalParamList{
+			//Create token value for procedure. Create a symbol. Create a block And link accordingly
+
+			//Create block
+			std::shared_ptr<AsmBlock> block = Program.CreateBlock(AsmBlock::Procedure);
+			
+			//Push block
+			Program.PushBlock(block);
+		};
 
 FuncDeclaration: FuncHeader ';' SubroutineBlock ';'
 		;
 
 FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
-	;
+			;
 
 /* Expression */
 Expression:  Expression SimpleOp SimpleExpression

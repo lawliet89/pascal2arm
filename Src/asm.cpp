@@ -41,10 +41,12 @@ AsmFile AsmFile::operator=(const AsmFile &obj){
 }
 
 void AsmFile::CreateGlobalScope(){
-	//TODO Global scope recreation check
+	if (GlobalBlock != nullptr)
+		throw;
 	
 	//Create Global scope
 	std::shared_ptr<AsmBlock> global = CreateBlock(AsmBlock::Global);
+	GlobalBlock = global;
 	PushBlock(global);		//Set as current block
 	
 	//Create reserved symbols - TODO
@@ -93,14 +95,15 @@ void AsmFile::PopBlock(){
 	BlockStack.pop_back();
 }
 
-
-std::shared_ptr<AsmBlock> AsmFile::CreateBlock(AsmBlock::Type_T type){
-	//TODO Global scope recreation check
+//Create block
+std::shared_ptr<AsmBlock> AsmFile::CreateBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok){
 	std::vector<std::shared_ptr<AsmBlock> >::iterator it;
-	it = BlockList.begin();
 	
-	std::shared_ptr<AsmBlock> ptr(new AsmBlock(type));
-	BlockList.insert(it, ptr);
+	std::shared_ptr<AsmBlock> ptr(new AsmBlock(type,tok));
+	BlockList.push_back(ptr);
+	
+	if (type != AsmBlock::Global)
+		GetCurrentBlock()->AddChildBlock(ptr);
 	
 	return ptr;
 }
@@ -220,7 +223,7 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 			
 			if (Flags.Pedantic && sym.second == SymbolExistsInOuterBlock){
 				std::stringstream msg;
-				msg << "Variable '" << value.first << "' occludes another symbol defined in an outer scope.";
+				msg << "Variable '" << value.first << "' might occlude another symbol defined in an outer scope.";
 				HandleError(msg.str().c_str(), E_GENERIC, E_WARNING, value.second -> GetLine(), value.second->GetColumn());
 			}
 		}
@@ -255,7 +258,7 @@ void AsmFile::GenerateCode(std::stringstream &output){
 }
 
 /** Compiler Debugging Methods **/
-void AsmFile::PrintSymbols(){
+void AsmFile::PrintSymbols(){  //TODO Print type of symbol and type of variable/function etc.
 	std::cout << "Printing Symbols (" << LexerLineCount << ")\n";
 	
 	std::pair<std::shared_ptr<Symbol>, AsmCode> result;
@@ -273,6 +276,19 @@ void AsmFile::PrintSymbols(){
 			std::shared_ptr<Symbol> value = (*iterator).second;
 			std::cout << "\t" << value->GetID() << " - " << int(value->GetType()) << "\n";
 		}
+	}
+	std::cout << std::endl;
+}
+
+void AsmFile::PrintBlocks(){
+	//Print current block child blocks
+	std::shared_ptr<AsmBlock> current = GetCurrentBlock();
+	std::cout << "Current Block '" << current->GetID() << "' Type " << (int) current->GetType() << " (" << LexerLineCount << ")\n";
+	
+	std::vector<std::shared_ptr<AsmBlock> > child = current->GetChildBlocks();
+	std::vector<std::shared_ptr<AsmBlock> >::iterator it;
+	for (it = child.begin(); it < child.end(); it++){
+		std::cout << "\t'" << (*it)->GetID() << "' Type " << (int) (*it)->GetType() << "\n";
 	}
 	std::cout << std::endl;
 }
@@ -319,22 +335,36 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
  * 	AsmBlock
  * 
  * */
-AsmBlock::AsmBlock(AsmBlock::Type_T type): Type(type)
+
+int AsmBlock::count = 0;
+
+AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok)
 {
-	//...
+	if (type == Global)
+		ID = "{GLOBAL}";
+	else if (TokenAssoc != nullptr)
+		ID = TokenAssoc -> GetStrValue();
+	else{
+		std::stringstream temp;
+		temp << "block_" << count;
+		ID = temp.str();
+	}
+	
+	count++;
 }
 
 AsmBlock::AsmBlock(const AsmBlock& obj): 
-	SymbolList(obj.SymbolList), Type(obj.Type)
+	SymbolList(obj.SymbolList), Type(obj.Type), ChildBlocks(obj.ChildBlocks), TokenAssoc(obj.TokenAssoc), ID(obj.ID)
 {
-
 }
 
 AsmBlock AsmBlock::operator=(const AsmBlock &obj){
 	if (&obj != this){
 		Type = obj.Type;
 		SymbolList = obj.SymbolList;
-		//SymbolStart = obj.SymbolStart;
+		ChildBlocks = obj.ChildBlocks;
+		TokenAssoc = obj.TokenAssoc;
+		ID = obj.ID;
 	}
 	return *this;
 }

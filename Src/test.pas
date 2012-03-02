@@ -4,6 +4,15 @@ VAR
 	test: integer;
 	float: real;
 
+PROCEDURE testing;
+	VAR
+		test: boolean;
+	begin
+		test := 123;
+//PRINT SYMBOL
+//PRINT BLOCK
+	END;
+	
 //PRINT SYMBOL
 BEGIN
 	Writeln('Hello World');
@@ -16,5 +25,5 @@ BEGIN
 	float := 10e-2;
 	
 	float := -10e3
-
+//PRINT BLOCK
 END.

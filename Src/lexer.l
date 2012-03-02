@@ -137,6 +137,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {F}{O}{R}{W}{A}{R}{D}  {LexerAddCharCount(); return I_FORWARD; }
 
 ^"//PRINT SYMBOL"$ { LexerAddCharCount(); Program.PrintSymbols(); }
+^"//PRINT BLOCK"$ { LexerAddCharCount(); Program.PrintBlocks(); }
 
 '{CHAR}'	|
 "#"{DIGIT}+	|

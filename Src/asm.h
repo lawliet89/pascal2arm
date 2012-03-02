@@ -40,25 +40,35 @@ public:
 	};
 	
 	//OCCF
-	AsmBlock(Type_T type);		//TODO associate with a line
+	AsmBlock(Type_T type,std::shared_ptr<Token> tok=nullptr);		//TODO associate with a line
 	~AsmBlock(){}
 	AsmBlock (const AsmBlock &obj);
 	AsmBlock operator=(const AsmBlock &obj);
 	
 	//Assign one symbol to the list
 	void AssignSymbol(std::shared_ptr<Symbol>) throw(AsmCode);		//Assign one symbol
+	void AddChildBlock(std::shared_ptr<AsmBlock> block){ ChildBlocks.push_back(block); }
+	void AssignToken(std::shared_ptr<Token> tok){ TokenAssoc = tok; }
+	void SetID(std::string ID){ this->ID = ID; }
 	
 	//Getters
 	std::shared_ptr<Symbol> GetSymbol(std::string) throw(AsmCode);
 	AsmCode CheckSymbol(std::string) throw();
 	std::map<std::string, std::shared_ptr<Symbol> > GetList(){ return SymbolList; }
+	std::vector<std::shared_ptr<AsmBlock> > GetChildBlocks(){ return ChildBlocks; }
+	std::shared_ptr<Token> GetToken(){ return TokenAssoc; }
+	std::string GetID() const{ return ID; }
+	Type_T GetType() const{ return Type; }
 	
 protected:
 	Type_T Type;		//Type of block & scope
 	//List of symbols defined in this block
 	std::map<std::string, std::shared_ptr<Symbol> > SymbolList; 
+	std::vector<std::shared_ptr<AsmBlock> > ChildBlocks;	//List of child blocks declared in this block - this is different from BlockStack!
+	std::shared_ptr<Token> TokenAssoc;		//Associated token, if any
+	std::string ID;
 	
-
+	static int count;
 };
 
 
@@ -96,11 +106,11 @@ public:
 	/** Block Related Methods **/
 	//Block Stack
 	std::shared_ptr<AsmBlock> GetCurrentBlock(); //Current blocks
-	void PushBlock(std::shared_ptr<AsmBlock>);
-	void PopBlock();
+	void PushBlock(std::shared_ptr<AsmBlock>);		//Set current block
+	void PopBlock();								//Return from current block
 	
-	//Blocks
-	std::shared_ptr<AsmBlock> CreateBlock(AsmBlock::Type_T type);	//TODO Block name/ID
+	std::shared_ptr<AsmBlock> CreateBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok=nullptr);	//Create block
+	std::shared_ptr<AsmBlock> GetGlobalBlock(){ return GlobalBlock; }		//Get global block pointer
 	
 	/** Code Related Methods **/
 	//Generate Code
@@ -108,6 +118,7 @@ public:
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
+	void PrintBlocks();
 	
 protected:
 	//Lines
@@ -117,20 +128,14 @@ protected:
 	
 	//Storage of labels
 	//std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
-	
-	//Symbols storage
-	//std::multimap<std::string, std::shared_ptr<Symbol> > SymbolList;		//Storage of all symbols
-	//std::map<std::string, std::shared_ptr<Symbol> > TypeList;	
+
 	
 	//AsmRegister Registers;		//State of registers- used when generating code
 	
 	//Storage of blocks
 	std::vector<std::shared_ptr<AsmBlock> > BlockList; 
-	
-	//Context related - use iterators to handle removing and adding of stuff during context switch
-	//Maybe stack?
 	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
-	//std::vector<std::shared_ptr<Symbol> > SymbolStack;	
+	std::shared_ptr<AsmBlock> GlobalBlock;
 };
 
 /**
