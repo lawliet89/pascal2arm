@@ -13,6 +13,7 @@ extern std::stringstream OutputString;		//op.cpp
 
 //Constructor
 AsmFile::AsmFile(){
+	CreateGlobalScope();
 }
 
 //Destructor
@@ -23,13 +24,13 @@ AsmFile::~AsmFile(){
 AsmFile::AsmFile(const AsmFile &obj): 
 	CodeLines(obj.CodeLines),
 	DataLines(obj.DataLines),
-	FunctionLines(obj.FunctionLines)
+	FunctionLines(obj.FunctionLines)	//TODO Copy constructor
 {
 	//operator=(obj);
 }
 
 AsmFile AsmFile::operator=(const AsmFile &obj){
-	if (&obj != this){
+	if (&obj != this){		//TODO Assignment operator - make these private?
 		//Vector will do deep copying for us.
 		CodeLines = obj.CodeLines;
 		DataLines = obj.DataLines;
@@ -134,7 +135,7 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::GetSymbol(std::string id) t
 	std::pair<std::shared_ptr<Symbol>, AsmCode> result;
 	std::shared_ptr<AsmBlock> working, current;
 	std::vector<std::shared_ptr<AsmBlock> >::reverse_iterator it;
-	
+	//TODO pedantic occlusion detection
 	current = GetCurrentBlock();
 	for (it = BlockStack.rbegin(); it < BlockStack.rend(); it++){
 		working = *it;
@@ -189,15 +190,18 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateTypeSymbol(std::strin
 	id = StringToLower(id);
 	Token_Type *ptr = new Token_Type(id, pri, sec);
 	
-	std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Typename, id, std::shared_ptr<Token>(dynamic_cast<Token *>(ptr)));
+	std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Typename, id, std::shared_ptr<Token>(ptr));
 	return sym;
 }
 
-std::shared_ptr<Symbol> AsmFile::GetTypeSymbol(std::string id) throw(AsmCode){
-	//TODO Check symbol stack
+std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::GetTypeSymbol(std::string id) throw(AsmCode){
 	id = StringToLower(id);	//Case insensitive
+	std::pair<std::shared_ptr<Symbol>, AsmCode> result = GetSymbol(id);
 	
+	if (result.first -> GetType() != Symbol::Typename)
+		throw SymbolIsNotAType;
 	
+	return result;
 }
 /*
 //Create symbol from list

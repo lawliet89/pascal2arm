@@ -93,7 +93,7 @@ public:
 	
 	//Create Type symbol
 	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(AsmCode);
-	std::shared_ptr<Symbol> GetTypeSymbol(std::string id) throw(AsmCode);
+	std::pair<std::shared_ptr<Symbol>, AsmCode> GetTypeSymbol(std::string id) throw(AsmCode); //Throws SymbolNotExists if not found
 	
 	//Create variable symbols from Identifier List Tokens
 	//void CreateVarSymbolsFromList(const Token_IDList &list, int PrimaryType, int SecondaryType, std::shared_ptr<Token> value=nullptr, std::shared_ptr<AsmBlock> block=nullptr) throw(AsmCode);

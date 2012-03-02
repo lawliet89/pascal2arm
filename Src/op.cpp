@@ -79,7 +79,7 @@ void ParseArg(int argc, char **argv){
 		//Index of the option in the long_options array
 		int option_index = 0;		
 		
-		c = getopt_long (argc, argv, "Ho:",	//Change short options here!
+		c = getopt_long (argc, argv, "Hpo:",	//Change short options here!
 				 long_options, &option_index);
 		
 		if (c == -1) //getopt_long will return -1 at the end of options

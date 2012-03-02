@@ -27,6 +27,7 @@
 #include "../define.h"
 #include "../token.h"
 #include "all.h"	//All specialisations
+#include "../define.h"
 }
 
 %code{
@@ -108,8 +109,8 @@ Sentence: Program Y_EOF { CurrentToken.reset();
 /* 	| Unit	*/	/* For probable implementation? */
 	;
 
-Program: Block '.' { Program.CreateGlobalScope(); }
-	| ProgramHeader ';' Block '.' { Program.CreateGlobalScope(); }
+Program: Block '.'
+	| ProgramHeader ';' Block '.' 
 	;
 	
 /* Program Headers */
@@ -159,7 +160,7 @@ IdentifierList: IdentifierList ',' Identifier
 					dynamic_cast<Token_IDList*>($$.get()) -> AddID($3);
 				}
 				catch (AsmCode e){
-					if (e == SymbolExistsInCurrentBlock){
+					if (e == SymbolExists){
 						std::stringstream msg;
 						msg << "Identifier '" << $3 -> GetStrValue();
 						msg << "' has already been declared previously.";	
@@ -225,10 +226,10 @@ SimpleType: OrdinalType { $$ = $1; }
 	| RealType { $$ = $1; }
 	;
 
-OrdinalType: I_INTEGER	{ $$ = Program.GetTypeSymbol("integer")->GetValue(); }
-	| I_CHAR { $$ = Program.GetTypeSymbol("char")->GetValue(); }
-	| I_BOOLEAN { $$ = Program.GetTypeSymbol("boolean")->GetValue(); }
-	| EnumType { $$ = Program.GetTypeSymbol("enum")->GetValue(); } /* TODO more handling */
+OrdinalType: I_INTEGER	{ $$ = Program.GetTypeSymbol("integer").first->GetValue(); }
+	| I_CHAR { $$ = Program.GetTypeSymbol("char").first->GetValue(); }
+	| I_BOOLEAN { $$ = Program.GetTypeSymbol("boolean").first->GetValue(); }
+	| EnumType { $$ = Program.GetTypeSymbol("enum").first->GetValue(); } /* TODO more handling */
 	| SubrangeType
 	;
 
@@ -248,21 +249,24 @@ SubrangeValue: Identifier
 		| Signed_Int
 		;
 
-RealType: I_REAL { $$ = Program.GetTypeSymbol("real")->GetValue(); }
+RealType: I_REAL { $$ = Program.GetTypeSymbol("real").first->GetValue(); }
 		;
 
-StringType: I_STRING { $$ = Program.GetTypeSymbol("string")->GetValue(); }
+StringType: I_STRING { $$ = Program.GetTypeSymbol("string").first->GetValue(); }
 	| I_STRING '[' V_INT ']' //TODO
 	;
 	
 TypeIdentifier: Identifier {
 	//Possibility that type doesn't exist
 	try{
-		$$ = Program.GetTypeSymbol($1 -> GetStrValue())->GetValue(); 
+		std::pair<std::shared_ptr<Symbol>, AsmCode> result = Program.GetTypeSymbol($1 -> GetStrValue());
+		$$ = result.first->GetValue(); 
 	}
-	catch (int e){
+	catch (AsmCode e){
 		std::stringstream msg;
-		msg << "Unknown type '" << $1 -> GetStrValue() << "'.";
+		msg << "'" << $1 -> GetStrValue() << "' ";
+
+		msg << "is an unknown type.";
 		if (Flags.ShowHints)
 			msg << " Has the type been declared before?";
 		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, LexerLineCount, LexerCharCount);
