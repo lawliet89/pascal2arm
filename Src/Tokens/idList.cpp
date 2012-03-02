@@ -2,7 +2,7 @@
 
 //Constructors
 Token_IDList::Token_IDList(std::shared_ptr<Token> token):
-Token(token->GetStrValue(), _IdentifierList,true)
+Token(token->GetStrValue(), IdentifierList,true)
 {
 	list[token->GetStrValue()] = token;
 }

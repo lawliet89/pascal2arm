@@ -25,12 +25,25 @@ enum AsmCode{
  * 	- TODO move to enum
  * */
 
-#define _Signed_Int -1
-#define _Signed_Real -2
-#define _Identifier -3
-#define _Variable -4
-#define _IdentifierList -5
-#define _VarList -6
-#define _Type -7
+enum T_Type{
+	V_Character,
+	V_String,
+	V_Identifier,
+	V_Real,
+	V_Int,
+	V_Nil,
+	
+	I_True,
+	I_False,
+	
+	Signed_Int,
+	Signed_Real,
+	Identifier,
+	Variable,
+	IdentifierList,
+	VarList,
+	Type,
+	FuncProc
+};
 
 #endif

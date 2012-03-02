@@ -2,7 +2,7 @@
 #include "../define.h"
 
 Token_Type::Token_Type(std::string id, Token_Type::P_Type pri, int sec):
-	Token(StringToLower(id), _Type, true), Primary(pri), Secondary(sec)
+	Token(StringToLower(id), Type, true), Primary(pri), Secondary(sec)
 {
 	//...
 }

@@ -2,11 +2,11 @@
 extern unsigned LexerCharCount, LexerLineCount;	//lexer.l
 
 //Constructors
-Token::Token(const char *StrValue, int type, bool IsConstant): 
+Token::Token(const char *StrValue, T_Type type, bool IsConstant): 
 	StrValue(StrValue), type(type), IsConstant(IsConstant),
 	line(LexerLineCount), column(LexerCharCount)
 {}
-Token::Token(std::string StrValue, int type, bool IsConstant): 
+Token::Token(std::string StrValue, T_Type type, bool IsConstant): 
 	StrValue(StrValue), type(type), IsConstant(IsConstant),
 	line(LexerLineCount), column(LexerCharCount)
 	{}

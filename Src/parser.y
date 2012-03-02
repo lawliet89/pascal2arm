@@ -151,7 +151,7 @@ BlockProcFuncDeclaration: ProcList
 
 /* Generic Stuff */
 Identifier: V_IDENTIFIER {
-				$$.reset(new Token(yylval-> GetStrValue(), _Identifier));
+				$$.reset(new Token(yylval-> GetStrValue(), Identifier));
 			}
 	;
 
@@ -313,18 +313,18 @@ PointerType: '^' Type
 
 /* Values */
 Signed_Int: '+' V_INT {  
-			$$.reset(new Token_Int(GetValue<long>(yylval), _Signed_Int));
+			$$.reset(new Token_Int(GetValue<long>(yylval), Signed_Int));
 		}
 	| '-' V_INT { 
-			$$.reset(new Token_Int(GetValue<long>(yylval) * -1, _Signed_Int));   
+			$$.reset(new Token_Int(GetValue<long>(yylval) * -1, Signed_Int));   
 		}
 	;
 	
 Signed_Real: '+' V_REAL {
-			$$.reset(new Token_Int(GetValue<double>(yylval), _Signed_Real));
+			$$.reset(new Token_Int(GetValue<double>(yylval), Signed_Real));
 			}
 	| '-' V_REAL{
-			$$.reset(new Token_Int(GetValue<double>(yylval)*-1, _Signed_Real));
+			$$.reset(new Token_Int(GetValue<double>(yylval)*-1, Signed_Real));
 			}
 	;
 ;
@@ -446,15 +446,15 @@ IndexList: IndexList ',' Expression
 	| Expression
 	;
 
-UnsignedConstant: V_REAL	{ $$.reset(new Token_Real(GetValue<double>(yylval), (int) V_REAL)); }
-		| V_INT		{ $$.reset(new Token_Int(GetValue<int>(yylval), (int) V_INT)); }
-		| V_STRING	{ $$.reset(new Token(yylval -> GetStrValue(), (int) V_STRING)); }
-		| V_CHAR	{ $$.reset(new Token(yylval -> GetStrValue(), (int) V_CHAR)); }
+UnsignedConstant: V_REAL	{ $$.reset(new Token_Real(GetValue<double>(yylval), V_Real)); }
+		| V_INT		{ $$.reset(new Token_Int(GetValue<int>(yylval), V_Int)); }
+		| V_STRING	{ $$.reset(new Token(yylval -> GetStrValue(), V_String)); }
+		| V_CHAR	{ $$.reset(new Token(yylval -> GetStrValue(), V_Character)); }
 		/* | Identifier */
-		| V_NIL		{ $$.reset(new Token("NIL", (int) V_NIL)); }
-		| I_TRUE	{ $$.reset(new Token("TRUE", (int) I_TRUE)); }
-		| I_FALSE	{ $$.reset(new Token("FALSE", (int) I_FALSE)); }
-		| I_MAXINT	{ $$.reset(new Token_Int(2147483647, (int) V_INT)); }
+		| V_NIL		{ $$.reset(new Token("NIL", V_Nil)); }
+		| I_TRUE	{ $$.reset(new Token("TRUE", I_True)); }
+		| I_FALSE	{ $$.reset(new Token("FALSE", I_False)); }
+		| I_MAXINT	{ $$.reset(new Token_Int(2147483647, V_Int)); }
 		;
 SignedConstant: Signed_Int
 		| Signed_Real

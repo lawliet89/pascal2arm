@@ -14,6 +14,7 @@
 //Forward declaration
 class AsmFile;	//Declared in asm.h - forward delcared so that we can define friend relations
 class AsmBlock;
+class AsmLabel;
 class Symbol; //Symbols definition
 
 /*
@@ -52,18 +53,16 @@ public:
 	}
 	*/
 	
-	void SetToken(std::shared_ptr<Token> token){
-		Value = token;
-	}
+	void SetToken(std::shared_ptr<Token> token){ Value = token; }
+	void SetBlock(std::shared_ptr<AsmBlock> block){ Block = block;	}
+	void SetLabel(std::shared_ptr<AsmLabel> Label){ this -> Label = Label; }
 	
-	void SetBlock(std::shared_ptr<AsmBlock> block){
-		Block = block;
-	}
-	
+	//Getters
 	Type_T GetType() const{ return Type; }
 	std::shared_ptr<AsmBlock> GetBlock(){ return Block; }
 	std::string GetID() const {return ID; }
 	bool IsReserved() const { return Reserved; }
+	std::shared_ptr<AsmLabel> GetLabel(){ return Label; }
 	
 protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	/** Methods **/
@@ -79,6 +78,7 @@ protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	std::shared_ptr<Token> Value;	//Token storing the value
 	bool Reserved;		//Reserved symbol
 	std::shared_ptr<AsmBlock> Block;	//Block in which symbol was defined
+	std::shared_ptr<AsmLabel> Label;	//Associated label, if any
 };
 
 #endif

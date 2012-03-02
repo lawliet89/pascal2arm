@@ -5,9 +5,9 @@
 class Token_Int: public Token{
 public:
 	//OCCF
-	Token_Int(const char *StrValue, int type, bool IsConstant=true);
-	Token_Int(std::string StrValue, int type, bool IsConstant=true);
-	Token_Int(int value, int type);
+	Token_Int(const char *StrValue, T_Type type, bool IsConstant=true);
+	Token_Int(std::string StrValue, T_Type type, bool IsConstant=true);
+	Token_Int(int value, T_Type type);
 	~Token_Int() { }
 	Token_Int(const Token_Int &obj);
 	Token_Int operator=(const Token_Int &obj);

@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include "utility.h"
+#include "define.h"
 
 //Forward declaration
 class Symbol;
@@ -17,8 +18,8 @@ public:
 	//OCCF
 	
 	//Constructor
-	Token(const char *StrValue, int type, bool IsConstant=true);	//Type is the token type as defined by parser.h (generated from parser.y)
-	Token(std::string StrValue, int type, bool IsConstant=true);	
+	Token(const char *StrValue, T_Type type, bool IsConstant=true);	//Type is the token type as defined by parser.h (generated from parser.y)
+	Token(std::string StrValue, T_Type type, bool IsConstant=true);	
 	virtual ~Token(){ }				//Destructor
 	Token(const Token &obj);		//Copy Constructor
 	virtual Token operator=(const Token &obj);	//Assignment operator
@@ -26,7 +27,7 @@ public:
 	//Virtual methods
 	virtual std::string GetStrValue() const { return StrValue; }
 	virtual const char* GetCStrValue() const { return StrValue.c_str(); }
-	int GetType() const { return type; }
+	T_Type GetType() const { return type; }
 	
 	//Return type is set to void * so that derived classes can override this
 	//Use the utility function DereferenceVoidPtr<T> to dereference this
@@ -42,7 +43,7 @@ public:
 	unsigned GetColumn() const { return column; }
 protected:
 	std::string StrValue;
-	int type;
+	T_Type type;
 	std::shared_ptr<Symbol> Sym;	//Associated symbol, if any
 	bool IsConstant;		//Is this token a constant?
 	

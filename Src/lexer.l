@@ -143,20 +143,20 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 "#"{DIGIT}+	|
 "^"{LETTER}	{LexerAddCharCount(); 
 			
-			CurrentToken.reset(new Token(yytext, (int) V_CHAR));
+			CurrentToken.reset(new Token(yytext,  V_Character));
 			return V_CHAR; 
 			}
 
 {STRING}	{LexerAddCharCount(); 
 			
-			CurrentToken.reset(new Token(yytext,(int) V_STRING));
+			CurrentToken.reset(new Token(yytext, V_String));
 			return V_STRING; 
 			}
 		
 {IDENTIFIER}  { //Identifier
 			LexerAddCharCount(); 
 			
-			CurrentToken.reset(new Token(yytext,(int) V_IDENTIFIER));
+			CurrentToken.reset(new Token(yytext,V_Identifier));
 			return V_IDENTIFIER; }
 
 
@@ -166,7 +166,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {FLOAT}{E}{SIGNED_NUMBER} {
 				LexerAddCharCount(); 
 				
-				CurrentToken.reset(new Token_Real(yytext, (int) V_REAL));
+				CurrentToken.reset(new Token_Real(yytext, V_Real));
 				return V_REAL;
 			}
 
@@ -176,7 +176,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 			LexerAddCharCount(); 
 			
 			
-			CurrentToken.reset(new Token_Int(yytext,(int) V_INT)); 
+			CurrentToken.reset(new Token_Int(yytext, V_Int)); 
 			return V_INT;
 		}
 	
