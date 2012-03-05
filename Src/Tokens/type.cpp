@@ -23,3 +23,14 @@ Token_Type Token_Type::operator=(const Token_Type &obj){
 	
 	return *this;
 }
+
+std::string Token_Type::AsmDefaultValue(){
+	switch(Primary){
+		case Integer:
+			return "0";
+			break;
+			
+		default:
+			return "";
+	}
+}

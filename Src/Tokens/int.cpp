@@ -26,3 +26,7 @@ Token_Int Token_Int::operator=(const Token_Int &obj){
 	}
 	return *this;
 }
+
+std::string Token_Int::AsmValue(){
+	return ToString<int>(value);
+}

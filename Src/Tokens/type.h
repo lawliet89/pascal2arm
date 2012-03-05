@@ -63,6 +63,11 @@ public:
 	void SetSize(int size) { this -> size = size; }
 	int GetSize() const { return size; }
 	
+	//Default value for Type
+	virtual std::string AsmValue() { return AsmDefaultValue(); }
+	virtual std::string AsmDefaultValue();
+
+
 protected:
 	P_Type Primary;
 	int Secondary;

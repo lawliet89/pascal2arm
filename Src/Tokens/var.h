@@ -38,6 +38,9 @@ public:
 	
 	bool GetTemp() const{ return Temp; }
 	void SetTemp(bool val) { Temp = val;}
+
+	virtual std::string AsmValue(){ return value -> AsmValue(); }
+	virtual std::string AsmDefaultValue(){ return Type -> AsmDefaultValue(); }
 	
 protected:
 	std::string id;

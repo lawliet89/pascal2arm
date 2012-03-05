@@ -96,12 +96,16 @@ public:
 	AsmCode CheckSymbol(std::string id);
 	std::pair<std::shared_ptr<Symbol>, AsmCode> GetSymbol(std::string id) throw(AsmCode);	//Throws SymbolNotExists if not found
 	
+	/** Variables **/
 	//Create Type symbol
 	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(AsmCode);
 	std::pair<std::shared_ptr<Symbol>, AsmCode> GetTypeSymbol(std::string id) throw(AsmCode); //Throws SymbolNotExists if not found
 	
-	//Create variable symbols from Identifier List Tokens
-	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> value=nullptr);
+	//Create permanent variable symbols from Identifier List Tokens
+	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> InitialValue=nullptr);
+	
+	//Create temporary variables for complex expressions
+	void CreateTempVarSymbol();	//TODO
 	
 	//Function and procedures
 	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcSymbol(std::string ID); //Create for the current block
@@ -118,6 +122,9 @@ public:
 	/** Code Related Methods **/
 	//Generate Code
 	void GenerateCode(std::stringstream &output);
+	
+	/** Line Related Methods **/
+	std::shared_ptr<AsmLine> CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value);	//Pass method with a completed label
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
@@ -164,7 +171,8 @@ public:
 		Floating,
 		Data,			//Load store etc
 		Branch,
-		Interrupt		//SWI etc.
+		Interrupt,//SWI etc.
+		CommentLine		//Purely comment
 	};
 	
 	/* OpCode Definition */
@@ -226,6 +234,7 @@ public:
 	void SetRd(std::shared_ptr<AsmOp> op){ Rd = op; }
 	void SetRm(std::shared_ptr<AsmOp> op){ Rm = op; }
 	void SetRn(std::shared_ptr<AsmOp> op){ Rn = op; }
+	void SetComment(std::string val){ Comment = val; }
 	
 	//Getters
 	OpCode_T GetOpCode() const { return OpCode; }
@@ -236,6 +245,7 @@ public:
 	std::shared_ptr<AsmOp> GetRd(){ return Rd; }
 	std::shared_ptr<AsmOp> GetRm(){ return Rm; }
 	std::shared_ptr<AsmOp> GetRn(){ return Rn; }
+	std::string GetComment() const{ return Comment; }
 	
 protected:
 	/** Data Members **/
@@ -247,6 +257,8 @@ protected:
 	std::shared_ptr<AsmLabel> Label;
 	
 	std::shared_ptr<AsmOp> Rd, Rm, Rn;
+	
+	std::string Comment;	
 	
 	/** Constructor Protected **/
 	AsmLine(OpType_T Type, OpCode_T OpCode);
@@ -261,6 +273,7 @@ protected:
 class AsmOp{
 public:
 	friend class AsmLine;
+	friend class AsmFile;
 
 	//Register
 	//Immediate
@@ -307,6 +320,7 @@ public:
 	void SetSymbol(std::shared_ptr<Symbol> val) { sym = val; }
 	void SetOffsetAddressOp(std::shared_ptr<AsmOp> val) { OffsetAddressOp = val; }
 	void SetScaleOp(std::shared_ptr<AsmOp> val) { ScaleOp = val; }
+	void SetImmediate(std::string val) { ImmediateValue = val; }
 	
 	//Getters
 	Type_T GetType() const { return Type; }
@@ -316,6 +330,7 @@ public:
 	std::shared_ptr<Symbol> GetSymbol() { return sym; }
 	std::shared_ptr<AsmOp> GetOffsetAddressOp() { return OffsetAddressOp; }
 	std::shared_ptr<AsmOp> GetScaleOp() { return ScaleOp; }
+	std::string GetImmediate() const { return ImmediateValue; }
 	
 protected:
 	Type_T Type;
@@ -326,6 +341,7 @@ protected:
 	
 	std::shared_ptr<AsmOp> OffsetAddressOp;		//If the type is OffsetAddr -initialise to nullptr
 	std::shared_ptr<AsmOp> ScaleOp;
+	std::string ImmediateValue;			//Value of immediate
 };
 
 /** AsmLabel
@@ -333,9 +349,25 @@ protected:
 class AsmLabel{
 public:
 	friend class AsmFile;
+	
+	AsmLabel(const AsmLabel &obj);
+	~AsmLabel(){}
+	AsmLabel operator=(const AsmLabel &obj);
+	
+	void SetSymbol(std::shared_ptr<Symbol> val) { sym = val; }
+	void SetLine(std::shared_ptr<AsmLine> val) { Line = val; }
+	void SetID(std::string val) { ID = val; }
+	
+	std::shared_ptr<Symbol> GetSymbol() { return sym; }
+	std::shared_ptr<AsmLine> GetLine() { return Line; }
+	std::string GetID() const { return ID; }
+	
 protected:
 	std::shared_ptr<Symbol> sym;	//Symbol associated, if any
 	std::shared_ptr<AsmLine> Line;	//Associated Line
+	std::string ID;		//Label ID
+	
+	AsmLabel(std::string ID, std::shared_ptr<Symbol> sym=nullptr, std::shared_ptr<AsmLine> Line=nullptr);
 };
 
 /** AsmRegister

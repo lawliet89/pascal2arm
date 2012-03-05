@@ -1,4 +1,6 @@
 #include "token.h"
+#include <sstream>
+
 extern unsigned LexerCharCount, LexerLineCount;	//lexer.l
 
 //Constructors
@@ -28,4 +30,20 @@ Token Token::operator=(const Token &obj){
 	}
 	
 	return *this;
+}
+
+std::string Token::AsmDefaultValue(){
+	int i = GetSize();
+	int n = i/4;
+	if (i % 4 != 0)
+		n++;
+	std::stringstream result;
+	result << "\"";
+	
+	for (int j = 0; j < n; j++){
+		result << '\0' << '\0' << '\0' << '\0';
+	}
+	result << "\"";
+	return result.str();
+	
 }

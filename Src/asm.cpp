@@ -209,7 +209,7 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::GetTypeSymbol(std::string i
 }
 
 //Create symbol from list - outputs pedantic errors
-void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> value){
+void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> InitialValue){
 	std::map <std::string, std::shared_ptr<Token> > list = IDList->GetList();
 	std::map <std::string, std::shared_ptr<Token> >::iterator it;
 	
@@ -226,6 +226,14 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 				msg << "Variable '" << value.first << "' might occlude another symbol defined in an outer scope.";
 				HandleError(msg.str().c_str(), E_GENERIC, E_WARNING, value.second -> GetLine(), value.second->GetColumn());
 			}
+			
+			//Create the data lines
+			std::string val;
+			if (InitialValue == nullptr)
+				val = type -> AsmDefaultValue();
+			else
+				val = InitialValue -> AsmValue();
+			
 		}
 		catch (AsmCode e){
 			if (e == SymbolReserved){
@@ -267,6 +275,17 @@ void AsmFile::GenerateCode(std::stringstream &output){
 	//Std Libary
 	output << ReadFile(Flags.AsmStdLibPath.c_str());
 }
+
+/** Line Related Methods **/
+std::shared_ptr<AsmLine> AsmFile::CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value)
+{
+	std::shared_ptr<AsmLine> ptr(new AsmLine(AsmLine::Directive, AsmLine::DCD));
+	ptr -> SetLabel(Label);
+	
+	std::shared_ptr<AsmOp> op(new AsmOp(AsmOp::Immediate, AsmOp::Destination));
+	
+}
+
 
 /** Compiler Debugging Methods **/
 void AsmFile::PrintSymbols(){  //TODO Print type of symbol and type of variable/function etc.
@@ -319,7 +338,8 @@ AsmLine::AsmLine(const AsmLine &obj):
 	Qualifier(obj.Qualifier),
 	Type(obj.Type),
 	Label(obj.Label),
-	Rd(obj.Rd), Rm(obj.Rm), Rn(obj.Rn)
+	Rd(obj.Rd), Rm(obj.Rm), Rn(obj.Rn),
+	Comment(obj.Comment)
 {
 	//...
 }
@@ -334,6 +354,7 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
 		Rd = obj.Rd;
 		Rm = obj.Rm;
 		Rn = obj.Rn;
+		Comment = obj.Comment;
 	}
 	return *this;
 }
@@ -348,7 +369,8 @@ AsmOp::AsmOp(Type_T Type, Position_T Position):
 
 AsmOp::AsmOp(const AsmOp &obj):
 	Type(obj.Type), Position(obj.Position), Scale(obj.Scale), sym(obj.sym), 
-	OffsetAddressOp(obj.OffsetAddressOp), ScaleOp(obj.ScaleOp)
+	OffsetAddressOp(obj.OffsetAddressOp), ScaleOp(obj.ScaleOp),
+	ImmediateValue(obj.ImmediateValue)
 {}
 
 AsmOp AsmOp::operator=(const AsmOp& obj)
@@ -360,6 +382,7 @@ AsmOp AsmOp::operator=(const AsmOp& obj)
 		sym = obj.sym;
 		OffsetAddressOp = obj.OffsetAddressOp;
 		ScaleOp = obj.ScaleOp;
+		ImmediateValue = obj.ImmediateValue;
 	}
 	
 	return *this;
@@ -368,6 +391,29 @@ AsmOp AsmOp::operator=(const AsmOp& obj)
 /**
  * 	AsmLabels
  * */
+
+AsmLabel::AsmLabel(std::string ID, std::shared_ptr<Symbol> sym, std::shared_ptr<AsmLine> Line):
+	sym(sym), Line(Line), ID(ID)
+	{}
+
+AsmLabel::AsmLabel(const AsmLabel& obj):
+	sym(obj.sym), Line(obj.Line), ID(obj.ID)
+{
+
+}
+
+AsmLabel AsmLabel::operator=(const AsmLabel& obj)
+{
+	if (this != &obj){
+		sym = obj.sym;
+		Line = obj.Line;
+		ID = obj.ID;
+	}
+	
+	return *this;
+}
+
+
 
 /**
  * 	AsmBlock

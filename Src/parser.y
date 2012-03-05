@@ -365,6 +365,8 @@ ProcDeclaration: ProcHeader ';' SubroutineBlock ';'{
 		;
 
 ProcHeader: K_PROCEDURE Identifier FormalParamList{
+			//Create the token for the procedure
+			//TODO
 			Program.CreateProcSymbol($2 -> GetStrValue());
 		};
 

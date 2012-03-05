@@ -1,6 +1,8 @@
 #ifndef TokenH
 #define TokenH
 
+#define WORD_SIZE 4
+
 #include <string>
 #include <memory>
 #include "utility.h"
@@ -41,6 +43,15 @@ public:
 	bool CheckIsConstant() const { return IsConstant; }
 	unsigned GetLine() const { return line; }
 	unsigned GetColumn() const { return column; }
+	
+	/** For Assembly Use - Immediates for ASM output **/
+	//If the size is > 1 word, make sure that the default value reflects this
+	virtual std::string AsmDefaultValue();
+	virtual std::string AsmValue(){ return "\"" + GetStrValue() + "\"";  }
+	
+	
+	virtual int GetSize(){ return StrValue.length(); }
+	
 protected:
 	std::string StrValue;
 	T_Type type;
