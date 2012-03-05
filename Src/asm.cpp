@@ -174,7 +174,7 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateSymbol(Symbol::Type_T
 		throw SymbolExistsInCurrentBlock;
 	
 	std::shared_ptr<Symbol> ptr( new Symbol (type, id, value, current));
-	current -> AssignSymbol(ptr);
+	current -> SetSymbol(ptr);
 	
 	result.first = ptr;
 	
@@ -342,6 +342,29 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
  * 	AsmOp
  * */
 
+AsmOp::AsmOp(Type_T Type, Position_T Position):
+	Type(Type), Position(Position), Scale(AsmOp::NoScale), sym(nullptr), OffsetAddressOp(nullptr), ScaleOp(nullptr)
+{}
+
+AsmOp::AsmOp(const AsmOp &obj):
+	Type(obj.Type), Position(obj.Position), Scale(obj.Scale), sym(obj.sym), 
+	OffsetAddressOp(obj.OffsetAddressOp), ScaleOp(obj.ScaleOp)
+{}
+
+AsmOp AsmOp::operator=(const AsmOp& obj)
+{
+	if (this != &obj){
+		Type = obj.Type;
+		Position = obj.Position;
+		Scale = obj.Scale;
+		sym = obj.sym;
+		OffsetAddressOp = obj.OffsetAddressOp;
+		ScaleOp = obj.ScaleOp;
+	}
+	
+	return *this;
+}
+
 /**
  * 	AsmLabels
  * */
@@ -384,7 +407,7 @@ AsmBlock AsmBlock::operator=(const AsmBlock &obj){
 	return *this;
 }
 
-void AsmBlock::AssignSymbol(std::shared_ptr<Symbol> sym) throw(AsmCode){
+void AsmBlock::SetSymbol(std::shared_ptr<Symbol> sym) throw(AsmCode){
 	SymbolList.insert(std::pair<std::string, std::shared_ptr<Symbol> >(sym -> GetID(), sym));
 }
 

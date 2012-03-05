@@ -46,9 +46,9 @@ public:
 	AsmBlock operator=(const AsmBlock &obj);
 	
 	//Assign one symbol to the list
-	void AssignSymbol(std::shared_ptr<Symbol>) throw(AsmCode);		//Assign one symbol
+	void SetSymbol(std::shared_ptr<Symbol>) throw(AsmCode);		//Set one symbol
 	void AddChildBlock(std::shared_ptr<AsmBlock> block){ ChildBlocks.push_back(block); }
-	void AssignToken(std::shared_ptr<Token> tok){ TokenAssoc = tok; }
+	void SetToken(std::shared_ptr<Token> tok){ TokenAssoc = tok; }
 	void SetID(std::string ID){ this->ID = ID; }
 	
 	//Getters
@@ -130,7 +130,7 @@ protected:
 	std::vector<std::shared_ptr<AsmLine> > FunctionLines;	//Lines for procedures and functions
 	
 	//Storage of labels
-	//std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
+	std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
 
 	
 	//AsmRegister Registers;		//State of registers- used when generating code
@@ -220,12 +220,12 @@ public:
 	AsmLine operator=(const AsmLine &obj);
 	
 	//Setter
-	void AssignCC(CC_T cc){ Condition = cc; }
-	void AssignQualifier (Qualifier_T Qualifier) { this -> Qualifier = Qualifier; }
-	void AssignLabel(std::shared_ptr<AsmLabel> Label){ this -> Label = Label; }
-	void AssignRd(std::shared_ptr<AsmOp> op){ Rd = op; }
-	void AssignRm(std::shared_ptr<AsmOp> op){ Rm = op; }
-	void AssignRn(std::shared_ptr<AsmOp> op){ Rn = op; }
+	void SetCC(CC_T cc){ Condition = cc; }
+	void SetQualifier (Qualifier_T Qualifier) { this -> Qualifier = Qualifier; }
+	void SetLabel(std::shared_ptr<AsmLabel> Label){ this -> Label = Label; }
+	void SetRd(std::shared_ptr<AsmOp> op){ Rd = op; }
+	void SetRm(std::shared_ptr<AsmOp> op){ Rm = op; }
+	void SetRn(std::shared_ptr<AsmOp> op){ Rn = op; }
 	
 	//Getters
 	OpCode_T GetOpCode() const { return OpCode; }
@@ -282,18 +282,50 @@ public:
 	 * 
 	 * */
 	
-	enum Type_T{
+	enum Position_T{
 		Destination, OP1, OP2
 	};
 	
-	AsmOp();
+	enum Type_T{
+		Register, Immediate, Address, OffsetAddr
+		//Note Complicated shit like LDR R0, [R1,R2,LSL #2]!
+	};
+	
+	enum Scale_T{
+		NoScale,
+		LSL, LSR, ASR, ROR, RRX
+	};
+	
+	
+	AsmOp(Type_T Type, Position_T Position);
 	~AsmOp() { }
 	AsmOp(const AsmOp &obj);
+	AsmOp operator=(const AsmOp &obj);
+	
+	void SetScale(Scale_T scale){ Scale = scale; }
+	void SetWriteBack(bool val) { WriteBack = val;}
+	void SetSymbol(std::shared_ptr<Symbol> val) { sym = val; }
+	void SetOffsetAddressOp(std::shared_ptr<AsmOp> val) { OffsetAddressOp = val; }
+	void SetScaleOp(std::shared_ptr<AsmOp> val) { ScaleOp = val; }
+	
+	//Getters
+	Type_T GetType() const { return Type; }
+	Position_T GetPosition() const { return Position; }
+	Scale_T GetScale() const { return Scale; }
+	bool GetWriteBack() const { return WriteBack; }
+	std::shared_ptr<Symbol> GetSymbol() { return sym; }
+	std::shared_ptr<AsmOp> GetOffsetAddressOp() { return OffsetAddressOp; }
+	std::shared_ptr<AsmOp> GetScaleOp() { return ScaleOp; }
 	
 protected:
 	Type_T Type;
+	Position_T Position;
+	Scale_T Scale;
+	bool WriteBack;			//The ! thing
 	std::shared_ptr<Symbol> sym;	//Symbol associated, if any
 	
+	std::shared_ptr<AsmOp> OffsetAddressOp;		//If the type is OffsetAddr -initialise to nullptr
+	std::shared_ptr<AsmOp> ScaleOp;
 };
 
 /** AsmLabel
@@ -302,7 +334,7 @@ class AsmLabel{
 public:
 	friend class AsmFile;
 protected:
-	std::shared_ptr<Symbol> Sym;	//Symbol associated, if any
+	std::shared_ptr<Symbol> sym;	//Symbol associated, if any
 	std::shared_ptr<AsmLine> Line;	//Associated Line
 };
 

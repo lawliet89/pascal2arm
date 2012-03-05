@@ -14,7 +14,7 @@ class Token_Var: public Token{
 public:
 	friend class AsmFile;
 	//OCCF
-	Token_Var(std::string id, std::shared_ptr<Token_Type> type);
+	Token_Var(std::string id, std::shared_ptr<Token_Type> type, bool temp=false);
 	Token_Var(const Token_Var &obj);
 	
 	~Token_Var() { }
@@ -36,11 +36,15 @@ public:
 	//Symbol
 	const Symbol* GetSymbol() const{ return Sym.get(); }
 	
+	bool GetTemp() const{ return Temp; }
+	void SetTemp(bool val) { Temp = val;}
+	
 protected:
 	std::string id;
 	std::shared_ptr<Token> value;
 	std::shared_ptr<Token_Type> Type;
 	std::shared_ptr<Symbol> Sym;	//Associated Symbol
+	bool Temp;			//Whether a variable is temp
 	
 	//Only AsmFile can set the symbol
 	void SetSymbol(std::shared_ptr<Symbol> ptr){
