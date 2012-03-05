@@ -37,10 +37,10 @@ public:
 	virtual const void * GetValue() const { return (void *) &StrValue; }
 	virtual const void * operator()() const { return (void *) &StrValue; }
 	
-	void AssignSymbol(std::shared_ptr<Symbol> symbol){ Sym = symbol; }
+	void SetSymbol(std::shared_ptr<Symbol> symbol){ Sym = symbol; }
 	std::shared_ptr<Symbol> GetSymbol(){ return Sym; }
 	
-	bool CheckIsConstant() const { return IsConstant; }
+	bool GetIsConstant() const { return IsConstant; }
 	unsigned GetLine() const { return line; }
 	unsigned GetColumn() const { return column; }
 	
@@ -54,7 +54,7 @@ public:
 	
 protected:
 	std::string StrValue;
-	T_Type type;
+	T_Type type;			//Base Type of token
 	std::shared_ptr<Symbol> Sym;	//Associated symbol, if any
 	bool IsConstant;		//Is this token a constant?
 	

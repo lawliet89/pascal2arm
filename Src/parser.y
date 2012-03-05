@@ -313,10 +313,10 @@ PointerType: '^' Type
 
 /* Values */
 Signed_Int: '+' V_INT {  
-			$$.reset(new Token_Int(GetValue<long>(yylval), Signed_Int));
+			$$.reset(new Token_Int(GetValue<int>(yylval), Signed_Int));
 		}
 	| '-' V_INT { 
-			$$.reset(new Token_Int(GetValue<long>(yylval) * -1, Signed_Int));   
+			$$.reset(new Token_Int(GetValue<int>(yylval) * -1, Signed_Int));   
 		}
 	;
 	
@@ -378,7 +378,8 @@ FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
 
 /* Expression */
 Expression:  Expression SimpleOp SimpleExpression
-	| SimpleExpression;
+	| SimpleExpression
+	;
 
 SimpleOp: '*'
 	| '<'
@@ -411,18 +412,96 @@ FactorOP: '*'
 	| OP_AND
 	;
 
-/* Factor can be shifted into Identifier in multiple paths. Need to optimise */
+/* Factor can be shifted into Identifier in multiple paths. Such paths have been commented out */
 Factor: '(' Expression ')'
-	| VarRef
-	| FuncCall
-	| UnsignedConstant
-	| OP_NOT Factor
-	| SignedConstant
-	| SetConstructors
+	| VarRef		//TODO
+	| FuncCall		//TODO
+	| UnsignedConstant { 
+				std::shared_ptr<Token_Type> FactorType;
+				//Determine type
+				switch($1 -> GetType()){
+					case V_Character:
+						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("char").first->GetValue());
+						break;
+					case V_Int:
+						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("integer").first->GetValue());
+						break;
+					case V_Real:
+						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("real").first->GetValue());
+						break;
+					case V_Boolean:
+						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("boolean").first->GetValue());
+						break;	
+					case V_String:
+						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("string").first->GetValue());
+						break;	
+					//V_Nil
+					default:
+						FactorType = nullptr;	//Recipe for segmentation fault
+				}
+				
+				$$.reset(new Token_Factor(Token_Factor::Constant, $1, FactorType)); 
+			}
+	| OP_NOT Factor { $$ = $2; dynamic_cast<Token_Factor *>($$.get())->SetNegate(true); }
+	| SignedConstant{ 
+				std::shared_ptr<Token_Type> FactorType;
+				//Determine type
+				switch($1 -> GetType()){
+					case V_Int:
+						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("integer").first->GetValue());
+						break;
+					case V_Real:
+						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("real").first->GetValue());
+						break;
+					default:
+						FactorType = nullptr;	//Recipe for segmentation fault
+				}
+				
+				$$.reset(new Token_Factor(Token_Factor::Constant, $1, FactorType)); 
+			}
+	| SetConstructors		//TODO
+	| Identifier	{ 
+				//Check for symbols with identifier and then set the type of the factor accordingly
+				try{
+					std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
+					//Type and form of symbol
+					Symbol::Type_T SymType = sym.first -> GetType();
+					Token_Factor::Form_T Form;
+					std::shared_ptr<Token_Type> FactorType;
+					
+					switch (SymType){
+						case Symbol::Function:
+						case Symbol::Procedure:		//For the purpose of this, we regard func and proc as the same. We will do type check later
+							Form = Token_Factor::FuncCall; 
+							FactorType = sym.first->GetTokenDerived<Token_Func>()->GetReturnType();
+							break;
+						case Symbol::Constant:		//Ditto
+						case Symbol::Variable:
+							Form = Token_Factor::VarRef; 
+							FactorType = sym.first->GetTokenDerived<Token_Var>()->GetVarType();
+							break;
+						case Symbol::Typename:	//Shouldn't happen
+							std::stringstream msg;
+							msg << "Unexpected type '" << $1 -> GetStrValue() << "'.";
+							HandleError(msg.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
+							YYERROR;
+					}
+					$$.reset(new Token_Factor(Form, $1, FactorType));
+				}
+				catch (AsmCode e){
+					if (e == SymbolNotExists){
+						std::stringstream msg;
+						msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, LexerLineCount, LexerCharCount);
+					}
+					YYERROR;
+				}
+				
+			}
 	/* Set, value typecast, address factor ?? */
 	;
 VarRef: SimpleVarReference VarQualifier
-	| SimpleVarReference
+	/*| SimpleVarReference */
 	;
 
 SimpleVarReference: Identifier
@@ -446,17 +525,19 @@ UnsignedConstant: V_REAL	{ $$.reset(new Token_Real(GetValue<double>(yylval), V_R
 		| V_INT		{ $$.reset(new Token_Int(GetValue<int>(yylval), V_Int)); }
 		| V_STRING	{ $$.reset(new Token(yylval -> GetStrValue(), V_String)); }
 		| V_CHAR	{ $$.reset(new Token(yylval -> GetStrValue(), V_Character)); }
-		/* | Identifier */
+		/*| Identifier	{ $$.reset(new Token(yylval -> GetStrValue(), V_Identifier)); }*/
 		| V_NIL		{ $$.reset(new Token("NIL", V_Nil)); }
-		| I_TRUE	{ $$.reset(new Token("TRUE", I_True)); }
-		| I_FALSE	{ $$.reset(new Token("FALSE", I_False)); }
+		| I_TRUE	{ $$.reset(new Token_Int(1, V_Boolean)); }
+		| I_FALSE	{ $$.reset(new Token_Int(0, V_Boolean)); }
 		| I_MAXINT	{ $$.reset(new Token_Int(2147483647, V_Int)); }
 		;
-SignedConstant: Signed_Int
-		| Signed_Real
+SignedConstant: Signed_Int { $$ = $1; }
+		| Signed_Real { $$ = $1; }
 		;
 		
-FuncCall: Identifier '(' ActualParamList ')'
+FuncCall: Identifier '(' ActualParamList ')' {
+				//TODO FuncCall Token
+			}
 	/* | Identifier */
 	;
 
@@ -482,6 +563,7 @@ CompoundStatement: K_BEGIN StatementList K_END
 		;
 
 StatementList:   StatementList ';' Statement
+		| StatementList ';' error { HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		| Statement
 		;
 
@@ -500,7 +582,24 @@ SimpleStatement: AssignmentStatement
 		| GotoStatement
 		;
 
-AssignmentStatement: Identifier OP_ASSIGNMENT Expression
+AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
+			//Check for Identifier
+			//And Type: TODO
+			try{
+				std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
+				//$$ = $1;
+				//$$ -> SetSymbol(sym.first);
+			}
+			catch (AsmCode e){
+				if (e == SymbolNotExists){
+					std::stringstream msg;
+					msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+				}
+				YYERROR;
+			}
+				
+		}
 		/* += -= /= *= */
 		;
 
@@ -565,9 +664,9 @@ WhileStatement: K_WHILE Expression K_DO Statement
 
 //If this is called then we have encountered an unknown parse error
 void yyerror(const char * msg){
-	std::stringstream text;
-	text << "Unknown parse error: " << msg;
+	//std::stringstream text;
+	//text << "Unknown parse error: " << msg;
 	//text << "(" << yylloc.first_line << "-" << yylloc.last_line << ":" << yylloc.first_column;
 	//text << "-" << yylloc.last_column << ")";
-	HandleError(text.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
+	HandleError(msg, E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
 }

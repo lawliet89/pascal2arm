@@ -36,7 +36,8 @@ public:
 		Char,
 		String,
 		File,
-		Set
+		Set,
+		Void		//Internal use
 	};
 	
 	enum S_Type{

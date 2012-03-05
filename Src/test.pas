@@ -31,5 +31,9 @@ BEGIN
 	character := 'T';
 	character := #43;
 	character := ^G;
+	
+	//unknown := test;
+	//test := unknown;
+
 //PRINT BLOCK
 END.

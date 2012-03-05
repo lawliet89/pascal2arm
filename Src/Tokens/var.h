@@ -14,7 +14,7 @@ class Token_Var: public Token{
 public:
 	friend class AsmFile;
 	//OCCF
-	Token_Var(std::string id, std::shared_ptr<Token_Type> type, bool temp=false);
+	Token_Var(std::string id, std::shared_ptr<Token_Type> type, bool constant=false, bool temp=false);
 	Token_Var(const Token_Var &obj);
 	
 	~Token_Var() { }
@@ -30,8 +30,8 @@ public:
 	std::string GetID() const { return GetStrValue(); }
 	
 	//Type
-	void SetType(std::shared_ptr<Token_Type> type){ Type = type; }
-	std::shared_ptr<Token_Type> GetType(){ return Type; }
+	void SetVarType(std::shared_ptr<Token_Type> type){ Type = type; }
+	std::shared_ptr<Token_Type> GetVarType(){ return Type; }
 	
 	//Symbol
 	const Symbol* GetSymbol() const{ return Sym.get(); }

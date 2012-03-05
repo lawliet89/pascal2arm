@@ -1,7 +1,7 @@
 #include "var.h"
 
-Token_Var::Token_Var(std::string id, std::shared_ptr<Token_Type> type, bool temp):
-	Token(StringToLower(id), Variable, false), Type(type), Temp(temp)
+Token_Var::Token_Var(std::string id, std::shared_ptr<Token_Type> type, bool constant, bool temp):
+	Token(StringToLower(id), Variable, constant), Type(type), Temp(temp)
 {
 	//...
 }

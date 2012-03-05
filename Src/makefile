@@ -32,7 +32,7 @@ BISON_DEBUG := true
 
 OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o \
 $(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o \
-$(GEN_DIR)type.o $(GEN_DIR)func.o $(GEN_DIR)char.o
+$(GEN_DIR)type.o $(GEN_DIR)func.o $(GEN_DIR)char.o $(GEN_DIR)expression.o $(GEN_DIR)term.o $(GEN_DIR)factor.o
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
 #-------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ BISON := bison
 
 #Flags for compiler
 ifdef DEBUG_BUILD
-CXXFLAGS := -g -pedantic -std=c++0x -Wall -Wextra
+CXXFLAGS := -g -pedantic -std=c++0x -Wall -Wextra -Werror=return-type -Wno-reorder
 else
 CXXFLAGS := -pedantic -std=c++0x
 endif
@@ -154,7 +154,19 @@ $(GEN_DIR)type.o: Tokens/type.cpp Tokens/type.h token.h define.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 
-$(GEN_DIR)func.o: Tokens/func.cpp Tokens/func.h token.h Tokens/var.h Tokens/type.h
+$(GEN_DIR)func.o: Tokens/func.cpp Tokens/func.h token.h Tokens/var.h Tokens/type.h Tokens/type.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
+
+$(GEN_DIR)expression.o: Tokens/expression.cpp Tokens/expression.h token.h Tokens/term.h Tokens/type.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
+
+$(GEN_DIR)term.o: Tokens/term.cpp Tokens/term.h token.h Tokens/factor.h Tokens/type.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
+
+$(GEN_DIR)factor.o: Tokens/factor.cpp Tokens/factor.h token.h Tokens/expression.h Tokens/type.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 	
@@ -180,3 +192,4 @@ again:
 clean-temp:
 	@rm -f -v *~
 	@rm -f -v Tokens/*~
+	@rm -f -v Asm/*~

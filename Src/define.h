@@ -28,13 +28,14 @@ enum AsmCode{
  * 	- TODO move to enum
  * */
 
-enum T_Type{
+enum T_Type{	//for token type
 	V_Character,
 	V_String,
 	V_Identifier,
 	V_Real,
 	V_Int,
 	V_Nil,
+	V_Boolean,
 	
 	I_True,
 	I_False,
@@ -46,7 +47,10 @@ enum T_Type{
 	IdentifierList,
 	VarList,
 	Type,
-	FuncProc
+	FuncProc,
+	Expression,
+	Term,
+	Factor
 };
 
 #endif

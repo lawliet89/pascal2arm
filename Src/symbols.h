@@ -43,8 +43,8 @@ public:
 	std::shared_ptr<Token> GetValue(){ return Value; }
 	Token *GetToken() { return Value.get(); }
 
-	template <typename T> T GetTokenDerived(){
-		return dynamic_cast<T> (Value.get());
+	template <typename T> std::shared_ptr<T> GetTokenDerived(){
+		return std::dynamic_pointer_cast<T>( Value );
 	}
 	/*
 	template <typename T> T GetValue(){
