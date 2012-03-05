@@ -32,7 +32,7 @@ BISON_DEBUG := true
 
 OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o \
 $(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o \
-$(GEN_DIR)type.o $(GEN_DIR)func.o
+$(GEN_DIR)type.o $(GEN_DIR)func.o $(GEN_DIR)char.o
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
 #-------------------------------------------------------------------------------
@@ -131,6 +131,10 @@ $(GEN_DIR)all_gen: all_gen.cpp
 
 #Tokens/...
 $(GEN_DIR)int.o: Tokens/int.cpp Tokens/int.h token.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+
+$(GEN_DIR)char.o: Tokens/char.cpp Tokens/char.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 

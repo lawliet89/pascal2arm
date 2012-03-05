@@ -35,6 +35,9 @@ std::string Token_Type::AsmDefaultValue(){
 		case Boolean:
 			return "0";
 			break;
+		case Char:
+			return "0";
+			break;
 		default:
 			return "";
 	}

@@ -38,7 +38,7 @@ inline void LexerAddCharCount();	//Add count to char
 %}
 %option yylineno
 %option noyywrap
-%option stack
+/*%option stack*/
 
 /* Pascal is case-insensitive */
 A [aA]
@@ -139,12 +139,35 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 ^"//PRINT SYMBOL"$ { LexerAddCharCount(); Program.PrintSymbols(); }
 ^"//PRINT BLOCK"$ { LexerAddCharCount(); Program.PrintBlocks(); }
 
-'{CHAR}'	|
-"#"{DIGIT}+	|
-"^"{LETTER}	{LexerAddCharCount(); 
-			
-			CurrentToken.reset(new Token(yytext,  V_Character));
-			return V_CHAR; 
+'{CHAR}'	{	LexerAddCharCount();
+				char chara;
+				if (!strcmp(yytext, "''''"))
+					chara = '\'';
+				else
+					chara = yytext[1];
+
+				CurrentToken.reset(new Token_Char(chara));
+				return V_CHAR; 
+			}
+"#"{DIGIT}+	{ 	LexerAddCharCount(); 
+				//Get the integer
+				std::string value(yytext);
+				value = value.substr(1, std::string::npos);
+				
+				unsigned chara = FromString<unsigned>(value);
+				
+				CurrentToken.reset(new Token_Char((char) chara));
+				return V_CHAR; 
+			}
+"^"{LETTER}	{	LexerAddCharCount(); 
+				char chara;
+				
+				if (yytext[1] >= 97)
+					chara = yytext[1] - 96;
+				else
+					chara = yytext[1] - 64;
+				CurrentToken.reset(new Token_Char(chara));
+				return V_CHAR; 
 			}
 
 {STRING}	{LexerAddCharCount(); 

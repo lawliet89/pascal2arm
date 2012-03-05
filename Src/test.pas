@@ -3,6 +3,7 @@ PROGRAM HelloWorld;
 VAR
 	test: integer;
 	float: real;
+	character: char;
 
 PROCEDURE testing;
 	VAR
@@ -24,6 +25,11 @@ BEGIN
 	
 	float := 10e-2;
 	
-	float := -10e3
+	float := -10e3;
+
+	character := '''';
+	character := 'T';
+	character := #43;
+	character := ^G;
 //PRINT BLOCK
 END.
