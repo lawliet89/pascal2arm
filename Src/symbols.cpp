@@ -2,7 +2,7 @@
 
 /** Constructor **/
 Symbol::Symbol(Type_T type, std::string id, std::shared_ptr<Token> value,std::shared_ptr<AsmBlock> block): 
-Type(type), Value(value), ID(StringToLower(id)), Reserved(false), Block(block)
+Type(type), ID(StringToLower(id)), Value(value), Reserved(false), Block(block)
 {
 	//...
 }

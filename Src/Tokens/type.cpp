@@ -29,7 +29,12 @@ std::string Token_Type::AsmDefaultValue(){
 		case Integer:
 			return "0";
 			break;
-			
+		case Real:
+			return "0";
+			break;
+		case Boolean:
+			return "0";
+			break;
 		default:
 			return "";
 	}

@@ -14,6 +14,11 @@ public:
 	
 	virtual const void * GetValue() const { return (void *) &value; }
 	virtual const void * operator()() const { return (void *) &value; }
+	
+	virtual std::string AsmDefaultValue() {return "0"; }
+	virtual std::string AsmValue(){ return "0"; }	//TODO
+	virtual int GetSize(){ return 4; }
+	
 protected:
 	double value;
 	

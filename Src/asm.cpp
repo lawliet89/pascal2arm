@@ -8,6 +8,11 @@ extern Flags_T Flags;
 extern std::stringstream OutputString;		//op.cpp
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l	- DEBUG purposes
 
+
+/** Data Structures **/
+
+std::map<AsmLine::OpCode_T, std::string> AsmLine::OpCodeStr;
+
 /**
  * 	AsmFile
  * */
@@ -227,6 +232,12 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 				HandleError(msg.str().c_str(), E_GENERIC, E_WARNING, value.second -> GetLine(), value.second->GetColumn());
 			}
 			
+			//Create a label
+			//Label is a concatenation of the current block name and it's ID
+			std::string LabelID = GetCurrentBlock() -> GetID() + "_" + value.first;
+			std::shared_ptr<AsmLabel> label = CreateLabel(LabelID, sym.first);		
+			sym.first->SetLabel(label);
+			
 			//Create the data lines
 			std::string val;
 			if (InitialValue == nullptr)
@@ -234,6 +245,11 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 			else
 				val = InitialValue -> AsmValue();
 			
+			std::shared_ptr<AsmLine> line = CreateDataLine(label, val);
+			label -> SetLine(line);
+			
+			//Add Line to data list
+			DataLines.push_back(line);
 		}
 		catch (AsmCode e){
 			if (e == SymbolReserved){
@@ -246,6 +262,12 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 				msg << "'" << value.first << "' has already been declared in this block.";
 				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, value.second -> GetLine(), value.second->GetColumn());
 			}
+			else if (e == LabelExists){
+				std::stringstream msg;
+				//This shouldn't happen
+				msg << "A duplicate Assembly label has been created. This is a compiler bug.";
+				HandleError(msg.str().c_str(), E_PARSE, E_FATAL, value.second -> GetLine(), value.second->GetColumn());
+			}
 		}
 	}
 		
@@ -253,39 +275,89 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 
 //Create Procedure Symbol
 std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcSymbol(std::string ID){
-//Create token value for procedure. Create a symbol. Create a block And link accordingly
+	//Create token value for procedure. Create a symbol. Create a block And link accordingly
+	std::pair<std::shared_ptr<Symbol>, AsmCode> result;
 	std::shared_ptr<Token_Func> tok(new Token_Func(ID, Token_Func::Procedure));
 	
 	//Create block
 	std::shared_ptr<AsmBlock> block = CreateBlock(AsmBlock::Procedure);
 	//Push block
 	PushBlock(block);
+	
+	return result;
 }
 
 //Generate Code
-void AsmFile::GenerateCode(std::stringstream &output){
-	
+std::string AsmFile::GenerateCode(){
+	std::stringstream output;
+	/** Header File **/
 	try{
 		output << ReadFile(Flags.AsmHeaderPath.c_str());
 	}
 	catch(...){
 		HandleError("Header file for assembly does not exist.", E_GENERIC, E_FATAL);
 	}
-	//User data variables etc.
-	//Std Libary
-	output << ReadFile(Flags.AsmStdLibPath.c_str());
+	/** Data Lines **/
+	
+	std::vector<std::shared_ptr<AsmLine> > ::iterator it;
+	for (it = DataLines.begin(); it < DataLines.end(); it++){
+		std::shared_ptr<AsmLine> line = *it;
+		
+		if (line -> GetLabel() != nullptr){
+			output << line -> GetLabel()->GetID();
+		}
+		output << "\t";
+		
+		output << line -> GetOpCodeStr();
+		output << " " << line -> GetRd() -> GetImmediate() << "\n";
+	}	
+	
+	output << ";--------------------------------------------------------------------------------" 
+		<< "\n;Program Code\n"
+		<< ";--------------------------------------------------------------------------------" 
+		<< "\n";
+	
+	/** Code Proper **/
+	output << "\tAREA Program, CODE\n\tENTRY\n";	
+	
+	/** StdLib **/
+	try{
+		output << ReadFile(Flags.AsmStdLibPath.c_str());
+	}
+	catch(...){
+		HandleError("StdLib file for assembly does not exist.", E_GENERIC, E_FATAL);
+	}
+	
+	output << "\n\tEND";
+	return output.str();
 }
 
 /** Line Related Methods **/
 std::shared_ptr<AsmLine> AsmFile::CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value)
 {
-	std::shared_ptr<AsmLine> ptr(new AsmLine(AsmLine::Directive, AsmLine::DCD));
-	ptr -> SetLabel(Label);
+	//TODO Comments
+	std::shared_ptr<AsmLine> line(new AsmLine(AsmLine::Directive, AsmLine::DCD));
+	line -> SetLabel(Label);
 	
 	std::shared_ptr<AsmOp> op(new AsmOp(AsmOp::Immediate, AsmOp::Destination));
+	op->SetImmediate(value);
 	
+	line -> SetRd(op);
+	
+	return line;
 }
 
+/** Label Related Methods **/
+std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<Symbol> sym, std::shared_ptr<AsmLine> Line) throw(AsmCode){
+	std::shared_ptr<AsmLabel> ptr(new AsmLabel(ID, sym, Line));
+	std::pair<std::map<std::string, std::shared_ptr<AsmLabel> >::iterator, bool> result;
+	result = LabelList.insert(
+			std::pair<std::string, std::shared_ptr<AsmLabel> >(ID, ptr)		
+	);
+	if (!result.second)
+		throw LabelExists;
+	return ptr;
+}
 
 /** Compiler Debugging Methods **/
 void AsmFile::PrintSymbols(){  //TODO Print type of symbol and type of variable/function etc.
@@ -329,7 +401,7 @@ void AsmFile::PrintBlocks(){
 AsmLine::AsmLine(OpType_T Type, OpCode_T OpCode):
 	Type(Type), OpCode(OpCode)
 {
-
+	InitialiseStaticMaps();
 }
 
 AsmLine::AsmLine(const AsmLine &obj):
@@ -341,7 +413,7 @@ AsmLine::AsmLine(const AsmLine &obj):
 	Rd(obj.Rd), Rm(obj.Rm), Rn(obj.Rn),
 	Comment(obj.Comment)
 {
-	//...
+	InitialiseStaticMaps();
 }
 
 AsmLine AsmLine::operator=(const AsmLine &obj){
@@ -357,6 +429,64 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
 		Comment = obj.Comment;
 	}
 	return *this;
+}
+
+std::string AsmLine::GetOpCodeStr() const{
+	return OpCodeStr[OpCode];
+}
+
+//Initialise 
+void AsmLine::InitialiseStaticMaps(){
+	static bool init = false;
+	if (!init){
+		init = true;
+		
+		OpCodeStr[AND] = "AND";
+		OpCodeStr[EOR] = "EOR";
+		OpCodeStr[SUB] = "SUB";
+		OpCodeStr[RSB] = "RSB";
+		OpCodeStr[ADD] = "ADD";
+		OpCodeStr[ADC] = "ADC";
+		OpCodeStr[SBC] = "SBC";
+		OpCodeStr[RSC] = "RSC";
+		OpCodeStr[TST] = "TST";
+		OpCodeStr[TEQ] = "TEQ";
+		OpCodeStr[CMP] = "CMP";
+		OpCodeStr[CMN] = "CMN";
+		OpCodeStr[ORR] = "ORR";
+		OpCodeStr[MOV] = "MOV";
+		OpCodeStr[BIC] = "BIC";
+		OpCodeStr[MVN] = "MVN";
+		OpCodeStr[SWP] = "SWP";
+		
+		OpCodeStr[MUL] = "MUL";
+		OpCodeStr[MLA] = "MLA";
+		OpCodeStr[UMULL] = "UMULL";
+		OpCodeStr[UMLAL] = "UMLAL";
+		OpCodeStr[SMULL] = "SMULL";
+		OpCodeStr[SMLAL] = "SMLAL";
+		
+		OpCodeStr[LDR] = "LDR";
+		OpCodeStr[STR] = "STR";
+		OpCodeStr[STM] = "STM";
+		OpCodeStr[LDM] = "LDM";
+		
+		OpCodeStr[B] = "B";
+		OpCodeStr[BL] = "BL";
+		
+		OpCodeStr[SWI] = "SWI";
+		
+		OpCodeStr[ADR] = "ADR";
+		OpCodeStr[AREA] = "AREA";
+		OpCodeStr[END] = "END";
+		OpCodeStr[ENTRY] = "ENTRY";
+		OpCodeStr[DATA] = "DATA";
+		OpCodeStr[DCD] = "DCD";
+		OpCodeStr[DCB] = "DCB";
+		//OpCodeStr[DCFD] = "DCFD";
+		//OpCodeStr[DCFS] = "DCFS";
+		OpCodeStr[EQU] = "EQU";
+	}
 }
 
 /**
@@ -425,7 +555,7 @@ int AsmBlock::count = 0;
 AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok)
 {
 	if (type == Global)
-		ID = "{GLOBAL}";
+		ID = "GLOBAL";
 	else if (TokenAssoc != nullptr)
 		ID = TokenAssoc -> GetStrValue();
 	else{

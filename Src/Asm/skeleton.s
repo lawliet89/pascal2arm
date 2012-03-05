@@ -96,3 +96,5 @@ NXTCHAR_ 	MOV R0, #0
 PrintNewL	MOV R0, #'\n'
 		SWI SWI_WriteC
 		LDMED r13!,{r0-r4,r15} ;Return
+
+		END

@@ -24,6 +24,7 @@ class AsmLabel;	//Labels
 class AsmRegister;	//State of the registers and data - used when generating code
 class AsmBlock;
 
+
 /** AsmBlock
  * 
  * */
@@ -121,10 +122,13 @@ public:
 	
 	/** Code Related Methods **/
 	//Generate Code
-	void GenerateCode(std::stringstream &output);
+	std::string GenerateCode();
 	
 	/** Line Related Methods **/
 	std::shared_ptr<AsmLine> CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value);	//Pass method with a completed label
+	
+	/** Label Related Methods **/
+	std::shared_ptr<AsmLabel> CreateLabel(std::string ID, std::shared_ptr<Symbol> sym=nullptr, std::shared_ptr<AsmLine> Line = nullptr) throw(AsmCode);
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
@@ -247,6 +251,8 @@ public:
 	std::shared_ptr<AsmOp> GetRn(){ return Rn; }
 	std::string GetComment() const{ return Comment; }
 	
+	std::string GetOpCodeStr() const;
+	
 protected:
 	/** Data Members **/
 	OpCode_T OpCode;
@@ -262,6 +268,10 @@ protected:
 	
 	/** Constructor Protected **/
 	AsmLine(OpType_T Type, OpCode_T OpCode);
+	
+	/** Static Members **/
+	static std::map<AsmLine::OpCode_T, std::string> OpCodeStr;
+	static void InitialiseStaticMaps();
 };
 
 /**

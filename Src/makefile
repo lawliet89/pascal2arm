@@ -43,7 +43,7 @@ BISON := bison
 
 #Flags for compiler
 ifdef DEBUG_BUILD
-CXXFLAGS := -g -pedantic -std=c++0x
+CXXFLAGS := -g -pedantic -std=c++0x -Wall -Wextra
 else
 CXXFLAGS := -pedantic -std=c++0x
 endif

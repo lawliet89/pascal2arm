@@ -30,7 +30,7 @@ void HandleAbort(int param){
 	//Clean up
 	
 	std::cout << "Compilation Terminated." << std::endl;
-	exit(1);
+	exit(param);
 }
 
 /**

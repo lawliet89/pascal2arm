@@ -1,14 +1,10 @@
+
+FINISH	SWI SWI_EXIT	;End program
+;--------------------------------------------------------------------------------
+; Function and Procedures
+;--------------------------------------------------------------------------------
 	AREA Functions, CODE
 ;"Library functions"
-
-;--------------------------------------------------------------------------------
-; Allocate memory for the stack--Used by subroutines
-; By Dr. Tom Clarke
-;--------------------------------------------------------------------------------
-
-STACK_ 	% 4000 ; reserve space for stack
-STACK_BASE ; base of downward-growing stack + 4
-	ALIGN
 
 ;--------------------------------------------------------------------------------
 ; Subroutine to print contents of register 0 in decimal
@@ -78,3 +74,12 @@ NXTCHAR_ 	MOV R0, #0
 PrintNewL	MOV R0, #'\n'
 		SWI SWI_WriteC
 		LDMED r13!,{r0-r4,r15} ;Return
+		
+;--------------------------------------------------------------------------------
+; Allocate memory for the stack--Used by subroutines
+; By Dr. Tom Clarke
+;--------------------------------------------------------------------------------
+
+STACK_ 	% 4000 ; reserve space for stack
+STACK_BASE ; base of downward-growing stack + 4
+	ALIGN

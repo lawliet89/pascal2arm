@@ -255,7 +255,7 @@ void LexerConsumeComments(const char *delimiter){
 	
 	//OUTPUT << " END DELIM " << endDelimiter;
 	
-	int i = 0;
+	unsigned i = 0;
 	char c;
 	//Time to eat charas
 	while(1){

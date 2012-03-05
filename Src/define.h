@@ -17,7 +17,10 @@ enum AsmCode{
 	SymbolCreated,
 	SymbolOccludes,
 	
-	SymbolIsNotAType
+	SymbolIsNotAType,
+	
+	LabelExists,
+	LabelNotExists
 };
 
 /**

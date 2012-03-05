@@ -106,7 +106,7 @@ Sentence: Program Y_EOF { CurrentToken.reset();
 			if (ParseError){
 				HandleError("There are parse error(s). Compilation cannot proceed.", E_PARSE, E_FATAL);
 			}
-			Program.GenerateCode(OUTPUT);
+			OUTPUT << Program.GenerateCode();
 			YYACCEPT; }
 /* 	| Unit	*/	/* For probable implementation? */
 	;
