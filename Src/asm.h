@@ -215,10 +215,27 @@ public:
 	};
 	
 	/** Public Methods **/
-	~AsmLine();
+	~AsmLine(){}
 	AsmLine(const AsmLine &obj);
 	AsmLine operator=(const AsmLine &obj);
-
+	
+	//Setter
+	void AssignCC(CC_T cc){ Condition = cc; }
+	void AssignQualifier (Qualifier_T Qualifier) { this -> Qualifier = Qualifier; }
+	void AssignLabel(std::shared_ptr<AsmLabel> Label){ this -> Label = Label; }
+	void AssignRd(std::shared_ptr<AsmOp> op){ Rd = op; }
+	void AssignRm(std::shared_ptr<AsmOp> op){ Rm = op; }
+	void AssignRn(std::shared_ptr<AsmOp> op){ Rn = op; }
+	
+	//Getters
+	OpCode_T GetOpCode() const { return OpCode; }
+	CC_T GetCC() const { return Condition; }
+	Qualifier_T GetQualifier() const { return Qualifier; }
+	OpType_T GetType() const { return Type; }
+	std::shared_ptr<AsmLabel> GetLabel(){ return Label; }
+	std::shared_ptr<AsmOp> GetRd(){ return Rd; }
+	std::shared_ptr<AsmOp> GetRm(){ return Rm; }
+	std::shared_ptr<AsmOp> GetRn(){ return Rn; }
 	
 protected:
 	/** Data Members **/
@@ -229,10 +246,10 @@ protected:
 	
 	std::shared_ptr<AsmLabel> Label;
 	
-	//AsmOp Rd, Rm, Rn;
+	std::shared_ptr<AsmOp> Rd, Rm, Rn;
 	
 	/** Constructor Protected **/
-	AsmLine();
+	AsmLine(OpType_T Type, OpCode_T OpCode);
 };
 
 /**
@@ -269,9 +286,13 @@ public:
 		Destination, OP1, OP2
 	};
 	
+	AsmOp();
+	~AsmOp() { }
+	AsmOp(const AsmOp &obj);
+	
 protected:
 	Type_T Type;
-	std::shared_ptr<Symbol> Sym;	//Symbol associated, if any
+	std::shared_ptr<Symbol> sym;	//Symbol associated, if any
 	
 };
 

@@ -46,7 +46,7 @@ public:
 	};
 	
 	//OCCF
-	Token_Type(std::string id, P_Type pri, int sec=0);
+	Token_Type(std::string id, P_Type pri, int sec=0, int size=4);
 	Token_Type(const Token_Type &obj);
 	
 	~Token_Type(){}
@@ -59,10 +59,14 @@ public:
 	bool IsPointer() const { return Secondary & Pointer; }
 	//ID
 	std::string GetID() const { return GetStrValue(); }
+	//Size
+	void SetSize(int size) { this -> size = size; }
+	int GetSize() const { return size; }
 	
 protected:
 	P_Type Primary;
 	int Secondary;
+	int size;			//No of bytes.
 };
 
 #endif

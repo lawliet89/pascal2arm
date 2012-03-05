@@ -307,19 +307,19 @@ void AsmFile::PrintBlocks(){
 /**
  * 	AsmLine
  * */
-AsmLine::AsmLine(){
-	//...
-}
+AsmLine::AsmLine(OpType_T Type, OpCode_T OpCode):
+	Type(Type), OpCode(OpCode)
+{
 
-AsmLine::~AsmLine(){
-	//...
 }
 
 AsmLine::AsmLine(const AsmLine &obj):
 	OpCode(obj.OpCode),
 	Condition(obj.Condition),
 	Qualifier(obj.Qualifier),
-	Type(obj.Type)
+	Type(obj.Type),
+	Label(obj.Label),
+	Rd(obj.Rd), Rm(obj.Rm), Rn(obj.Rn)
 {
 	//...
 }
@@ -330,6 +330,10 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
 		Condition = obj.Condition;
 		Qualifier = obj.Qualifier;
 		Type = obj.Type;
+		Label = obj.Label;
+		Rd = obj.Rd;
+		Rm = obj.Rm;
+		Rn = obj.Rn;
 	}
 	return *this;
 }
