@@ -20,7 +20,10 @@ enum AsmCode{
 	SymbolIsNotAType,
 	
 	LabelExists,
-	LabelNotExists
+	LabelNotExists,
+	
+	TypeIncompatible,
+	OperationIncompatible
 };
 
 /**
@@ -52,5 +55,16 @@ enum T_Type{	//for token type
 	Term,
 	Factor
 };
+
+/** Operator Type **/
+enum Op_T{
+		Multiply,
+		Divide,
+		Div,
+		Mod, 
+		And,
+		
+		None
+	};
 
 #endif

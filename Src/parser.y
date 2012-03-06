@@ -77,7 +77,7 @@ void yyerror(const char *msg);
 /* Multiplicative */
 %left '*' '/' OP_DIV OP_MOD OP_AND
 /* Additive */
-%left '+' '-' OP_OR
+%left '+' '-' OP_OR OP_XOR
 /* Relational */
 %left '=' OP_GE OP_LE OP_NOTEQUAL '<' '>' OP_IN
 
@@ -398,11 +398,20 @@ SimpleExpression: SimpleExpression TermOP Term
 TermOP: '+'
 	| '-'
 	| OP_OR
-	/* XOR ? */
+	| OP_XOR
 	;
 
-Term:  Term FactorOP Factor
-	| Factor
+Term:  Term FactorOP Factor{
+			try{
+				
+			}
+			catch (AsmCode e){
+			
+			}
+		}
+	| Factor {
+			$$.reset(new Token_Term(std::dynamic_pointer_cast<Token_Factor>($1)));
+		}
 	;
 
 FactorOP: '*'

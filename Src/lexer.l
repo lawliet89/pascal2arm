@@ -122,6 +122,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 {V}{A}{R}   {LexerAddCharCount(); return K_VAR; }
 {W}{H}{I}{L}{E}   {LexerAddCharCount(); return K_WHILE; }
 {W}{I}{T}{H}   {LexerAddCharCount(); return K_WITH; }
+{X}{O}{R}    {LexerAddCharCount(); return OP_XOR; }
 
 {T}{R}{U}{E} { LexerAddCharCount(); return I_TRUE; }
 {F}{A}{L}{S}{E} { LexerAddCharCount(); return I_FALSE; }

@@ -32,7 +32,8 @@ BISON_DEBUG := true
 
 OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o \
 $(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o \
-$(GEN_DIR)type.o $(GEN_DIR)func.o $(GEN_DIR)char.o $(GEN_DIR)expression.o $(GEN_DIR)term.o $(GEN_DIR)factor.o
+$(GEN_DIR)type.o $(GEN_DIR)func.o $(GEN_DIR)char.o $(GEN_DIR)expression.o $(GEN_DIR)term.o $(GEN_DIR)factor.o\
+$(GEN_DIR)operator.o
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
 #-------------------------------------------------------------------------------
@@ -169,6 +170,10 @@ $(GEN_DIR)term.o: Tokens/term.cpp Tokens/term.h token.h Tokens/factor.h Tokens/t
 $(GEN_DIR)factor.o: Tokens/factor.cpp Tokens/factor.h token.h Tokens/expression.h Tokens/type.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
+
+$(GEN_DIR)operator.o: Tokens/op.cpp Tokens/op.h token.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 	
 #$(GEN_DIR)varList.o: Tokens/varList.cpp Tokens/varList.h token.h Tokens/var.h define.h
 #	@echo "Compiling $@"
