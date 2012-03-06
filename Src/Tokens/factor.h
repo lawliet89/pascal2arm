@@ -3,6 +3,7 @@
 #include "../token.h"
 
 class Token_Expression;
+class Token_SimExpression;
 class Token_Factor;
 class Token_Term;
 
@@ -19,8 +20,8 @@ public:
 		//NegateFactor,			//Set negate flag to true	
 		//SignedConstant,
 		Constant,			//Signed and unsigned Collapsed into constant
-		SetConstructors,
-		Identifier			//TODO Remove this eventually
+		SetConstructors
+		//Identifier			//TODO Remove this eventually
 	};
 	
 	//OCCF

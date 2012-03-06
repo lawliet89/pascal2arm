@@ -9,7 +9,7 @@ PROCEDURE testing;
 	VAR
 		test: boolean;
 	begin
-		test := 123;
+		//test := 123;
 //PRINT SYMBOL
 //PRINT BLOCK
 	END;
@@ -18,6 +18,8 @@ PROCEDURE testing;
 BEGIN
 	Writeln('Hello World');
 	test := 5 * 6 + 5;
+
+	test := 5 + 6*5;
 
 	test := -5 + -6;
 	
@@ -32,10 +34,11 @@ BEGIN
 	character := #43;
 	character := ^G;
 
-	//test := test * float;
-	
+	test := test * float;
 	//unknown := test;
 	//test := unknown;
+
+	test := test + float;
 
 //PRINT BLOCK
 END.

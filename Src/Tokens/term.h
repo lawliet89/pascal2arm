@@ -3,6 +3,7 @@
 #include "../token.h"
 
 class Token_Expression;
+class Token_SimExpression;
 class Token_Factor;
 class Token_Term;
 

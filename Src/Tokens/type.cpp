@@ -46,7 +46,6 @@ std::string Token_Type::AsmDefaultValue(){
 
 std::string Token_Type::TypeToString(){
 	std::stringstream str;
-	
 	switch(Primary){
 		case Integer:
 			str << "integer"; break;
@@ -68,6 +67,8 @@ std::string Token_Type::TypeToString(){
 			str << "set"; break;
 		case Void:
 			str << "void"; break;
+		default:
+			str << "unknown";
 	}
 	return str.str();
 }

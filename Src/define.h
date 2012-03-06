@@ -52,6 +52,7 @@ enum T_Type{	//for token type
 	Type,
 	FuncProc,
 	Expression,
+	SimExpression,
 	Term,
 	Factor,
 	Operator
@@ -59,7 +60,11 @@ enum T_Type{	//for token type
 
 /** Operator Type **/
 enum Op_T{
-		
+		Add=10,
+		Subtract,
+		Or,
+		Xor,
+	
 		//FactorOP
 		Multiply=20,
 		Divide,

@@ -378,11 +378,10 @@ FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
 
 /* Expression */
 Expression:  Expression SimpleOp SimpleExpression
-	| SimpleExpression
+	| SimpleExpression	
 	;
 
-SimpleOp: '*'
-	| '<'
+SimpleOp: '<'
 	| OP_LE
 	| '>'
 	| OP_GE
@@ -391,14 +390,37 @@ SimpleOp: '*'
 	| OP_IN
 	; 
 
-SimpleExpression: SimpleExpression TermOP Term
-		| Term
+SimpleExpression: SimpleExpression TermOP Term {
+			std::shared_ptr<Token_SimExpression> LHS(std::dynamic_pointer_cast<Token_SimExpression>($1));
+			std::shared_ptr<Token_Term> RHS(std::dynamic_pointer_cast<Token_Term>($3));
+			//Operator
+			Op_T Op = (Op_T) GetValue<int>($2);
+			try{
+				$$.reset(new Token_SimExpression(RHS, Op, LHS));
+			}
+			catch (AsmCode e){
+				std::stringstream msg;
+				if (e == TypeIncompatible){
+					msg << "Incompatible Types: left hand side of simple expression \n\thas type '" << LHS -> GetType() -> TypeToString();
+					msg << "' and right hand side of simple expression has type '" << RHS -> GetType() -> TypeToString() << "'"; 
+					
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $3 -> GetLine(), $3 -> GetColumn());
+				}
+				else if (e == OperatorIncompatible){
+					msg <<	"Operator is incompatible with type '"	<< LHS -> GetType() -> TypeToString() << "'";	//TODO Operator string
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+				}
+				
+				YYERROR;
+			}
+		}
+		| Term { $$.reset(new Token_SimExpression(std::dynamic_pointer_cast<Token_Term>($1)));	}
 		;
 
-TermOP: '+'
-	| '-'
-	| OP_OR
-	| OP_XOR
+TermOP: '+' { $$.reset(new Token_Int((int) Op_T::Add, T_Type::Operator)); }
+	| '-' { $$.reset(new Token_Int((int) Op_T::Subtract, T_Type::Operator)); }
+	| OP_OR { $$.reset(new Token_Int((int) Op_T::Or, T_Type::Operator)); }
+	| OP_XOR { $$.reset(new Token_Int((int) Op_T::Xor, T_Type::Operator)); }
 	;
 
 Term:  Term FactorOP Factor{
@@ -407,14 +429,13 @@ Term:  Term FactorOP Factor{
 			//Operator
 			Op_T Op = (Op_T) GetValue<int>($2);
 			try{
-				
 				$$.reset(new Token_Term(RHS, Op, LHS));
 			}
 			catch (AsmCode e){
 				std::stringstream msg;
 				if (e == TypeIncompatible){
 					msg << "Incompatible Types: left hand side of term has type '" << LHS -> GetType() -> TypeToString();
-					msg << "' and right hand side of term has type '" << RHS -> GetType() -> TypeToString() << "'"; 
+					msg << "'\n\tand right hand side of term has type '" << RHS -> GetType() -> TypeToString() << "'"; 
 					
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $3 -> GetLine(), $3 -> GetColumn());
 				}
@@ -589,7 +610,7 @@ CompoundStatement: K_BEGIN StatementList K_END
 		;
 
 StatementList:   StatementList ';' Statement
-		| StatementList ';' error { HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
+		| StatementList ';' error { if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		| Statement
 		;
 
