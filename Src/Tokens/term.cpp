@@ -38,8 +38,12 @@ void Token_Term::CheckType() throw(AsmCode){
 		LHS = Term -> GetType();
 		RHS = Factor -> GetType();
 		
-		//For now simple equivalence
+		//For now simple equivalence - TODO
 		if (LHS != RHS)
 			throw TypeIncompatible;
+		
+		//Simple operator check - TODO
+		if ((int) Operator < (int) Op_T::Multiply)
+			throw OperatorIncompatible;
 	}
 }

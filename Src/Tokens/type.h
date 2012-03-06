@@ -68,7 +68,7 @@ public:
 	virtual std::string AsmValue() { return AsmDefaultValue(); }
 	virtual std::string AsmDefaultValue();
 
-
+	std::string TypeToString();
 protected:
 	P_Type Primary;
 	int Secondary;

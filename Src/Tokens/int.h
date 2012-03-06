@@ -15,6 +15,8 @@ public:
 	virtual const void * GetValue() const { return (void *) &value; }
 	virtual const void * operator()() const { return (void *) &value; }
 	
+	int GetInt() const { return value; }
+	
 	//Assembly Stuff
 	virtual std::string AsmDefaultValue() {return "0"; }
 	virtual std::string AsmValue();

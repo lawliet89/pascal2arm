@@ -31,6 +31,8 @@ BEGIN
 	character := 'T';
 	character := #43;
 	character := ^G;
+
+	//test := test * float;
 	
 	//unknown := test;
 	//test := unknown;

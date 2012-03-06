@@ -20,8 +20,8 @@ public:
 	//OCCF
 	
 	//Constructor
-	Token(const char *StrValue, T_Type type, bool IsConstant=true);	//Type is the token type as defined by parser.h (generated from parser.y)
-	Token(std::string StrValue, T_Type type, bool IsConstant=true);	
+	Token(const char *StrValue, T_Type TokenType, bool IsConstant=true);	//Type is the token type as defined by parser.h (generated from parser.y)
+	Token(std::string StrValue, T_Type TokenType, bool IsConstant=true);	
 	virtual ~Token(){ }				//Destructor
 	Token(const Token &obj);		//Copy Constructor
 	virtual Token operator=(const Token &obj);	//Assignment operator
@@ -29,7 +29,7 @@ public:
 	//Virtual methods
 	virtual std::string GetStrValue() const { return StrValue; }
 	virtual const char* GetCStrValue() const { return StrValue.c_str(); }
-	T_Type GetType() const { return type; }
+	T_Type GetTokenType() const { return TokenType; }
 	
 	//Return type is set to void * so that derived classes can override this
 	//Use the utility function DereferenceVoidPtr<T> to dereference this
@@ -54,7 +54,7 @@ public:
 	
 protected:
 	std::string StrValue;
-	T_Type type;			//Base Type of token
+	T_Type TokenType;			//Base Type of token
 	std::shared_ptr<Symbol> Sym;	//Associated symbol, if any
 	bool IsConstant;		//Is this token a constant?
 	

@@ -23,7 +23,7 @@ enum AsmCode{
 	LabelNotExists,
 	
 	TypeIncompatible,
-	OperationIncompatible
+	OperatorIncompatible
 };
 
 /**
@@ -53,18 +53,21 @@ enum T_Type{	//for token type
 	FuncProc,
 	Expression,
 	Term,
-	Factor
+	Factor,
+	Operator
 };
 
 /** Operator Type **/
 enum Op_T{
-		Multiply,
+		
+		//FactorOP
+		Multiply=20,
 		Divide,
 		Div,
 		Mod, 
 		And,
 		
-		None
+		None=99
 	};
 
 #endif

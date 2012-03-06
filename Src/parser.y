@@ -402,11 +402,28 @@ TermOP: '+'
 	;
 
 Term:  Term FactorOP Factor{
+			std::shared_ptr<Token_Term> LHS(std::dynamic_pointer_cast<Token_Term>($1));
+			std::shared_ptr<Token_Factor> RHS(std::dynamic_pointer_cast<Token_Factor>($3));
+			//Operator
+			Op_T Op = (Op_T) GetValue<int>($2);
 			try{
 				
+				$$.reset(new Token_Term(RHS, Op, LHS));
 			}
 			catch (AsmCode e){
-			
+				std::stringstream msg;
+				if (e == TypeIncompatible){
+					msg << "Incompatible Types: left hand side of term has type '" << LHS -> GetType() -> TypeToString();
+					msg << "' and right hand side of term has type '" << RHS -> GetType() -> TypeToString() << "'"; 
+					
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $3 -> GetLine(), $3 -> GetColumn());
+				}
+				else if (e == OperatorIncompatible){
+					msg <<	"Operator is incompatible with type '"	<< LHS -> GetType() -> TypeToString() << "'";	//TODO Operator string
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+				}
+				
+				YYERROR;
 			}
 		}
 	| Factor {
@@ -414,11 +431,11 @@ Term:  Term FactorOP Factor{
 		}
 	;
 
-FactorOP: '*'
-	| '/'
-	| OP_DIV
-	| OP_MOD
-	| OP_AND
+FactorOP: '*' { $$.reset(new Token_Int((int) Op_T::Multiply, T_Type::Operator)); }
+	| '/' { $$.reset(new Token_Int((int) Op_T::Divide, T_Type::Operator)); }
+	| OP_DIV { $$.reset(new Token_Int((int) Op_T::Div, T_Type::Operator)); }
+	| OP_MOD { $$.reset(new Token_Int((int) Op_T::Mod, T_Type::Operator)); }
+	| OP_AND { $$.reset(new Token_Int((int) Op_T::And, T_Type::Operator)); }
 	;
 
 /* Factor can be shifted into Identifier in multiple paths. Such paths have been commented out */
@@ -428,7 +445,7 @@ Factor: '(' Expression ')'
 	| UnsignedConstant { 
 				std::shared_ptr<Token_Type> FactorType;
 				//Determine type
-				switch($1 -> GetType()){
+				switch($1 -> GetTokenType()){
 					case V_Character:
 						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("char").first->GetValue());
 						break;
@@ -455,7 +472,7 @@ Factor: '(' Expression ')'
 	| SignedConstant{ 
 				std::shared_ptr<Token_Type> FactorType;
 				//Determine type
-				switch($1 -> GetType()){
+				switch($1 -> GetTokenType()){
 					case V_Int:
 						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("integer").first->GetValue());
 						break;
