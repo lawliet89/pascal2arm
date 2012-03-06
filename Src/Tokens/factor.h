@@ -1,6 +1,11 @@
 #ifndef FactornH
 #define FactornH
 #include "../token.h"
+
+class Token_Expression;
+class Token_Factor;
+class Token_Term;
+
 #include "expression.h"
 #include "type.h"
 
