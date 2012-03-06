@@ -377,8 +377,31 @@ FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
 			;
 
 /* Expression */
-Expression:  Expression SimpleOp SimpleExpression
-	| SimpleExpression	
+Expression:  Expression SimpleOp SimpleExpression {
+			std::shared_ptr<Token_Expression> LHS(std::dynamic_pointer_cast<Token_Expression>($1));
+			std::shared_ptr<Token_SimExpression> RHS(std::dynamic_pointer_cast<Token_SimExpression>($3));
+			//Operator
+			Op_T Op = (Op_T) GetValue<int>($2);
+			try{
+				$$.reset(new Token_Expression(RHS, Op, LHS));
+			}
+			catch (AsmCode e){
+				std::stringstream msg;
+				if (e == TypeIncompatible){
+					msg << "Incompatible Types: left hand side of expression \n\thas type '" << LHS -> GetType() -> TypeToString();
+					msg << "' and right hand side of expression has type '" << RHS -> GetType() -> TypeToString() << "'"; 
+					
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $3 -> GetLine(), $3 -> GetColumn());
+				}
+				else if (e == OperatorIncompatible){
+					msg <<	"Operator is incompatible with type '"	<< LHS -> GetType() -> TypeToString() << "'";	//TODO Operator string
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+				}
+				
+				YYERROR;
+			}
+		}
+	| SimpleExpression { $$.reset(new Token_Expression(std::dynamic_pointer_cast<Token_SimExpression>($1)));}
 	;
 
 SimpleOp: '<'

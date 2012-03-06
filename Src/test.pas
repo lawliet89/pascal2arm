@@ -34,11 +34,11 @@ BEGIN
 	character := #43;
 	character := ^G;
 
-	test := test * float;
+	//test := test * float;
 	//unknown := test;
 	//test := unknown;
 
-	test := test + float;
+	//test := test + float;
 
 //PRINT BLOCK
 END.

@@ -60,6 +60,14 @@ enum T_Type{	//for token type
 
 /** Operator Type **/
 enum Op_T{
+		LT,
+		LTE,
+		GT,
+		GTE,
+		Equal,
+		NotEqual,
+		In,
+	
 		Add=10,
 		Subtract,
 		Or,
