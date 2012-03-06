@@ -67,6 +67,9 @@ void AsmFile::CreateGlobalScope(){
 	sym = CreateTypeSymbol("boolean", Token_Type::Boolean);
 	sym.first -> SetReserved();
 	
+	//Assign bool type to expression
+	Token_Expression::SetBoolType(sym.first->GetTokenDerived<Token_Type>());
+	
 	sym = CreateTypeSymbol("record", Token_Type::Record);
 	sym.first -> SetReserved();
 	
@@ -84,7 +87,7 @@ void AsmFile::CreateGlobalScope(){
 	
 	sym = CreateTypeSymbol("set", Token_Type::Set);
 	sym.first -> SetReserved();	
-	
+
 }
 
 /** Block Methods **/

@@ -23,7 +23,10 @@ enum AsmCode{
 	LabelNotExists,
 	
 	TypeIncompatible,
-	OperatorIncompatible
+	OperatorIncompatible,
+	
+	BoolTypeUndefined,
+	BoolTypeIncorrect
 };
 
 /**

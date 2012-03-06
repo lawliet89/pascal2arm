@@ -1,4 +1,5 @@
 #include "expression.h"
+std::shared_ptr<Token_Type> Token_Expression::BoolType;
 
 /** SimExpression **/
 Token_SimExpression::Token_SimExpression(std::shared_ptr<Token_Term> Term, Op_T Operator, std::shared_ptr<Token_SimExpression> SimExpression):
@@ -85,6 +86,8 @@ Token_Expression Token_Expression::operator=(const Token_Expression& obj)
 }
 
 void Token_Expression::CheckType() throw(AsmCode){
+	if (BoolType == nullptr)
+		throw BoolTypeUndefined;
 	if (Operator == None || Expression == nullptr){
 		Type = SimExpression -> GetType();
 	}
@@ -108,7 +111,14 @@ void Token_Expression::CheckType() throw(AsmCode){
 		if ((int) Operator > (int) Op_T::In)
 			throw OperatorIncompatible;
 		
-		//TODO - Note an expression with relational operators is of type boolean
-		Type = LHS;
+		//With relational operators, this has become a boolean type 
+		Type = BoolType;
 	}
+}
+
+void Token_Expression::SetBoolType(std::shared_ptr<Token_Type> tok) throw(AsmCode){
+	if (tok -> GetPrimary() != Token_Type::Boolean)
+		throw BoolTypeIncorrect;
+	
+	BoolType = tok;
 }

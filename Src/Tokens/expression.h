@@ -56,6 +56,8 @@ public:
 	std::shared_ptr<Token_SimExpression> GetSimExpression(){ return SimExpression; }
 	std::shared_ptr<Token_Type> GetType(){ return Type; }
 	
+	static void SetBoolType(std::shared_ptr<Token_Type>) throw(AsmCode);
+
 protected:
 	//Form: Expression OP SimExpression where Expression can contain another Expression indefinitely
 	//When reduced to SimExpression, Expression will be set to nullptr
@@ -63,6 +65,8 @@ protected:
 	Op_T Operator;
 	std::shared_ptr<Token_Expression> Expression;
 	std::shared_ptr<Token_Type> Type;
+	
+	static std::shared_ptr<Token_Type> BoolType;	//Stored type for bool.
 };
 
 
