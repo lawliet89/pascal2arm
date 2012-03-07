@@ -18,10 +18,12 @@ enum AsmCode{
 	SymbolOccludes,
 	
 	SymbolIsNotAType,
+	SymbolIsNotAVariable,
 	
 	LabelExists,
 	LabelNotExists,
 	
+	TypeCompatible,
 	TypeIncompatible,
 	OperatorIncompatible,
 	

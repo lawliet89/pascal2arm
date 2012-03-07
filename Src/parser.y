@@ -137,7 +137,7 @@ Block: BlockDeclaration CompoundStatement
 BlockDeclaration: BlockLabelDeclaration BlockConstantDeclaration BlockTypeDeclaration BlockVarDeclaration BlockProcFuncDeclaration
 		;
 
-BlockLabelDeclaration: LabelDeclaration
+BlockLabelDeclaration: LabelDeclaration { HandleError("Labels are unsupported and are discarded.", E_GENERIC, E_WARNING,LexerLineCount, LexerCharCount); }
 			|;
 BlockConstantDeclaration: K_CONST ConstantList
 			|;
@@ -179,8 +179,8 @@ IdentifierList: IdentifierList ',' Identifier
 				}
 		;
 
-LabelDeclaration: LabelDeclaration ',' K_LABEL V_INT
-		| K_LABEL V_INT ';'
+LabelDeclaration: LabelDeclaration ',' K_LABEL V_INT	//Ignored
+		| K_LABEL V_INT ';' //Ignored 
 		;
 
 ConstantList: 	ConstantList ConstantDeclaration
@@ -313,18 +313,18 @@ PointerType: '^' Type
 
 /* Values */
 Signed_Int: '+' V_INT {  
-			$$.reset(new Token_Int(GetValue<int>(yylval), Signed_Int));
+			$$.reset(new Token_Int(GetValue<int>(yylval), V_Int));
 		}
 	| '-' V_INT { 
-			$$.reset(new Token_Int(GetValue<int>(yylval) * -1, Signed_Int));   
+			$$.reset(new Token_Int(GetValue<int>(yylval) * -1, V_Int));   
 		}
 	;
 	
 Signed_Real: '+' V_REAL {
-			$$.reset(new Token_Int(GetValue<double>(yylval), Signed_Real));
+			$$.reset(new Token_Int(GetValue<double>(yylval), V_Real));
 			}
 	| '-' V_REAL{
-			$$.reset(new Token_Int(GetValue<double>(yylval)*-1, Signed_Real));
+			$$.reset(new Token_Int(GetValue<double>(yylval)*-1, V_Real));
 			}
 	;
 ;
@@ -635,6 +635,7 @@ CompoundStatement: K_BEGIN StatementList K_END
 StatementList:   StatementList ';' Statement
 		| StatementList ';' error { if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		| Statement
+		| error { if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		;
 
 StatementLabel: V_INT ':' {
@@ -649,16 +650,39 @@ Statement: StatementLabel SimpleStatement
 
 SimpleStatement: AssignmentStatement
 		| ProcedureStatement
-		| GotoStatement
+		| GotoStatement { HandleError("Labels and Gotos are unsupported.", E_PARSE, E_WARNING,LexerLineCount, LexerCharCount);  }
 		;
 
 AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 			//Check for Identifier
-			//And Type: TODO
 			try{
+				std::shared_ptr<Token_Type> LHS_T, RHS_T;
+				std::shared_ptr<Token_Expression> RHS;
+
 				std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
-				//$$ = $1;
-				//$$ -> SetSymbol(sym.first);
+				//Check that symbol is a variable
+				if (sym.first -> GetType() != Symbol::Variable){
+					std::stringstream msg;
+					msg << "Identifier '" << $1 -> GetStrValue() << "' is not a variable.";
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+					throw SymbolIsNotAVariable;	//Skip rest of execution
+				}					
+				RHS = std::dynamic_pointer_cast<Token_Expression>($3);
+				//Check that variable type matches expression
+				
+				LHS_T = sym.first->GetTokenDerived<Token_Var>()->GetVarType();
+				RHS_T = RHS -> GetType();
+				if (Program.TypeCompatibilityCheck(LHS_T, RHS_T) != TypeCompatible){
+					std::stringstream msg;
+					msg << "Incompatible Types: Variable '"<< $1 -> GetStrValue() << "' has type '" << LHS_T -> TypeToString();
+					msg << "'\n\tand expression has type '" << RHS_T -> TypeToString() << "'"; 
+					
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+					throw TypeIncompatible;
+				}
+
+				//Generate that assignment line!
+				Program.CreateAssignmentLine($1, RHS);
 			}
 			catch (AsmCode e){
 				if (e == SymbolNotExists){
@@ -666,6 +690,7 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 					msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
 				}
+					
 				YYERROR;
 			}
 				

@@ -334,7 +334,7 @@ void LexerConsumeInvalid(){
 		msg << " at the end of the file";
 		EOFError = true;
 	}
-	else
+	else if (charCount > 1)
 		unput(c);
 
 	msg << "'";

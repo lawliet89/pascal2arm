@@ -323,6 +323,8 @@ std::string AsmFile::GenerateCode(){
 	/** Code Proper **/
 	output << "\tAREA Program, CODE\n\tENTRY\n";	
 	
+	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
+	
 	/** StdLib **/
 	try{
 		output << ReadFile(Flags.AsmStdLibPath.c_str());
@@ -350,6 +352,12 @@ std::shared_ptr<AsmLine> AsmFile::CreateDataLine(std::shared_ptr<AsmLabel> Label
 	return line;
 }
 
+std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Token> ID, std::shared_ptr<Token_Expression> expr){
+	std::shared_ptr<AsmLine> line;
+	
+	return line;
+}
+
 /** Label Related Methods **/
 std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<Symbol> sym, std::shared_ptr<AsmLine> Line) throw(AsmCode){
 	std::shared_ptr<AsmLabel> ptr(new AsmLabel(ID, sym, Line));
@@ -360,6 +368,11 @@ std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<S
 	if (!result.second)
 		throw LabelExists;
 	return ptr;
+}
+
+/** Statement Methods **/
+AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
+	return LHS == RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
 
 /** Compiler Debugging Methods **/

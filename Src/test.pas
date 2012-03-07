@@ -9,7 +9,7 @@ PROCEDURE testing;
 	VAR
 		test: boolean;
 	begin
-		test := 123;
+		//test := 123;
 	END;
 	
 BEGIN
@@ -30,6 +30,8 @@ BEGIN
 	character := 'T';
 	character := #43;
 	character := ^G;
+
+	//test := true;
 
 	//test := test * float;
 	//unknown := test;

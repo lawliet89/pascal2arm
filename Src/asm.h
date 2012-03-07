@@ -126,9 +126,13 @@ public:
 	
 	/** Line Related Methods **/
 	std::shared_ptr<AsmLine> CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value);	//Pass method with a completed label
+	std::shared_ptr<AsmLine> CreateAssignmentLine(std::shared_ptr<Token> ID, std::shared_ptr<Token_Expression> expr);		//For assignment statements
 	
 	/** Label Related Methods **/
 	std::shared_ptr<AsmLabel> CreateLabel(std::string ID, std::shared_ptr<Symbol> sym=nullptr, std::shared_ptr<AsmLine> Line = nullptr) throw(AsmCode);
+	
+	/** Statement Related Methods **/
+	AsmCode TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS);	//Return AsmCode
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
