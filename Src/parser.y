@@ -483,7 +483,9 @@ FactorOP: '*' { $$.reset(new Token_Int((int) Op_T::Multiply, T_Type::Operator));
 	;
 
 /* Factor can be shifted into Identifier in multiple paths. Such paths have been commented out */
-Factor: '(' Expression ')'
+Factor: '(' Expression ')' {
+						$$.reset(new Token_Factor(Token_Factor::Expression, $2)); 
+					}
 	| VarRef		//TODO
 	| FuncCall		//TODO
 	| UnsignedConstant { 
@@ -512,7 +514,20 @@ Factor: '(' Expression ')'
 				
 				$$.reset(new Token_Factor(Token_Factor::Constant, $1, FactorType)); 
 			}
-	| OP_NOT Factor { $$ = $2; dynamic_cast<Token_Factor *>($$.get())->SetNegate(true); }
+
+	| OP_NOT Factor { 
+					//You can only NOT a boolean
+					$$ = $2; 
+					std::shared_ptr<Token_Factor> RHS = std::dynamic_pointer_cast<Token_Factor>($$);
+					if (RHS -> GetType() != std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("boolean").first->GetValue())){
+						std::stringstream msg;
+						msg << "You can only NOT a boolean. Factor is of type '" << RHS -> GetType() -> TypeToString() << "'";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2->GetLine(), $2 -> GetColumn());
+					}
+					RHS -> SetNegate();	
+					
+	}
+
 	| SignedConstant{ 
 				std::shared_ptr<Token_Type> FactorType;
 				//Determine type
@@ -529,7 +544,9 @@ Factor: '(' Expression ')'
 				
 				$$.reset(new Token_Factor(Token_Factor::Constant, $1, FactorType)); 
 			}
+
 	| SetConstructors		//TODO
+
 	| Identifier	{ 
 				//Check for symbols with identifier and then set the type of the factor accordingly
 				try{

@@ -134,6 +134,20 @@ public:
 	/** Statement Related Methods **/
 	AsmCode TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS);	//Return AsmCode
 	
+	//Take an expression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled, for the caller to fill
+	//If cmp is set to true, will be a CMP type instruction and so Rd will be undefined
+	//Recursive
+	std::shared_ptr<AsmLine> FlattenExpression(std::shared_ptr<Token_Expression> expr, bool cmp=false);	
+	
+	//Take a SimpleExpression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled
+	std::shared_ptr<AsmLine> FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr);
+	
+	//Take a term and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
+	std::shared_ptr<AsmLine> FlattenTerm(std::shared_ptr<Token_Term> term);
+	
+	//Take a factor and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
+	std::shared_ptr<AsmLine> FlattenFactor(std::shared_ptr<Token_Factor> factor);
+	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
 	void PrintBlocks();

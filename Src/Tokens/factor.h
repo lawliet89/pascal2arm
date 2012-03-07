@@ -26,6 +26,7 @@ public:
 	
 	//OCCF
     Token_Factor(Form_T Form, std::shared_ptr<Token> value, std::shared_ptr<Token_Type> Type=nullptr);
+	Token_Factor(std::shared_ptr<Token_Expression> value);		//Overloaded form for expression
     Token_Factor(const Token_Factor& obj);
 	~Token_Factor() {}
 	Token_Factor operator=(const Token_Factor &obj);
@@ -38,7 +39,7 @@ public:
 	Form_T GetForm() const{ return Form; }
 	bool IsNegate() const { return Negate; }
 	std::shared_ptr<Token> GetToken(){ return value; }
-	std::shared_ptr<Token_Type> GetType(){ return Type; }
+	std::shared_ptr<Token_Type> GetType();
 protected:
 	Form_T Form;
 	std::shared_ptr<Token_Type> Type;
