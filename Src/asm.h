@@ -305,7 +305,22 @@ protected:
  * State of registers during run time generation
  * */
 class AsmRegister{
+public:
 	
+	struct State_T{		//State of registers
+		unsigned ID;
+		std::shared_ptr<Symbol> sym;
+		bool WrittenTo;			//Has the register been written to?
+		
+		State_T(): WrittenTo(false){}
+	};
+	
+	//NOTE: Take note of temp variables!
+	std::string GetVarRead(std::shared_ptr<Symbol> var);		//Returns the string to be outputted to code 
+	std::string GetVarWrite(std::shared_ptr<Symbol> var);		//Returns the string to be outputted to code
+	
+	
+protected:
 };
 
 /*

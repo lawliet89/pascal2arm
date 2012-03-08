@@ -79,7 +79,7 @@ PrintNewL	MOV R0, #'\n'
 ; Allocate memory for the stack--Used by subroutines
 ; By Dr. Tom Clarke
 ;--------------------------------------------------------------------------------
-
+	AREA Stack, DATA
 STACK_ 	% 4000 ; reserve space for stack
 STACK_BASE ; base of downward-growing stack + 4
 	ALIGN
