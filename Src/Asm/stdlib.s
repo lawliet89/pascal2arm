@@ -1,5 +1,5 @@
 
-FINISH	SWI SWI_EXIT	;End program
+FINISH	SWI SWI_Exit	;End program
 ;--------------------------------------------------------------------------------
 ; Function and Procedures
 ;--------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ NEXT0_ 		LDR R2, [R3], #4
 		;Print all significant characters
 
 NXTCHAR_ 	MOV R0, #0
-		SUBTRACT_ CMP R1, R2
+SUBTRACT_	CMP R1, R2
 		SUBPL R1, R1, R2
 		ADDPL R0,R0, #1
 		BPL SUBTRACT_

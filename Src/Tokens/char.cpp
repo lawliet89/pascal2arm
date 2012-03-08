@@ -22,5 +22,5 @@ Token_Char Token_Char::operator=(const Token_Char &obj){
 }
 
 std::string Token_Char::AsmValue(){
-	return ToString<unsigned>((unsigned) value);
+	return "#" + ToString<unsigned>((unsigned) value);
 }
