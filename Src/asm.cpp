@@ -224,7 +224,7 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 	for (it=list.begin() ; it != list.end(); it++ ){
 		std::pair<std::string, std::shared_ptr<Token> > value;
 		value = *it;
-		Token_Var * ptr = new Token_Var(value.first, type);
+		Token_Var * ptr = new Token_Var(value.first, type);		//TODO use shared pointer
 		try{
 			std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, value.first, std::shared_ptr<Token>(dynamic_cast<Token *>(ptr)));	
 			ptr -> SetSymbol(sym.first);		
@@ -290,6 +290,17 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcSymbol(std::strin
 	return result;
 }
 
+//Create temp variable
+std::shared_ptr<Symbol> AsmFile::CreateTempVar(std::shared_ptr<Token_Expression> expr){
+	std::shared_ptr<Token_Var> var(new Token_Var(expr -> GetIDStr(), expr->GetType(), false, true));
+	
+	std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, expr -> GetIDStr(), var);	
+	sym.first -> SetTemporary();
+	expr -> SetTempVar(sym.first);
+	
+	return sym.first;
+}
+
 //Generate Code
 std::string AsmFile::GenerateCode(){
 	std::stringstream output;
@@ -324,6 +335,25 @@ std::string AsmFile::GenerateCode(){
 	output << "\tAREA Program, CODE\n\tENTRY\n";	
 	
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
+	for (it = CodeLines.begin(); it < CodeLines.end(); it++){
+		std::shared_ptr<AsmLine> line = *it;
+		
+		if (line -> GetLabel() != nullptr){
+			output << line -> GetLabel()->GetID();
+		}
+		output << "\t";
+		
+		output << line -> GetOpCodeStr() << " ";
+		//output << " " << line -> GetRd() -> GetImmediate() << "\n";
+		
+		//TODO
+		output << "R1, ";
+		output << line -> GetRm() -> GetImmediate();
+		
+		output << "\n";
+	}	
+	
+	
 	
 	/** StdLib **/
 	try{
@@ -344,7 +374,7 @@ std::shared_ptr<AsmLine> AsmFile::CreateDataLine(std::shared_ptr<AsmLabel> Label
 	std::shared_ptr<AsmLine> line(new AsmLine(AsmLine::Directive, AsmLine::DCD));
 	line -> SetLabel(Label);
 	
-	std::shared_ptr<AsmOp> op(new AsmOp(AsmOp::Immediate, AsmOp::Destination));
+	std::shared_ptr<AsmOp> op(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
 	op->SetImmediate(value);
 	
 	line -> SetRd(op);
@@ -352,10 +382,19 @@ std::shared_ptr<AsmLine> AsmFile::CreateDataLine(std::shared_ptr<AsmLabel> Label
 	return line;
 }
 
-std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Token> ID, std::shared_ptr<Token_Expression> expr){
+std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLine::OpCode_T OpCode){
+	std::shared_ptr<AsmLine> line(new AsmLine(OpType, OpCode));
+	CodeLines.push_back(line);
+	
+	return line;
+}
+
+std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr){
 	std::shared_ptr<AsmLine> line;
+	line = FlattenExpression(expr);
+	std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
 	
-	
+	Rd -> SetSymbol(sym);
 	
 	return line;
 }
@@ -375,6 +414,50 @@ std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<S
 /** Statement Methods **/
 AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
 	return LHS == RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
+}
+
+std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, bool cmp){
+	std::shared_ptr<AsmLine> result;
+	
+	//Check for simplicity
+	std::shared_ptr<Token_Factor>simple = expr -> GetSimple();
+	
+	//This is a simple expression - CMP doesn't make sense here
+	if (simple != nullptr){
+		//std::cout << expr -> GetLine() << ":" << expr -> GetColumn() << "\n";
+		
+		//Handle based on form
+		Token_Factor::Form_T Form = simple -> GetForm();
+		
+		//Variable reference
+		if (Form == Token_Factor::VarRef){
+			if (simple -> IsNegate()){
+				//result = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
+			}
+			else{
+				//result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+			}
+			
+			//Create AsmOp for variable - TODO
+			std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
+			//Rm -> SetSymbol();
+		}
+		//Constant
+		else if (Form == Token_Factor::Constant){
+			if (simple -> IsNegate()){
+				result = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
+			}
+			else{
+				result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+			}
+			std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Immediate, AsmOp::Rm ) );
+			Rm -> SetImmediate(simple -> GetValueToken() -> AsmValue());
+			
+			result -> SetRm(Rm);
+		}
+		return result;
+	}
+	return result;
 }
 
 /** Compiler Debugging Methods **/

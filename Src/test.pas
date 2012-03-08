@@ -14,6 +14,7 @@ PROCEDURE testing;
 	END;
 	
 BEGIN
+	test := 5;		//Simple
 	Writeln('Hello World');
 	test := 5 * 6 + 5;
 
@@ -21,11 +22,11 @@ BEGIN
 
 	test := -5 + -6;
 	
-	float := 3.59;
+	//float := 3.59;
 	
-	float := 10e-2;
+	//float := 10e-2;
 	
-	float := -10e3;
+	//float := -10e3;
 
 	//float := 3;			//No type promotion for now
 	test := 5 * (6 + 5);

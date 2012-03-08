@@ -610,8 +610,8 @@ IndexList: IndexList ',' Expression
 
 UnsignedConstant: V_REAL	{ $$.reset(new Token_Real(GetValue<double>(yylval), V_Real)); }
 		| V_INT		{ $$.reset(new Token_Int(GetValue<int>(yylval), V_Int)); }
-		| V_STRING	{ $$.reset(new Token(yylval -> GetStrValue(), V_String)); }
-		| V_CHAR	{ $$.reset(new Token(yylval -> GetStrValue(), V_Character)); }
+		| V_STRING	{ /*$$.reset(new Token(yylval -> GetStrValue(), V_String));*/ }
+		| V_CHAR	{ $$.reset(new Token_Char(yylval -> GetStrValue()[0])); }
 		/*| Identifier	{ $$.reset(new Token(yylval -> GetStrValue(), V_Identifier)); }*/
 		| V_NIL		{ $$.reset(new Token("NIL", V_Nil)); }
 		| I_TRUE	{ $$.reset(new Token_Int(1, V_Boolean)); }
@@ -699,7 +699,7 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 				}
 
 				//Generate that assignment line!
-				Program.CreateAssignmentLine($1, RHS);
+				Program.CreateAssignmentLine(sym.first, RHS);
 			}
 			catch (AsmCode e){
 				if (e == SymbolNotExists){

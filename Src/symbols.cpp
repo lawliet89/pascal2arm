@@ -2,7 +2,7 @@
 
 /** Constructor **/
 Symbol::Symbol(Type_T type, std::string id, std::shared_ptr<Token> value,std::shared_ptr<AsmBlock> block): 
-Type(type), ID(StringToLower(id)), Value(value), Reserved(false), Block(block)
+Type(type), ID(StringToLower(id)), Value(value), Reserved(false), Block(block), Temporary(false)
 {
 	//...
 }
@@ -11,7 +11,8 @@ Symbol::Symbol(const Symbol &obj):
 	Type(obj.Type),
 	Value(obj.Value),
 	Reserved(obj.Reserved),
-	Block(obj.Block)
+	Block(obj.Block),
+	Temporary(obj.Temporary)
 {
 	//...
 }
@@ -23,6 +24,7 @@ Symbol Symbol::operator=(const Symbol &obj){
 		Value = obj.Value;
 		Reserved = obj.Reserved;
 		Block = obj.Block;
+		Temporary = obj.Temporary;
 	}
 	return *this;
 }

@@ -6,6 +6,7 @@ class Token_Expression;
 class Token_SimExpression;
 class Token_Factor;
 class Token_Term;
+class Symbol;
 
 #include "term.h"
 #include <memory>
@@ -28,6 +29,7 @@ public:
 	Op_T GetOp() const { return Operator; }
 	std::shared_ptr<Token_SimExpression> GetSimExpression(){ return SimExpression; }
 	std::shared_ptr<Token_Type> GetType(){ return Type; }
+	bool IsSimple(){ return SimExpression==nullptr && Operator==None; }
 	
 protected:
 	//Form: SimExpression OP Term where SimExpression can contain another SimExpression indefinitely
@@ -50,12 +52,22 @@ public:
 	void SetOp(Op_T Operator){ this -> Operator = Operator; }
 	void SetSimExpression(std::shared_ptr<Token_SimExpression> SimExpression){ this -> SimExpression = SimExpression; }
 	void CheckType() throw(AsmCode);		//Calculate the type of the Expression. Throws exceptions on LHS and RHS being incompatible
+	void SetTempVar(std::shared_ptr<Symbol> sym){ TempVar = sym; }
 	
 	std::shared_ptr<Token_Expression> GetExpression(){ return Expression; }
 	Op_T GetOp() const { return Operator; }
 	std::shared_ptr<Token_SimExpression> GetSimExpression(){ return SimExpression; }
 	std::shared_ptr<Token_Type> GetType(){ return Type; }
+	int GetID() const { return ExpressionID; }
+	std::string GetIDStr();
+	std::shared_ptr<Symbol> GetTempVar(){ return TempVar; }
+	bool IsSimple(){ return Expression==nullptr && Operator==None; }		//Check to see if expression is simple
 	
+	/** Flattening Related Methods **/
+	//An expression is simple iff, brackets not withstanding, it only contains one factor. This method will return that factor 
+	std::shared_ptr<Token_Factor> GetSimple();		
+	
+	//static methods
 	static void SetBoolType(std::shared_ptr<Token_Type>) throw(AsmCode);
 
 protected:
@@ -65,8 +77,11 @@ protected:
 	Op_T Operator;
 	std::shared_ptr<Token_Expression> Expression;
 	std::shared_ptr<Token_Type> Type;
+	int ExpressionID;
+	std::shared_ptr<Symbol> TempVar;
 	
 	static std::shared_ptr<Token_Type> BoolType;	//Stored type for bool.
+	static int IDCount;
 };
 
 

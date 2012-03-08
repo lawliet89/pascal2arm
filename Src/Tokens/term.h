@@ -28,6 +28,7 @@ public:
 	Op_T GetOp() const { return Operator; }
 	std::shared_ptr<Token_Factor> GetFactor(){ return Factor; }
 	std::shared_ptr<Token_Type> GetType(){ return Type; }
+	bool IsSimple(){ return Term==nullptr && Operator==None; }
 	
 protected:
 	//Form: Term OP Factor where Term can contain another term indefinitely

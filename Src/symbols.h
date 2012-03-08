@@ -62,6 +62,7 @@ public:
 	std::shared_ptr<AsmBlock> GetBlock(){ return Block; }
 	std::string GetID() const {return ID; }
 	bool IsReserved() const { return Reserved; }
+	bool IsTemporary() const { return Temporary; }
 	std::shared_ptr<AsmLabel> GetLabel(){ return Label; }
 	
 protected:	//Consturctor is protected so that no one but AsmFile can instantiate
@@ -69,6 +70,7 @@ protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	//OCCF
 	Symbol(Type_T type, std::string id, std::shared_ptr<Token> value=nullptr, std::shared_ptr<AsmBlock> block=nullptr);
 	void SetReserved(){ Reserved = true; }	//Only AsmFile can define reserved
+	void SetTemporary(){ Temporary = true; }
 
 	
 	/** Data Members **/
@@ -77,6 +79,7 @@ protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	Type_T Type;
 	std::shared_ptr<Token> Value;	//Token storing the value
 	bool Reserved;		//Reserved symbol
+	bool Temporary;
 	std::shared_ptr<AsmBlock> Block;	//Block in which symbol was defined
 	std::shared_ptr<AsmLabel> Label;	//Associated label, if any
 };

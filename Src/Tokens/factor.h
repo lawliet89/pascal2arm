@@ -21,18 +21,17 @@ public:
 		//SignedConstant,
 		Constant,			//Signed and unsigned Collapsed into constant
 		SetConstructors
-		//Identifier			//TODO Remove this eventually
 	};
 	
 	//OCCF
     Token_Factor(Form_T Form, std::shared_ptr<Token> value, std::shared_ptr<Token_Type> Type=nullptr);
-	Token_Factor(std::shared_ptr<Token_Expression> value);		//Overloaded form for expression
     Token_Factor(const Token_Factor& obj);
 	~Token_Factor() {}
 	Token_Factor operator=(const Token_Factor &obj);
 	
 	virtual const void * GetValue() const { return (void *) &value; }
 	virtual const void * operator()() const { return (void *) &value; }
+	std::shared_ptr<Token> GetValueToken(){ return value; }
 	
 	void SetNegate(bool val=true){ Negate = val; }
 	
@@ -40,6 +39,8 @@ public:
 	bool IsNegate() const { return Negate; }
 	std::shared_ptr<Token> GetToken(){ return value; }
 	std::shared_ptr<Token_Type> GetType();
+	bool IsSimple(){ return Form != Expression; }  //TODO for more complicated stuff
+	
 protected:
 	Form_T Form;
 	std::shared_ptr<Token_Type> Type;

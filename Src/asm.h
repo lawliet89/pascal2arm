@@ -72,104 +72,6 @@ protected:
 	static int count;
 };
 
-
-/*
- * 	Assembly file class - the "main" class
- * 
- * */
-class AsmFile{
-public:
-	//OCCF
-	AsmFile();
-	~AsmFile(); //Destroy all the pointers
-	AsmFile(const AsmFile &obj);
-	AsmFile operator=(const AsmFile &obj);
-	
-	void CreateGlobalScope();	//Create Global Scope and reserved symbols
-	
-	/** Symbols Related Methods **/
-	//Creates symbol in the current scope. AsmCode gives the status
-	//Will throw SymbolReserved if the symbol to be created infringes on a reserved symbol
-	//Also throws SymbolExistsInCurrentBlock if it is already defined in the current block
-	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateSymbol(Symbol::Type_T type, std::string id, std::shared_ptr<Token> value=nullptr) throw(AsmCode);
-	
-	//Check if symbol with id that is accessible from the current scope exists. return AsmCode with appropriate information
-	AsmCode CheckSymbol(std::string id);
-	std::pair<std::shared_ptr<Symbol>, AsmCode> GetSymbol(std::string id) throw(AsmCode);	//Throws SymbolNotExists if not found
-	
-	/** Variables **/
-	//Create Type symbol
-	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(AsmCode);
-	std::pair<std::shared_ptr<Symbol>, AsmCode> GetTypeSymbol(std::string id) throw(AsmCode); //Throws SymbolNotExists if not found
-	
-	//Create permanent variable symbols from Identifier List Tokens
-	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> InitialValue=nullptr);
-	
-	//Create temporary variables for complex expressions
-	void CreateTempVarSymbol();	//TODO
-	
-	//Function and procedures
-	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcSymbol(std::string ID); //Create for the current block
-	
-	/** Block Related Methods **/
-	//Block Stack
-	std::shared_ptr<AsmBlock> GetCurrentBlock(); //Current blocks
-	void PushBlock(std::shared_ptr<AsmBlock>);		//Set current block
-	void PopBlock();								//Return from current block
-	
-	std::shared_ptr<AsmBlock> CreateBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok=nullptr);	//Create block
-	std::shared_ptr<AsmBlock> GetGlobalBlock(){ return GlobalBlock; }		//Get global block pointer
-	
-	/** Code Related Methods **/
-	//Generate Code
-	std::string GenerateCode();
-	
-	/** Line Related Methods **/
-	std::shared_ptr<AsmLine> CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value);	//Pass method with a completed label
-	std::shared_ptr<AsmLine> CreateAssignmentLine(std::shared_ptr<Token> ID, std::shared_ptr<Token_Expression> expr);		//For assignment statements
-	
-	/** Label Related Methods **/
-	std::shared_ptr<AsmLabel> CreateLabel(std::string ID, std::shared_ptr<Symbol> sym=nullptr, std::shared_ptr<AsmLine> Line = nullptr) throw(AsmCode);
-	
-	/** Statement Related Methods **/
-	AsmCode TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS);	//Return AsmCode
-	
-	//Take an expression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled, for the caller to fill
-	//If cmp is set to true, will be a CMP type instruction and so Rd will be undefined
-	//Recursive
-	std::shared_ptr<AsmLine> FlattenExpression(std::shared_ptr<Token_Expression> expr, bool cmp=false);	
-	
-	//Take a SimpleExpression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled
-	std::shared_ptr<AsmLine> FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr);
-	
-	//Take a term and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
-	std::shared_ptr<AsmLine> FlattenTerm(std::shared_ptr<Token_Term> term);
-	
-	//Take a factor and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
-	std::shared_ptr<AsmLine> FlattenFactor(std::shared_ptr<Token_Factor> factor);
-	
-	/** Compiler Debug Methods **/
-	void PrintSymbols();
-	void PrintBlocks();
-	
-protected:
-	//Lines
-	std::vector<std::shared_ptr<AsmLine> > CodeLines;		//Lines for normal program code
-	std::vector<std::shared_ptr<AsmLine> > DataLines;		//Lines for data declaration
-	std::vector<std::shared_ptr<AsmLine> > FunctionLines;	//Lines for procedures and functions
-	
-	//Storage of labels
-	std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
-
-	
-	//AsmRegister Registers;		//State of registers- used when generating code
-	
-	//Storage of blocks
-	std::vector<std::shared_ptr<AsmBlock> > BlockList; 
-	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
-	std::shared_ptr<AsmBlock> GlobalBlock;
-};
-
 /**
  * 	Assembly line class
  * 		Wrapper class
@@ -324,7 +226,7 @@ public:
 	 * */
 	
 	enum Position_T{
-		Destination, OP1, OP2
+		Rd, Rm, Rn
 	};
 	
 	enum Type_T{
@@ -404,5 +306,104 @@ protected:
  * */
 class AsmRegister{
 	
+};
+
+/*
+ * 	Assembly file class - the "main" class
+ * 
+ * */
+class AsmFile{
+public:
+	//OCCF
+	AsmFile();
+	~AsmFile(); //Destroy all the pointers
+	AsmFile(const AsmFile &obj);
+	AsmFile operator=(const AsmFile &obj);
+	
+	void CreateGlobalScope();	//Create Global Scope and reserved symbols
+	
+	/** Symbols Related Methods **/
+	//Creates symbol in the current scope. AsmCode gives the status
+	//Will throw SymbolReserved if the symbol to be created infringes on a reserved symbol
+	//Also throws SymbolExistsInCurrentBlock if it is already defined in the current block
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateSymbol(Symbol::Type_T type, std::string id, std::shared_ptr<Token> value=nullptr) throw(AsmCode);
+	
+	//Check if symbol with id that is accessible from the current scope exists. return AsmCode with appropriate information
+	AsmCode CheckSymbol(std::string id);
+	std::pair<std::shared_ptr<Symbol>, AsmCode> GetSymbol(std::string id) throw(AsmCode);	//Throws SymbolNotExists if not found
+	
+	/** Variables **/
+	//Create Type symbol
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateTypeSymbol(std::string ID, Token_Type::P_Type pri, int sec=0) throw(AsmCode);
+	std::pair<std::shared_ptr<Symbol>, AsmCode> GetTypeSymbol(std::string id) throw(AsmCode); //Throws SymbolNotExists if not found
+	
+	//Create permanent variable symbols from Identifier List Tokens
+	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> InitialValue=nullptr);
+	
+	
+	//Create temporary variables for complex expressions
+	std::shared_ptr<Symbol> CreateTempVar(std::shared_ptr<Token_Expression> expr);
+	
+	//Function and procedures
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcSymbol(std::string ID); //Create for the current block
+	
+	/** Block Related Methods **/
+	//Block Stack
+	std::shared_ptr<AsmBlock> GetCurrentBlock(); //Current blocks
+	void PushBlock(std::shared_ptr<AsmBlock>);		//Set current block
+	void PopBlock();								//Return from current block
+	
+	std::shared_ptr<AsmBlock> CreateBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok=nullptr);	//Create block
+	std::shared_ptr<AsmBlock> GetGlobalBlock(){ return GlobalBlock; }		//Get global block pointer
+	
+	/** Code Related Methods **/
+	//Generate Code
+	std::string GenerateCode();
+	
+	/** Line Related Methods **/
+	std::shared_ptr<AsmLine> CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value);	//Pass method with a completed label
+	std::shared_ptr<AsmLine> CreateCodeLine(AsmLine::OpType_T, AsmLine::OpCode_T);		//Create an empty line and add it to list
+	std::shared_ptr<AsmLine> CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr);		//For assignment statements
+	
+	/** Label Related Methods **/
+	std::shared_ptr<AsmLabel> CreateLabel(std::string ID, std::shared_ptr<Symbol> sym=nullptr, std::shared_ptr<AsmLine> Line = nullptr) throw(AsmCode);
+	
+	/** Statement Related Methods **/
+	AsmCode TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS);	//Return AsmCode
+	
+	//Take an expression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled, for the caller to fill
+	//If cmp is set to true, will be a CMP type instruction and so Rd will be undefined
+	//Recursive
+	std::shared_ptr<AsmLine> FlattenExpression(std::shared_ptr<Token_Expression> expr, bool cmp=false);	
+	
+	//Take a SimpleExpression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled
+	std::shared_ptr<AsmLine> FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr);
+	
+	//Take a term and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
+	std::shared_ptr<AsmLine> FlattenTerm(std::shared_ptr<Token_Term> term);
+	
+	//Take a factor and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
+	std::shared_ptr<AsmLine> FlattenFactor(std::shared_ptr<Token_Factor> factor);
+	
+	/** Compiler Debug Methods **/
+	void PrintSymbols();
+	void PrintBlocks();
+	
+protected:
+	//Lines
+	std::vector<std::shared_ptr<AsmLine> > CodeLines;		//Lines for normal program code
+	std::vector<std::shared_ptr<AsmLine> > DataLines;		//Lines for data declaration
+	std::vector<std::shared_ptr<AsmLine> > FunctionLines;	//Lines for procedures and functions
+	
+	//Storage of labels
+	std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels
+
+	
+	//AsmRegister Registers;		//State of registers- used when generating code
+	
+	//Storage of blocks
+	std::vector<std::shared_ptr<AsmBlock> > BlockList; 
+	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
+	std::shared_ptr<AsmBlock> GlobalBlock;
 };
 #endif

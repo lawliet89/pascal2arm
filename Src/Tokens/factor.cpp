@@ -1,19 +1,13 @@
 #include "factor.h"
 
 Token_Factor::Token_Factor(Token_Factor::Form_T Form, std::shared_ptr< Token > value, std::shared_ptr<Token_Type> Type): 
-	Token("factor", Factor, false), Form(Form), value(value), Type(Type)
+	Token("factor", Factor, false), Form(Form), value(value), Type(Type), Negate(false)
 {
 
-}
-
-Token_Factor::Token_Factor(std::shared_ptr<Token_Expression> value):
-	Token("factor", Factor, false), Form(Expression), value(value), Type(nullptr)
-{
-	
 }
 
 Token_Factor::Token_Factor(const Token_Factor & obj): 
-	Token(obj), Form(obj.Form), value(obj.value), Type(obj.Type)
+	Token(obj), Form(obj.Form), value(obj.value), Type(obj.Type), Negate(obj.Negate)
 {
 
 }
@@ -25,6 +19,7 @@ Token_Factor Token_Factor::operator=(const Token_Factor& obj)
 		Form = obj.Form;
 		value = obj.value;
 		Type = obj.Type;
+		Negate = obj.Negate;
 	}
 	
 	return *this;

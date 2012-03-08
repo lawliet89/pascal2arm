@@ -158,7 +158,7 @@ $(GEN_DIR)func.o: Tokens/func.cpp Tokens/func.h token.h Tokens/var.h Tokens/type
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 
-$(GEN_DIR)expression.o: Tokens/expression.cpp Tokens/expression.h token.h Tokens/term.h Tokens/type.h
+$(GEN_DIR)expression.o: Tokens/expression.cpp Tokens/expression.h token.h Tokens/term.h Tokens/type.h utility.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 
