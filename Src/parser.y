@@ -98,6 +98,7 @@ void yyerror(const char *msg);
      {
 	//Initialise Lexer
 	LexerInit();
+	//yydebug = 1;
      };
 
 %%
@@ -397,7 +398,10 @@ Expression:  Expression SimpleOp SimpleExpression {
 					msg <<	"Operator is incompatible with type '"	<< LHS -> GetType() -> TypeToString() << "'";	//TODO Operator string
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
 				}
-				
+				else{
+					msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+				}
 				YYERROR;
 			}
 		}
@@ -433,7 +437,10 @@ SimpleExpression: SimpleExpression TermOP Term {
 					msg <<	"Operator is incompatible with type '"	<< LHS -> GetType() -> TypeToString() << "'";	//TODO Operator string
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
 				}
-				
+				else{
+					msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+				}
 				YYERROR;
 			}
 		}
@@ -466,7 +473,10 @@ Term:  Term FactorOP Factor{
 					msg <<	"Operator is incompatible with type '"	<< LHS -> GetType() -> TypeToString() << "'";	//TODO Operator string
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
 				}
-				
+				else{
+					msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+				}
 				YYERROR;
 			}
 		}
@@ -585,6 +595,11 @@ Factor: '(' Expression ')' {
 						msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
 						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, LexerLineCount, LexerCharCount);
 					}
+					else{
+						std::stringstream msg;
+						msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+					}
 					YYERROR;
 				}
 				
@@ -657,9 +672,9 @@ CompoundStatement: K_BEGIN StatementList K_END
 		;
 
 StatementList:   StatementList ';' Statement
-		| StatementList ';' error { if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
+		| StatementList ';' error { yyerrok; if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		| Statement
-		| error { if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
+		| error { yyerrok; if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		;
 
 StatementLabel: V_INT ':' {
@@ -714,7 +729,11 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 					msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
 				}
-					
+				else{
+					std::stringstream msg;
+					msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+				}
 				YYERROR;
 			}
 				

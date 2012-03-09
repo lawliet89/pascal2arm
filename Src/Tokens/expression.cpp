@@ -13,7 +13,7 @@ Token_SimExpression::Token_SimExpression(std::shared_ptr<Token_Term> Term, Op_T 
 
 Token_SimExpression::Token_SimExpression(const Token_SimExpression& obj): 
 	Token(obj), SimExpression(obj.SimExpression), Operator(obj.Operator), Term(obj.Term),
-	Type(obj.Type)
+	Type(obj.Type), TempVar(obj.TempVar)
 {
 
 }
@@ -26,6 +26,7 @@ Token_SimExpression Token_SimExpression::operator=(const Token_SimExpression& ob
 		Operator = obj.Operator;
 		Term = obj.Term;
 		Type = obj.Type;
+		TempVar = obj.TempVar;
 	}
 	
 	return *this;

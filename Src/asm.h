@@ -252,6 +252,7 @@ public:
 	AsmOp(const AsmOp &obj);
 	AsmOp operator=(const AsmOp &obj);
 	
+	void SetType(Type_T type) { Type = type; }
 	void SetScale(Scale_T scale){ Scale = scale; }
 	void SetWriteBack(bool val) { WriteBack = val;}
 	void SetSymbol(std::shared_ptr<Symbol> val) { sym = val; }
@@ -426,17 +427,18 @@ public:
 	
 	//Take an expression, flatten it by generating AsmLines and return an AsmLine
 	//If cmp is set to true, will be a CMP type instruction and so Rd will be undefined
+	//If expression is simple, then the return is undefined. You most likely will not be using it anyway
 	//Recursive
 	std::shared_ptr<AsmLine> FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd=nullptr, bool cmp=false);	
 	
-	//Take a SimpleExpression, flatten it by generating AsmLines and return an AsmLine 
-	std::shared_ptr<AsmLine> FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr, std::shared_ptr<AsmOp> Rd=nullptr);
+	//Take a SimpleExpression, flatten it by generating AsmLines and return an AsmOp to refer to the simexpr
+	std::shared_ptr<AsmOp> FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr, std::shared_ptr<AsmOp> Rd=nullptr);
 	
-	//Take a term and flatten it by generating AsmLines and return an AsmLine
-	std::shared_ptr<AsmLine> FlattenTerm(std::shared_ptr<Token_Term> term, std::shared_ptr<AsmOp> Rd=nullptr);
+	//Take a term and flatten it by generating AsmLines and return an AsmOp to refer to the term
+	std::shared_ptr<AsmOp> FlattenTerm(std::shared_ptr<Token_Term> term, std::shared_ptr<AsmOp> Rd=nullptr);
 	
-	//Take a factor and flatten it by generating AsmLines and return an AsmLine
-	std::shared_ptr<AsmLine> FlattenFactor(std::shared_ptr<Token_Factor> factor, std::shared_ptr<AsmOp> Rd=nullptr);
+	//Take a factor and flatten it by generating AsmLines and return an AsmOp to refer to the term
+	std::shared_ptr<AsmOp> FlattenFactor(std::shared_ptr<Token_Factor> factor, std::shared_ptr<AsmOp> Rd=nullptr);
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();

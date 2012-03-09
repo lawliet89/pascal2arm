@@ -24,12 +24,14 @@ public:
 	void SetOp(Op_T Operator){ this -> Operator = Operator; }
 	void SetSimExpression(std::shared_ptr<Token_SimExpression> SimExpression){ this -> SimExpression = SimExpression; }
 	void CheckType() throw(AsmCode);		//Calculate the type of the Term. Throws exceptions on LHS and RHS being incompatible
+	void SetTempVar(std::shared_ptr<Symbol> sym){ TempVar = sym; }
 	
 	std::shared_ptr<Token_Term> GetTerm(){ return Term; }
 	Op_T GetOp() const { return Operator; }
 	std::shared_ptr<Token_SimExpression> GetSimExpression(){ return SimExpression; }
 	std::shared_ptr<Token_Type> GetType(){ return Type; }
 	bool IsSimple(){ return SimExpression==nullptr && Operator==None; }
+	std::shared_ptr<Symbol> GetTempVar(){ return TempVar; }
 	
 protected:
 	//Form: SimExpression OP Term where SimExpression can contain another SimExpression indefinitely
@@ -38,6 +40,8 @@ protected:
 	Op_T Operator;
 	std::shared_ptr<Token_Term> Term;
 	std::shared_ptr<Token_Type> Type;
+	std::shared_ptr<Symbol> TempVar;
+
 };
 
 /** Expression **/

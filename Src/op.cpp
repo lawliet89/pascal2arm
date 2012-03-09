@@ -196,5 +196,4 @@ void LexerInit(){
 	//CurrentToken = NULL;
 	LexerSyntaxError = false;
 	ParseError = false;
-	//yydebug = 1;
 }

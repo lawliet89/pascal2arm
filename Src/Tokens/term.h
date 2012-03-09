@@ -6,6 +6,7 @@ class Token_Expression;
 class Token_SimExpression;
 class Token_Factor;
 class Token_Term;
+class Symbol;
 
 #include "factor.h"
 #include "type.h"
@@ -23,12 +24,14 @@ public:
 	void SetOp(Op_T Operator){ this -> Operator = Operator; }
 	void SetFactor(std::shared_ptr<Token_Factor> Factor){ this -> Factor = Factor; }
 	void CheckType() throw(AsmCode);		//Calculate the type of the Term. Throws exceptions on LHS and RHS being incompatible
+	void SetTempVar(std::shared_ptr<Symbol> sym){ TempVar = sym; }
 	
 	std::shared_ptr<Token_Term> GetTerm(){ return Term; }
 	Op_T GetOp() const { return Operator; }
 	std::shared_ptr<Token_Factor> GetFactor(){ return Factor; }
 	std::shared_ptr<Token_Type> GetType(){ return Type; }
 	bool IsSimple(){ return Term==nullptr && Operator==None; }
+	std::shared_ptr<Symbol> GetTempVar(){ return TempVar; }
 	
 protected:
 	//Form: Term OP Factor where Term can contain another term indefinitely
@@ -37,6 +40,7 @@ protected:
 	Op_T Operator;
 	std::shared_ptr<Token_Factor> Factor;
 	std::shared_ptr<Token_Type> Type;
+	std::shared_ptr<Symbol> TempVar;
 };
 
 #endif

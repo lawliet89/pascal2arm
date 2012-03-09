@@ -296,6 +296,7 @@ std::shared_ptr<Symbol> AsmFile::CreateTempVar(std::shared_ptr<Token_Type> type)
 	static unsigned counter = 0;
 	
 	std::string ID = ToString<unsigned>(counter) + "_temp";
+	counter++;
 	
 	std::shared_ptr<Token_Var> var(new Token_Var(ID, type, false, true));
 	
@@ -365,9 +366,19 @@ std::string AsmFile::GenerateCode(){
 		}
 		
 		/** Rn **/ //TODO
+		if (Rn != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RnType = Rn -> GetType();
+			if (RnType == AsmOp::Register){
+				RnOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rn -> GetSymbol() );
+			}
+			else if (RnType == AsmOp::Immediate){
+				RnOutput.first = Rn -> GetImmediate();
+			}
+			output << RnOutput.second;
+		}
 		
-		
-		/** RD **/ //TODO More than just destination registers?
+		/** Rd **/ //TODO More than just destination registers?
 		RdOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rd -> GetSymbol() );		//Because Rd can only be a register...
 		output << RdOutput.second;
 		
@@ -507,29 +518,32 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			
 			result -> SetRm(Rm);
 		}
+		result -> SetRd(Rd);
 	}
 	else{
 		//No? More hard work :(
 		//Check if Expression is simple
-		if (expr -> IsSimple()){
+		if (expr -> IsSimple()){			//CMP does not make sense here
 			//Then there is nothing to generate for expression. Move down to flattening the SimExpression
-			result = FlattenSimExpression(expr -> GetSimExpression(), Rd);
+			FlattenSimExpression(expr -> GetSimExpression(), Rd);		//We can throw this away because there is no more operations to be done
+			return nullptr;
 		}
 		else{
 			//In this case we definitely have to generate temporary variables already. We will use the existing Rd for LHS
-			std::shared_ptr<AsmLine> LHS, RHS;
+			std::shared_ptr<AsmLine> LHS;
+			std::shared_ptr<AsmOp> RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));
 			//Flatten Expression on LHS
 			LHS = FlattenExpression(expr -> GetExpression(), Rd);
 			
-			std::shared_ptr<Symbol> RHSTemp = CreateTempVar(expr -> GetType());
+			std::shared_ptr<Symbol> RHSTemp = CreateTempVar(expr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
 			expr -> SetTempVar(RHSTemp);
-			std::shared_ptr<AsmOp> RHSOp(new AsmOp(AsmOp::Register, AsmOp::Rd));
-			RHSOp -> SetSymbol(RHSTemp);
+			RHS -> SetSymbol(RHSTemp);
 			//and generate a temporary variable for RHS
 			//Flatten expression on RHS
-			RHS = FlattenSimExpression(expr -> GetSimExpression(), RHSOp);
+			RHS = FlattenSimExpression(expr -> GetSimExpression(), RHS);
 			
-			Op_T Op;
+			Op_T Op = expr -> GetOp(); //TODO
+			
 			if (Op == LT){
 				
 			}
@@ -543,7 +557,10 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 				
 			}
 			else if (Op == Equal){
-				
+				//if (cmp)
+				//	result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+				//else
+				//	result = CreateCodeLine(AsmLine::Processing, AsmLine::AND);
 			}
 			else if (Op == NotEqual){
 				
@@ -551,18 +568,137 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			else if (Op == In){
 				
 			}
+			result -> SetRm(LHS->GetRd());
+			result -> SetRn(RHS);
 		}
-		
+		if (!cmp)
+			result -> SetRd(Rd);		
 	}
-	
-	if (!cmp)
-		result -> SetRd(Rd);
+	result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
 	return result;
 }
 
-std::shared_ptr<AsmLine> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr, std::shared_ptr<AsmOp> Rd){
-	return nullptr;
+//Terms plus minus
+std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr, std::shared_ptr<AsmOp> Rd){
+	std::shared_ptr<AsmOp> result = Rd;	//Most likely
+	std::shared_ptr<AsmLine> line;
+	
+	if (simexpr -> IsSimple()){
+		result = FlattenTerm(simexpr -> GetTerm(), Rd);
+	}
+	else{
+		//It's a plus minus or xor
+		std::shared_ptr<AsmOp> LHS, RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));
+		LHS = FlattenSimExpression(simexpr -> GetSimExpression(), Rd);
+		
+		std::shared_ptr<Symbol> RHSTemp = CreateTempVar(simexpr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+		RHS -> SetSymbol(RHSTemp);
+		//and generate a temporary variable for RHS		
+		
+		RHS = FlattenTerm(simexpr -> GetTerm(), RHS);
+		
+		Op_T Op = simexpr -> GetOp(); 
+		if (Op == Add){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
+		}
+		else if (Op == Subtract){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::SUB);
+		}
+		else if (Op == Or){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::ORR);
+		}
+		else if (Op == Xor){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::EOR);
+		}
+		
+		line -> SetRd(Rd);
+		line -> SetRm(LHS);
+		line -> SetRn(RHS);
+	}
+	
+	return result;
 }
+
+std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, std::shared_ptr<AsmOp> Rd){
+	std::shared_ptr<AsmOp> result = Rd;		//Most likely
+	std::shared_ptr<AsmLine> line;
+	
+	if (term -> IsSimple()){		//TODO Strict simplicity optimisation
+		std::shared_ptr<AsmOp> factor = FlattenFactor(term -> GetFactor(), Rd);
+		line  = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+		line -> SetRd(Rd);
+		line -> SetRm(factor);
+	}
+	else{
+		//It's a * / div mod and
+		std::shared_ptr<AsmOp> LHS, RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));		//RHS has to use a temp variable
+		LHS = FlattenTerm(term -> GetTerm(), Rd);
+		
+		std::shared_ptr<Symbol> RHSTemp = CreateTempVar(term -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+		term -> SetTempVar(RHSTemp);
+		RHS -> SetSymbol(RHSTemp);			
+
+		RHS = FlattenFactor(term -> GetFactor(), RHS);
+		
+		Op_T Op = term -> GetOp(); 
+		if (Op == Multiply){		//TODO
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::MUL);
+		}
+		else if (Op == Divide){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
+			line -> SetComment("Unsupported, for now");
+		}
+		else if (Op == Div){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
+			line -> SetComment("Unsupported, for now");
+		}
+		else if (Op == Mod){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
+			line -> SetComment("Unsupported, for now");
+		}
+		else if (Op == And){
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::AND);
+		}
+		
+		line -> SetRd(Rd);
+		line -> SetRm(LHS);
+		line -> SetRn(RHS);
+	}
+	
+	return result;
+}
+
+std::shared_ptr<AsmOp> AsmFile::FlattenFactor(std::shared_ptr<Token_Factor> factor, std::shared_ptr<AsmOp> Rd){
+	std::shared_ptr<AsmOp> result = Rd;		//Most likely the case
+	
+	//Check form of factor
+	Token_Factor::Form_T form = factor->GetForm();
+	if (form == Token_Factor::Constant){
+		result -> SetType(AsmOp::Immediate);
+		result -> SetImmediate(factor -> GetValueToken() -> AsmValue());
+	}
+	else if (form == Token_Factor::Expression){
+		//Flatten an expression
+		std::shared_ptr<AsmLine> line = FlattenExpression(factor -> GetTokenDerived<Token_Expression>());
+		result = line -> GetRd();
+	}
+	else if (form == Token_Factor::VarRef){
+		result -> SetType(AsmOp::Register);
+		result -> SetSymbol(factor -> GetTokenDerived<Token_Var>() -> GetSymbol());
+	}
+	else if (form == Token_Factor::FuncCall){
+		
+	}
+	
+	//Negate value
+	if (factor -> IsNegate()){
+		std::shared_ptr<AsmLine> line = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
+		line -> SetRd(result);
+		line -> SetRm(result);
+	}
+	
+	return result;
+}	
 
 /** Compiler Debugging Methods **/
 void AsmFile::PrintSymbols(){  //TODO Print type of symbol and type of variable/function etc.

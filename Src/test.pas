@@ -15,6 +15,9 @@ PROCEDURE testing;
 	
 BEGIN
 	test := 5;		//Simple
+	test2 := 6;
+	test := 1+2;
+	test := test + test2;
 	//Writeln('Hello World');
 	//test := 5 * 6 + 5;
 

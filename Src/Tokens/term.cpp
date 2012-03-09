@@ -9,7 +9,7 @@ Token_Term::Token_Term(std::shared_ptr<Token_Factor> Factor, Op_T Operator, std:
 
 Token_Term::Token_Term(const Token_Term& obj): 
 	Token(obj), Factor(obj.Factor), Operator(obj.Operator), Term(obj.Term),
-	Type(obj.Type)
+	Type(obj.Type), TempVar(obj.TempVar)
 {
 
 }
@@ -22,6 +22,7 @@ Token_Term Token_Term::operator=(const Token_Term& obj)
 		Operator = obj.Operator;
 		Term = obj.Term;
 		Type = obj.Type;
+		TempVar = obj.TempVar;
 	}
 	
 	return *this;
