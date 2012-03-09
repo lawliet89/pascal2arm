@@ -341,19 +341,58 @@ std::string AsmFile::GenerateCode(){
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
 	for (it = CodeLines.begin(); it < CodeLines.end(); it++){
 		std::shared_ptr<AsmLine> line = *it;
+		std::shared_ptr<AsmOp> Rd, Rm, Rn;
+		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput;
 		
-		std::pair<std::string, std::string> Rd;
-		Rd = GetCurrentBlock()->GetRegister() -> GetVarWrite( line -> GetRd() -> GetSymbol() );
-		output << Rd.second;
+		Rd = line -> GetRd();
+		Rm = line -> GetRm();
+		Rn = line -> GetRn();
+
+		/** Rm **/ //TODO
+		if (Rm != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RmType = Rm -> GetType();
+			if (RmType == AsmOp::Register){
+				RmOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rm -> GetSymbol() );
+			}
+			else if (RmType == AsmOp::Immediate){
+				RmOutput.first = Rm -> GetImmediate();
+			}
+			output << RmOutput.second;
+		}
+		
+		/** Rn **/ //TODO
+		
+		
+		/** RD **/ //TODO More than just destination registers?
+		RdOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rd -> GetSymbol() );		//Because Rd can only be a register...
+		output << RdOutput.second;
+		
+		//Label
 		if (line -> GetLabel() != nullptr){
 			output << line -> GetLabel()->GetID();
 		}
 		output << "\t";
-		
+		//Opcode
 		output << line -> GetOpCodeStr() << " ";
-		output << Rd.first << ", ";
-		output << line -> GetRm() -> GetImmediate();
 		
+		if (!RdOutput.first.empty())
+			//Rd
+			output << RdOutput.first;
+		
+		if (!RmOutput.first.empty())
+			//Rm
+			output << ", " << RmOutput.first;
+		if (!RnOutput.first.empty())
+			//Rn
+			output << ", " << RnOutput.first;
+		
+		//Comments
+		std::string comment = line -> GetComment();
+		if (!comment.empty())
+			output << " ;" << comment;
+		
+		//EOL
 		output << "\n";
 	}	
 	
@@ -440,15 +479,17 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 		//Variable reference
 		if (Form == Token_Factor::VarRef){
 			if (simple -> IsNegate()){
-				//result = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
+				result = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
 			}
 			else{
-				//result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+				result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
 			}
 			
-			//Create AsmOp for variable - TODO
+			//Create AsmOp for variable
 			std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
-			//Rm -> SetSymbol();
+
+			Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+			result -> SetRm(Rm);
 		}
 		//Constant
 		else if (Form == Token_Factor::Constant){
@@ -839,8 +880,8 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 	}
 	if (sym != nullptr && load){
 		//Load data into register
-		output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << "\n";
-		output << "\tLDR R" << ToReturn.first << ", [" << AsmScratch << "]\n";
+		output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << "; Loading variable\n";
+		output << "\tLDR R" << ToReturn.first << ", [R" << AsmScratch << "]\n";
 	}
 	GetRegister(ToReturn.first).sym = sym;
 	ToReturn.second = output.str();

@@ -486,7 +486,11 @@ FactorOP: '*' { $$.reset(new Token_Int((int) Op_T::Multiply, T_Type::Operator));
 Factor: '(' Expression ')' {
 						$$.reset(new Token_Factor(Token_Factor::Expression, $2)); 
 					}
-	| VarRef		//TODO
+
+	| VarRef		{
+						//TODO with qualifier
+					}
+
 	| FuncCall		//TODO
 	| UnsignedConstant { 
 				std::shared_ptr<Token_Type> FactorType;
@@ -573,7 +577,7 @@ Factor: '(' Expression ')' {
 							HandleError(msg.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
 							YYERROR;
 					}
-					$$.reset(new Token_Factor(Form, $1, FactorType));
+					$$.reset(new Token_Factor(Form, sym.first -> GetValue(), FactorType));
 				}
 				catch (AsmCode e){
 					if (e == SymbolNotExists){
@@ -587,7 +591,10 @@ Factor: '(' Expression ')' {
 			}
 	/* Set, value typecast, address factor ?? */
 	;
-VarRef: SimpleVarReference VarQualifier
+VarRef: SimpleVarReference VarQualifier{
+											//TODO Qualifier
+											
+										}
 	/*| SimpleVarReference */
 	;
 

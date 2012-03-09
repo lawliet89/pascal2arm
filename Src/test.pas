@@ -1,7 +1,7 @@
 PROGRAM HelloWorld;
 
 VAR
-	test: integer;
+	test, test2: integer;
 	float: real;
 	character: char;
 	bool: boolean;
@@ -36,7 +36,8 @@ BEGIN
 	character := #43;
 	character := ^G;
 
-	//bool := NOT bool;
+	bool := NOT bool;
+	test2 := test;
 	//test := NOT test;
 
 	//test := true;

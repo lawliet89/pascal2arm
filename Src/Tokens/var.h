@@ -34,7 +34,7 @@ public:
 	std::shared_ptr<Token_Type> GetVarType(){ return Type; }
 	
 	//Symbol
-	const Symbol* GetSymbol() const{ return Sym.get(); }
+	std::shared_ptr<Symbol> GetSymbol() { return Sym; }
 	
 	bool GetTemp() const{ return Temp; }
 	void SetTemp(bool val) { Temp = val;}
