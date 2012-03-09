@@ -35,6 +35,7 @@ struct Flags_T{
 	//Skeleton Assembly Files location
 	std::string AsmHeaderPath;
 	std::string AsmStdLibPath;	//Standard libary ASM file
+	std::string AsmStackPath;
 	
 };	//There will be one object - Flags - defined in utility.cpp
 

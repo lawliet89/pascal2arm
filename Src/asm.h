@@ -6,10 +6,14 @@
 #include <fstream>
 #include <memory>	//C++11
 #include <map>
+#include <set>
 #include "token.h"
 #include "Gen/all.h"
 #include "symbols.h"
 #include "define.h"
+
+#define AsmUsableReg 11			//No of registers usable
+#define AsmScratch 12		//Register to be the scratch register
 
 /**
  * 
@@ -60,6 +64,7 @@ public:
 	std::shared_ptr<Token> GetToken(){ return TokenAssoc; }
 	std::string GetID() const{ return ID; }
 	Type_T GetType() const{ return Type; }
+	std::shared_ptr<AsmRegister> GetRegister(){ return Register; }
 	
 protected:
 	Type_T Type;		//Type of block & scope
@@ -68,6 +73,8 @@ protected:
 	std::vector<std::shared_ptr<AsmBlock> > ChildBlocks;	//List of child blocks declared in this block - this is different from BlockStack!
 	std::shared_ptr<Token> TokenAssoc;		//Associated token, if any
 	std::string ID;
+	
+	std::shared_ptr<AsmRegister> Register;
 	
 	static int count;
 };
@@ -155,9 +162,9 @@ public:
 	void SetCC(CC_T cc){ Condition = cc; }
 	void SetQualifier (Qualifier_T Qualifier) { this -> Qualifier = Qualifier; }
 	void SetLabel(std::shared_ptr<AsmLabel> Label){ this -> Label = Label; }
-	void SetRd(std::shared_ptr<AsmOp> op){ Rd = op; }
-	void SetRm(std::shared_ptr<AsmOp> op){ Rm = op; }
-	void SetRn(std::shared_ptr<AsmOp> op){ Rn = op; }
+	void SetRd(std::shared_ptr<AsmOp> val){ Rd = val; }
+	void SetRm(std::shared_ptr<AsmOp> val){ Rm = val; }
+	void SetRn(std::shared_ptr<AsmOp> val){ Rn = val; }
 	void SetComment(std::string val){ Comment = val; }
 	
 	//Getters
@@ -305,22 +312,53 @@ protected:
  * State of registers during run time generation
  * */
 class AsmRegister{
-public:
+public:	
+	AsmRegister(bool IsGlobal=false);
+	AsmRegister(unsigned FuncRegister);		//If this is inside a function, use this to set the number of initial registers that area already assigned. Assign symbols if neccessary
+	~AsmRegister() { }
+	AsmRegister(const AsmRegister &obj);
+	AsmRegister operator=(const AsmRegister &obj);
 	
-	struct State_T{		//State of registers
-		unsigned ID;
-		std::shared_ptr<Symbol> sym;
-		bool WrittenTo;			//Has the register been written to?
-		
-		State_T(): WrittenTo(false){}
-	};
 	
-	//NOTE: Take note of temp variables!
-	std::string GetVarRead(std::shared_ptr<Symbol> var);		//Returns the string to be outputted to code 
-	std::string GetVarWrite(std::shared_ptr<Symbol> var);		//Returns the string to be outputted to code
+	//NOTE: Take note of temp variables! -
+	std::pair<std::string, std::string> GetVarRead(std::shared_ptr<Symbol> var);		//Returns a pair of string. The first refers to the operator to access the register, the second refers to any stack movement.
+	std::pair<std::string, std::string> GetVarWrite(std::shared_ptr<Symbol> var);		//The first refers to the operator to access the register, the second refers to any stack movement.
 	
+	std::shared_ptr<Symbol> GetSymbol(unsigned ID);
+	bool GetBelongToScope(unsigned ID) const;
+	bool GetWrittenTo(unsigned ID) const;
+	bool GetPermanent(unsigned ID) const;
+	
+	//Aggregate Getters
+	std::vector<int> GetListOfNotBelong();			//Returns a list of registers that do not belong to this scope 
 	
 protected:
+	struct State_T{		//State of registers
+		std::shared_ptr<Symbol> sym;
+		bool WrittenTo;			//Has the register been written to?
+		bool BelongToScope;		//Set whether current register belong to scope
+		unsigned LastUsed;		//Counter where register was last used
+		bool Permanent;		//Set to disallow storage of this to memory. Used in a function for R0-R3
+		
+		State_T(bool IsGlobal=false): WrittenTo(false), BelongToScope(IsGlobal), Permanent(false), LastUsed(0){}
+	};
+	
+	std::vector<State_T> Registers;
+	unsigned counter;		//Kind of like a PC. To track least recently used
+	unsigned InitialUse;	//For initial tracking until all 13 gets filled up
+	
+	State_T &GetRegister(unsigned ID);
+	const State_T &GetRegister(unsigned ID) const;
+	
+	//Get ID of available register
+	std::pair<unsigned, std::string> GetAvailableRegister(std::shared_ptr<Symbol>sym, bool load=false);		//Set load to a symbol if you want to load its value
+	
+	void SetBelongToScope(unsigned ID, bool val=true);
+	void SetSymbol(unsigned ID, std::shared_ptr<Symbol> sym);
+	void SetWrittenTo(unsigned ID, bool val=true);
+	void SetPermanent(unsigned ID, bool val=true);
+	
+	std::pair<std::shared_ptr<Symbol>, unsigned> FindSymbol(std::shared_ptr<Symbol>);		//Iterate through the registers and see if symbol is already represented
 };
 
 /*

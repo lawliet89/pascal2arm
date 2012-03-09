@@ -72,6 +72,7 @@ void ParseArg(int argc, char **argv){
 	
 	Flags.AsmHeaderPath = "Asm/header.s";		//TODO-Handle later
 	Flags.AsmStdLibPath = "Asm/stdlib.s";
+	Flags.AsmStackPath = "Asm/stack.s";
 	
 	/** Handle Args **/
 	

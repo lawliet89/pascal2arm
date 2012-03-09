@@ -74,12 +74,3 @@ SUBTRACT_	CMP R1, R2
 PrintNewL	MOV R0, #'\n'
 		SWI SWI_WriteC
 		LDMED r13!,{r0-r4,r15} ;Return
-		
-;--------------------------------------------------------------------------------
-; Allocate memory for the stack--Used by subroutines
-; By Dr. Tom Clarke
-;--------------------------------------------------------------------------------
-	AREA Stack, DATA
-STACK_ 	% 4000 ; reserve space for stack
-STACK_BASE ; base of downward-growing stack + 4
-	ALIGN

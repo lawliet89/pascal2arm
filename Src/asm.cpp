@@ -3,6 +3,7 @@
 #include "op.h"
 #include <iostream>
 #include <set>
+#include <climits>
 
 extern Flags_T Flags;
 extern std::stringstream OutputString;		//op.cpp
@@ -325,29 +326,32 @@ std::string AsmFile::GenerateCode(){
 		output << line -> GetOpCodeStr();
 		output << " " << line -> GetRd() -> GetImmediate() << "\n";
 	}	
-	
-	output << ";--------------------------------------------------------------------------------" 
-		<< "\n;Program Code\n"
-		<< ";--------------------------------------------------------------------------------" 
-		<< "\n";
-	
+
+	/** Stack File **/
+	try{
+		output << ReadFile(Flags.AsmStackPath.c_str());
+	}
+	catch(...){
+		HandleError("Stack file for assembly does not exist.", E_GENERIC, E_FATAL);
+	}
+
 	/** Code Proper **/
-	output << "\tAREA Program, CODE\n\tENTRY\n";	
+
 	
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
 	for (it = CodeLines.begin(); it < CodeLines.end(); it++){
 		std::shared_ptr<AsmLine> line = *it;
 		
+		std::pair<std::string, std::string> Rd;
+		Rd = GetCurrentBlock()->GetRegister() -> GetVarWrite( line -> GetRd() -> GetSymbol() );
+		output << Rd.second;
 		if (line -> GetLabel() != nullptr){
 			output << line -> GetLabel()->GetID();
 		}
 		output << "\t";
 		
 		output << line -> GetOpCodeStr() << " ";
-		//output << " " << line -> GetRd() -> GetImmediate() << "\n";
-		
-		//TODO
-		output << "R1, ";
+		output << Rd.first << ", ";
 		output << line -> GetRm() -> GetImmediate();
 		
 		output << "\n";
@@ -362,6 +366,9 @@ std::string AsmFile::GenerateCode(){
 	catch(...){
 		HandleError("StdLib file for assembly does not exist.", E_GENERIC, E_FATAL);
 	}
+	
+	/** User functions/procedures **/
+	
 	
 	output << "\n\tEND";
 	return output.str();
@@ -393,8 +400,9 @@ std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> s
 	std::shared_ptr<AsmLine> line;
 	line = FlattenExpression(expr);
 	std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
-	
 	Rd -> SetSymbol(sym);
+	
+	line -> SetRd(Rd);
 	
 	return line;
 }
@@ -653,10 +661,11 @@ AsmLabel AsmLabel::operator=(const AsmLabel& obj)
 
 int AsmBlock::count = 0;
 
-AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok)
+AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok), Register(new AsmRegister(type == AsmBlock::Global))
 {
-	if (type == Global)
+	if (type == Global){
 		ID = "GLOBAL";
+	}
 	else if (TokenAssoc != nullptr)
 		ID = TokenAssoc -> GetStrValue();
 	else{
@@ -669,7 +678,7 @@ AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type
 }
 
 AsmBlock::AsmBlock(const AsmBlock& obj): 
-	SymbolList(obj.SymbolList), Type(obj.Type), ChildBlocks(obj.ChildBlocks), TokenAssoc(obj.TokenAssoc), ID(obj.ID)
+	SymbolList(obj.SymbolList), Type(obj.Type), ChildBlocks(obj.ChildBlocks), TokenAssoc(obj.TokenAssoc), ID(obj.ID), Register(obj.Register)
 {
 }
 
@@ -680,6 +689,7 @@ AsmBlock AsmBlock::operator=(const AsmBlock &obj){
 		ChildBlocks = obj.ChildBlocks;
 		TokenAssoc = obj.TokenAssoc;
 		ID = obj.ID;
+		Register = obj.Register;
 	}
 	return *this;
 }
@@ -713,4 +723,187 @@ AsmCode AsmBlock::CheckSymbol(std::string id) throw(){
 		else
 			return SymbolExistsInCurrentBlock;
 	}
+}
+
+/** AsmRegisters **/
+AsmRegister::AsmRegister(bool IsGlobal) : 
+	Registers(AsmUsableReg, AsmRegister::State_T(IsGlobal)), counter(0), InitialUse(0)
+{
+
+}
+
+AsmRegister::AsmRegister(unsigned FuncRegister):
+	Registers(AsmUsableReg, AsmRegister::State_T(false)), counter(0), InitialUse(FuncRegister-1)
+{
+	for (unsigned i = 0; i < FuncRegister; i++){
+		GetRegister(i).Permanent = true;
+		GetRegister(i).BelongToScope = true;
+	}
+}
+
+AsmRegister::AsmRegister(const AsmRegister& obj):
+	Registers(obj.Registers), counter(obj.counter), InitialUse(obj.InitialUse)
+{
+
+}
+
+AsmRegister AsmRegister::operator=(const AsmRegister& obj)
+{
+	if (this != &obj){
+		Registers = obj.Registers;
+		counter = obj.counter;
+		InitialUse = obj.InitialUse;
+	}
+	
+	return *this;
+}
+
+/**Simple Getters and Setters **/
+
+AsmRegister::State_T &AsmRegister::GetRegister(unsigned ID){
+	if (ID > AsmUsableReg)
+		throw;	//Illegal access
+	return Registers.at(ID);
+	
+}
+
+const AsmRegister::State_T &AsmRegister::GetRegister(unsigned ID) const{
+	if (ID > AsmUsableReg)
+		throw;	//Illegal access
+	return Registers.at(ID);
+	
+}
+
+void AsmRegister::SetBelongToScope(unsigned ID, bool val){
+	GetRegister(ID).BelongToScope = val;
+}
+
+void AsmRegister::SetSymbol(unsigned ID, std::shared_ptr<Symbol> sym){
+	GetRegister(ID).sym = sym;
+}
+
+void AsmRegister::SetWrittenTo(unsigned ID, bool val){
+	GetRegister(ID).WrittenTo = val;
+}
+
+void AsmRegister::SetPermanent(unsigned ID, bool val){
+	GetRegister(ID).Permanent = val;
+}
+
+std::shared_ptr<Symbol> AsmRegister::GetSymbol(unsigned ID){
+	return GetRegister(ID).sym;
+}
+bool AsmRegister::GetBelongToScope(unsigned ID) const{
+	return GetRegister(ID).BelongToScope;
+}
+bool AsmRegister::GetWrittenTo(unsigned ID) const{
+	return GetRegister(ID).WrittenTo;
+}
+bool AsmRegister::GetPermanent(unsigned ID) const{
+	return GetRegister(ID).Permanent;
+}
+
+/** Getters and Setters - Aggregate **/
+std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_ptr<Symbol> sym, bool load){
+	std::pair<unsigned, std::string> ToReturn;
+	std::stringstream output;
+	if (InitialUse <= AsmUsableReg){
+		//Okay easy
+		ToReturn.first =  InitialUse;
+		InitialUse++;
+	}
+	else{
+		//Find LRU
+		unsigned result, counter=UINT_MAX;
+		bool candidate = false;
+		for (unsigned i = 0; i < AsmUsableReg; i++){
+			State_T Register = GetRegister(i);
+			if (!Register.Permanent && Register.LastUsed < counter){
+				counter = Register.LastUsed;
+				result = i;
+				candidate = true;
+			}
+		}
+		
+		if (!candidate)		//Unlikely. In the event someone actually sets all AsmUsableReg registers as permanent....
+			throw;
+		
+		ToReturn.first = result;
+		State_T Register = GetRegister(result);
+		
+		//Check if register has been written to
+		if (Register.WrittenTo){
+			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "\n";
+			output << "\tSTR R" << result << ", [R" << AsmScratch << "]\n";
+		}
+	}
+	if (sym != nullptr && load){
+		//Load data into register
+		output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << "\n";
+		output << "\tLDR R" << ToReturn.first << ", [" << AsmScratch << "]\n";
+	}
+	GetRegister(ToReturn.first).sym = sym;
+	ToReturn.second = output.str();
+	return ToReturn;
+}
+
+std::pair<std::string, std::string> AsmRegister::GetVarRead(std::shared_ptr<Symbol> var){
+	std::pair<std::string, std::string> result;
+	std::map<std::shared_ptr<Symbol>, unsigned >::iterator it;
+	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);
+	
+	if (sym.first == nullptr){
+		//Not found.
+		std::pair<unsigned, std::string> ID = GetAvailableRegister(var, true);
+		result.second = ID.second;  //Any neccessary instructions
+		result.first = "R" + ToString<unsigned>(ID.first);
+		GetRegister(ID.first).LastUsed = counter;
+	}
+	else{
+		//Found
+		result.first = "R" + ToString<unsigned>(sym.second);
+		GetRegister(sym.second).LastUsed = counter;
+	}
+	counter++;
+	return result;
+}
+
+std::pair<std::string, std::string> AsmRegister::GetVarWrite(std::shared_ptr<Symbol> var){
+	std::pair<std::string, std::string> result;
+	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);
+	
+	if (sym.first == nullptr){
+		//Not found.
+		std::pair<unsigned, std::string> ID = GetAvailableRegister(var);
+		result.second = ID.second;  //Any neccessary instructions
+		result.first = "R" + ToString<unsigned>(ID.first);
+		GetRegister(ID.first).LastUsed = counter;
+		GetRegister(ID.first).WrittenTo = true;
+	}
+	else{
+		//Found
+		result.first = "R" + ToString<unsigned>(sym.second);
+		GetRegister(sym.second).LastUsed = counter;
+		GetRegister(sym.second).WrittenTo = true;
+	}
+	counter++;
+	return result;
+}
+
+std::pair<std::shared_ptr<Symbol>, unsigned> AsmRegister::FindSymbol(std::shared_ptr<Symbol> sym){
+	std::pair<std::shared_ptr<Symbol>, unsigned> result;
+	unsigned end = InitialUse;
+	
+	if (end > AsmUsableReg)
+		end = AsmUsableReg;
+	
+	for (unsigned i = 0; i <= end; i++){
+		if(Registers[i].sym.get() == sym.get()){
+			result.first = Registers[i].sym;
+			result.second = i;
+			break;
+		}
+	}
+	
+	return result;
 }

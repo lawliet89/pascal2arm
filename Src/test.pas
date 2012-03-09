@@ -15,12 +15,12 @@ PROCEDURE testing;
 	
 BEGIN
 	test := 5;		//Simple
-	Writeln('Hello World');
-	test := 5 * 6 + 5;
+	//Writeln('Hello World');
+	//test := 5 * 6 + 5;
 
-	test := 5 + 6*5;
+	//test := 5 + 6*5;
 
-	test := -5 + -6;
+	//test := -5 + -6;
 	
 	//float := 3.59;
 	
@@ -29,14 +29,14 @@ BEGIN
 	//float := -10e3;
 
 	//float := 3;			//No type promotion for now
-	test := 5 * (6 + 5);
+	//test := 5 * (6 + 5);
 
 	character := '''';
 	character := 'T';
 	character := #43;
 	character := ^G;
 
-	bool := NOT bool;
+	//bool := NOT bool;
 	//test := NOT test;
 
 	//test := true;
