@@ -36,7 +36,7 @@ public:
 	//Symbol
 	std::shared_ptr<Symbol> GetSymbol() { return Sym; }
 	
-	bool GetTemp() const{ return Temp; }
+	bool IsTemp() const{ return Temp; }
 	void SetTemp(bool val) { Temp = val;}
 
 	virtual std::string AsmValue(){ return value -> AsmValue(); }

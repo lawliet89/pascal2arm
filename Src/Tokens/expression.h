@@ -64,7 +64,7 @@ public:
 	bool IsSimple(){ return Expression==nullptr && Operator==None; }		//Check to see if expression is simple
 	
 	/** Flattening Related Methods **/
-	//An expression is simple iff, brackets not withstanding, it only contains one factor. This method will return that factor 
+	//An expression is strictly simple iff, brackets not withstanding, it only contains one factor. This method will return that factor 
 	std::shared_ptr<Token_Factor> GetSimple();		
 	
 	//static methods

@@ -178,7 +178,7 @@ public:
 	std::shared_ptr<AsmOp> GetRn(){ return Rn; }
 	std::string GetComment() const{ return Comment; }
 	
-	std::string GetOpCodeStr() const;
+	std::string GetOpCodeStr() const;		//TODO Handle CC
 	
 protected:
 	/** Data Members **/
@@ -395,7 +395,7 @@ public:
 	
 	
 	//Create temporary variables for complex expressions
-	std::shared_ptr<Symbol> CreateTempVar(std::shared_ptr<Token_Expression> expr);
+	std::shared_ptr<Symbol> CreateTempVar(std::shared_ptr<Token_Type> type);
 	
 	//Function and procedures
 	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcSymbol(std::string ID); //Create for the current block
@@ -424,19 +424,19 @@ public:
 	/** Statement Related Methods **/
 	AsmCode TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS);	//Return AsmCode
 	
-	//Take an expression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled, for the caller to fill
+	//Take an expression, flatten it by generating AsmLines and return an AsmLine
 	//If cmp is set to true, will be a CMP type instruction and so Rd will be undefined
 	//Recursive
-	std::shared_ptr<AsmLine> FlattenExpression(std::shared_ptr<Token_Expression> expr, bool cmp=false);	
+	std::shared_ptr<AsmLine> FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd=nullptr, bool cmp=false);	
 	
-	//Take a SimpleExpression, flatten it by generating AsmLines and return an AsmLine with Rd unfilled
-	std::shared_ptr<AsmLine> FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr);
+	//Take a SimpleExpression, flatten it by generating AsmLines and return an AsmLine 
+	std::shared_ptr<AsmLine> FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr, std::shared_ptr<AsmOp> Rd=nullptr);
 	
-	//Take a term and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
-	std::shared_ptr<AsmLine> FlattenTerm(std::shared_ptr<Token_Term> term);
+	//Take a term and flatten it by generating AsmLines and return an AsmLine
+	std::shared_ptr<AsmLine> FlattenTerm(std::shared_ptr<Token_Term> term, std::shared_ptr<AsmOp> Rd=nullptr);
 	
-	//Take a factor and flatten it by generating AsmLines and return an AsmLine with Rd unfilled
-	std::shared_ptr<AsmLine> FlattenFactor(std::shared_ptr<Token_Factor> factor);
+	//Take a factor and flatten it by generating AsmLines and return an AsmLine
+	std::shared_ptr<AsmLine> FlattenFactor(std::shared_ptr<Token_Factor> factor, std::shared_ptr<AsmOp> Rd=nullptr);
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();

@@ -225,9 +225,9 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 	for (it=list.begin() ; it != list.end(); it++ ){
 		std::pair<std::string, std::shared_ptr<Token> > value;
 		value = *it;
-		Token_Var * ptr = new Token_Var(value.first, type);		//TODO use shared pointer
+		std::shared_ptr<Token_Var> ptr(new Token_Var(value.first, type));	
 		try{
-			std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, value.first, std::shared_ptr<Token>(dynamic_cast<Token *>(ptr)));	
+			std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, value.first, std::dynamic_pointer_cast<Token>(ptr));	
 			ptr -> SetSymbol(sym.first);		
 			
 			if (Flags.Pedantic && sym.second == SymbolExistsInOuterBlock){
@@ -292,12 +292,15 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcSymbol(std::strin
 }
 
 //Create temp variable
-std::shared_ptr<Symbol> AsmFile::CreateTempVar(std::shared_ptr<Token_Expression> expr){
-	std::shared_ptr<Token_Var> var(new Token_Var(expr -> GetIDStr(), expr->GetType(), false, true));
+std::shared_ptr<Symbol> AsmFile::CreateTempVar(std::shared_ptr<Token_Type> type){
+	static unsigned counter = 0;
 	
-	std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, expr -> GetIDStr(), var);	
+	std::string ID = ToString<unsigned>(counter) + "_temp";
+	
+	std::shared_ptr<Token_Var> var(new Token_Var(ID, type, false, true));
+	
+	std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, ID, var);	
 	sym.first -> SetTemporary();
-	expr -> SetTempVar(sym.first);
 	
 	return sym.first;
 }
@@ -437,11 +440,11 @@ std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLi
 
 std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr){
 	std::shared_ptr<AsmLine> line;
-	line = FlattenExpression(expr);
+	
 	std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
 	Rd -> SetSymbol(sym);
 	
-	line -> SetRd(Rd);
+	line = FlattenExpression(expr, Rd);
 	
 	return line;
 }
@@ -463,13 +466,13 @@ AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::sh
 	return LHS == RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
 
-std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, bool cmp){
+std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd, bool cmp){
 	std::shared_ptr<AsmLine> result;
 	
-	//Check for simplicity
+	//Check for strict simplicity
 	std::shared_ptr<Token_Factor>simple = expr -> GetSimple();
 	
-	//This is a simple expression - CMP doesn't make sense here
+	//This is a strictly simple expression - CMP doesn't make sense here
 	if (simple != nullptr){
 		//std::cout << expr -> GetLine() << ":" << expr -> GetColumn() << "\n";
 		
@@ -504,9 +507,61 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			
 			result -> SetRm(Rm);
 		}
-		return result;
 	}
+	else{
+		//No? More hard work :(
+		//Check if Expression is simple
+		if (expr -> IsSimple()){
+			//Then there is nothing to generate for expression. Move down to flattening the SimExpression
+			result = FlattenSimExpression(expr -> GetSimExpression(), Rd);
+		}
+		else{
+			//In this case we definitely have to generate temporary variables already. We will use the existing Rd for LHS
+			std::shared_ptr<AsmLine> LHS, RHS;
+			//Flatten Expression on LHS
+			LHS = FlattenExpression(expr -> GetExpression(), Rd);
+			
+			std::shared_ptr<Symbol> RHSTemp = CreateTempVar(expr -> GetType());
+			expr -> SetTempVar(RHSTemp);
+			std::shared_ptr<AsmOp> RHSOp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+			RHSOp -> SetSymbol(RHSTemp);
+			//and generate a temporary variable for RHS
+			//Flatten expression on RHS
+			RHS = FlattenSimExpression(expr -> GetSimExpression(), RHSOp);
+			
+			Op_T Op;
+			if (Op == LT){
+				
+			}
+			else if (Op == LTE){
+				
+			}
+			else if (Op == GT){
+				
+			}
+			else if (Op == GTE){
+				
+			}
+			else if (Op == Equal){
+				
+			}
+			else if (Op == NotEqual){
+				
+			}
+			else if (Op == In){
+				
+			}
+		}
+		
+	}
+	
+	if (!cmp)
+		result -> SetRd(Rd);
 	return result;
+}
+
+std::shared_ptr<AsmLine> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr, std::shared_ptr<AsmOp> Rd){
+	return nullptr;
 }
 
 /** Compiler Debugging Methods **/
@@ -872,15 +927,15 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 		ToReturn.first = result;
 		State_T Register = GetRegister(result);
 		
-		//Check if register has been written to
-		if (Register.WrittenTo){
+		//Check if register has been written to and if the variable is a temporary
+		if (Register.WrittenTo && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "\n";
 			output << "\tSTR R" << result << ", [R" << AsmScratch << "]\n";
 		}
 	}
 	if (sym != nullptr && load){
 		//Load data into register
-		output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << "; Loading variable\n";
+		output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << " ;Loading variable\n";
 		output << "\tLDR R" << ToReturn.first << ", [R" << AsmScratch << "]\n";
 	}
 	GetRegister(ToReturn.first).sym = sym;
