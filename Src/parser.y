@@ -202,7 +202,12 @@ VarList:	VarList VarDeclaration
 		| VarDeclaration
 		;
 
-VarDeclaration:	IdentifierList ':' Type '=' Expression ';'	/* Add to Data declaration? */
+VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
+			//Handle expression
+			//TODO
+			
+			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1),std::dynamic_pointer_cast<Token_Type>($3));
+		}
 		| IdentifierList ':' Type ';' {
 			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1),std::dynamic_pointer_cast<Token_Type>($3));
 		};

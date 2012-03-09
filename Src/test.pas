@@ -19,9 +19,9 @@ BEGIN
 	test := 1+2;
 	test := test + test2;
 	//Writeln('Hello World');
-	//test := 5 * 6 + 5;
+	test := 5 * 6 + 5;
 
-	//test := 5 + 6*5;
+	test := 5 + 6*5;
 
 	//test := -5 + -6;
 	
@@ -32,7 +32,7 @@ BEGIN
 	//float := -10e3;
 
 	//float := 3;			//No type promotion for now
-	//test := 5 * (6 + 5);
+	test := 5 * (6 + 5);
 
 	character := '''';
 	character := 'T';
@@ -40,7 +40,8 @@ BEGIN
 	character := ^G;
 
 	bool := NOT bool;
-	test2 := test;
+	bool := NOT TRUE;
+	//test2 := test;
 	//test := NOT test;
 
 	//test := true;

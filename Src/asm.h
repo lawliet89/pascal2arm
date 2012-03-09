@@ -137,7 +137,8 @@ public:
 		DCB, 	//Byte version of DCD which is word
 		DCFD,	//Double precision - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Caccijca.html
 		DCFS,	//Single - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Cacdagie.html
-		EQU	//http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Caccddic.html
+		EQU, 	//http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Caccddic.html
+		NOP
 		//INCLUDE	?
 	};
 	enum CC_T{	//Condition Code
@@ -259,6 +260,7 @@ public:
 	void SetOffsetAddressOp(std::shared_ptr<AsmOp> val) { OffsetAddressOp = val; }
 	void SetScaleOp(std::shared_ptr<AsmOp> val) { ScaleOp = val; }
 	void SetImmediate(std::string val) { ImmediateValue = val; }
+	void SetToken(std::shared_ptr<Token> tok){ this -> tok = tok; }
 	
 	//Getters
 	Type_T GetType() const { return Type; }
@@ -269,6 +271,7 @@ public:
 	std::shared_ptr<AsmOp> GetOffsetAddressOp() { return OffsetAddressOp; }
 	std::shared_ptr<AsmOp> GetScaleOp() { return ScaleOp; }
 	std::string GetImmediate() const { return ImmediateValue; }
+	std::shared_ptr<Token> GetToken() { return tok;}
 	
 protected:
 	Type_T Type;
@@ -276,6 +279,7 @@ protected:
 	Scale_T Scale;
 	bool WriteBack;			//The ! thing
 	std::shared_ptr<Symbol> sym;	//Symbol associated, if any
+	std::shared_ptr<Token> tok;		//Token associated, if any
 	
 	std::shared_ptr<AsmOp> OffsetAddressOp;		//If the type is OffsetAddr -initialise to nullptr
 	std::shared_ptr<AsmOp> ScaleOp;
