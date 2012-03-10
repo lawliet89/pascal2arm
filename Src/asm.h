@@ -357,6 +357,8 @@ public:
 	void EvictRegister(unsigned no);
 	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false);	//Force variable to be in register no
 	void IncrementCounter(){ counter++; }
+	std::string SaveAllRegisters();
+	
 protected:
 	struct State_T{		//State of registers
 		std::shared_ptr<Symbol> sym;
@@ -416,7 +418,7 @@ public:
 	std::pair<std::shared_ptr<Symbol>, AsmCode> GetTypeSymbol(std::string id) throw(AsmCode); //Throws SymbolNotExists if not found
 	
 	//Create permanent variable symbols from Identifier List Tokens
-	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> InitialValue=nullptr);
+	void CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::string AsmInitialValue="");
 	
 	
 	//Create temporary variables for complex expressions

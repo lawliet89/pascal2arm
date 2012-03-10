@@ -74,13 +74,14 @@ void ParseArg(int argc, char **argv){
 	Flags.AsmStdLibPath = "Asm/stdlib.s";
 	Flags.AsmStackPath = "Asm/stack.s";
 	
+	Flags.SaveRegisters = false;
 	/** Handle Args **/
 	
 	while (1){		//TODO - Deal with no arguments & options
 		//Index of the option in the long_options array
 		int option_index = 0;		
 		
-		c = getopt_long (argc, argv, "Hpo:",	//Change short options here!
+		c = getopt_long (argc, argv, "sHpo:",	//Change short options here!
 				 long_options, &option_index);
 		
 		if (c == -1) //getopt_long will return -1 at the end of options
@@ -110,6 +111,8 @@ void ParseArg(int argc, char **argv){
 			case '?':
 				/* getopt_long already printed an error message. */
 				break;
+			case 's':
+				Flags.SaveRegisters = true;
 			default:	//Shouldn't happen.
 				abort ();
 		}

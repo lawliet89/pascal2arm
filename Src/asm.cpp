@@ -218,7 +218,7 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::GetTypeSymbol(std::string i
 }
 
 //Create symbol from list - outputs pedantic errors
-void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::shared_ptr<Token> InitialValue){
+void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::string AsmInitialValue){
 	std::map <std::string, std::shared_ptr<Token> > list = IDList->GetList();
 	std::map <std::string, std::shared_ptr<Token> >::iterator it;
 	
@@ -238,16 +238,16 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 			
 			//Create a label
 			//Label is a concatenation of the current block name and it's ID
-			std::string LabelID = GetCurrentBlock() -> GetID() + "_" + value.first;
+			std::string LabelID = GetCurrentBlock() -> GetID() + "_" + StringToLower(value.first);
 			std::shared_ptr<AsmLabel> label = CreateLabel(LabelID, sym.first);		
 			sym.first->SetLabel(label);
 			
 			//Create the data lines
 			std::string val;
-			if (InitialValue == nullptr)
+			if (AsmInitialValue.empty())
 				val = type -> AsmDefaultValue();
 			else
-				val = InitialValue -> AsmValue();
+				val = AsmInitialValue;
 			
 			std::shared_ptr<AsmLine> line = CreateDataLine(label, val);
 			label -> SetLine(line);
@@ -363,7 +363,7 @@ std::string AsmFile::GenerateCode(){
 			}
 			continue;
 		}
-		else if (OpCode == AsmLine::WRITE_INT){
+		else if (OpCode == AsmLine::WRITE_INT || OpCode == AsmLine::WRITE_C){
 			AsmOp::Type_T RdType = Rd -> GetType();
 
 			if (RdType == AsmOp::Register){
@@ -376,7 +376,10 @@ std::string AsmFile::GenerateCode(){
 				output << "\tMOV R0, ";
 				output << Rd -> GetImmediate() << "\n";
 			}
-			output << "\tBL PRINTR0_ ;Print integer\n";
+			if (OpCode == AsmLine::WRITE_INT)
+				output << "\tBL PRINTR0_ ;Print integer\n";
+			else
+				output << "\tSWI SWI_WriteC\n";
 			continue;
 		}
 		
@@ -474,6 +477,8 @@ std::string AsmFile::GenerateCode(){
 		output << "\n";
 	}	
 	
+	if (Flags.SaveRegisters)
+		output << GetCurrentBlock()->GetRegister()->SaveAllRegisters();
 	
 	
 	/** StdLib **/
@@ -1190,6 +1195,11 @@ void AsmFile::CreateWriteLine(std::shared_ptr<Token_ExprList> list){
 		line = CreateCodeLine(AsmLine::Processing, AsmLine::WRITE_INT);	
 		line -> SetRd(exprLine -> GetRd());
 	}
+	else if (type->GetPrimary() == Token_Type::Char){
+std::shared_ptr<AsmLine> exprLine = FlattenExpression(expr);
+		line = CreateCodeLine(AsmLine::Processing, AsmLine::WRITE_C);	
+		line -> SetRd(exprLine -> GetRd());
+	}
 	
 }
 
@@ -1687,7 +1697,7 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);
 	State_T Register = GetRegister(no);
 	
-	if (sym.second == no)
+	if (sym.first != nullptr && sym.second == no)
 		//Trivial
 		return "";
 	//Force save no
@@ -1713,13 +1723,25 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 			//Load data into register
 			result << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << " ;Loading variable\n";
 			result << "\tLDR R" << no << ", [R" << AsmScratch << "]\n";
-		}
+		};
 	}
 
 	if (write)
 		Register.WrittenTo = true;
 	
 	counter++;
+	
+	return result.str();
+}
+
+std::string AsmRegister::SaveAllRegisters(){
+	std::stringstream result;
+	unsigned end = InitialUse;
+	
+	if (end > AsmUsableReg)
+		end = AsmUsableReg;
+	for (unsigned i = 0; i <= end; i++)
+		result << SaveRegister(i);
 	
 	return result.str();
 }

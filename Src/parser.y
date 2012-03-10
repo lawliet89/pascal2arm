@@ -200,13 +200,37 @@ TypeDeclaration: Identifier '=' Type ';'
 
 VarList:	VarList VarDeclaration
 		| VarDeclaration
+		| VarList error { if (Flags.Pedantic) HandleError("Error in variable declaration. Variable ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
+		| error { if (Flags.Pedantic) HandleError("Error in variable declaration. Variable ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		;
 
 VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
 			//Handle expression
-			//TODO
+			//Check expression Type
+			std::shared_ptr<Token_Expression> expr = std::dynamic_pointer_cast<Token_Expression>($5);
+			std::shared_ptr<Token_Type> type = std::dynamic_pointer_cast<Token_Type>($3);
 			
-			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1),std::dynamic_pointer_cast<Token_Type>($3));
+			
+			if (Program.TypeCompatibilityCheck(expr->GetType(), type) != TypeCompatible){
+				std::stringstream msg;
+				msg << "Variable(s) of type '" << expr->GetType()-> TypeToString();
+				msg << "' cannot be initialised with expressions of type '" << type -> TypeToString() << "'"; 
+				
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+				YYERROR;
+			}
+			//Try to flatten expression
+			std::shared_ptr<AsmLine> line = Program.FlattenExpression(expr);
+			//Check if Rd is an immediate
+			if (line -> GetRd() -> GetType() != AsmOp::Immediate){
+				std::stringstream msg;
+				msg << "Variable(s) cannot be initialised with non-constant expressions.";
+				
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $5 -> GetLine(), $5 -> GetColumn());
+				YYERROR;
+			}
+			
+			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1), type, line -> GetRd()->GetImmediate());
 		}
 		| IdentifierList ':' Type ';' {
 			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1),std::dynamic_pointer_cast<Token_Type>($3));
@@ -677,9 +701,9 @@ CompoundStatement: K_BEGIN StatementList K_END
 		;
 
 StatementList:   StatementList ';' Statement
-		| StatementList ';' error { yyerrok; if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
+		| StatementList ';' error { if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		| Statement
-		| error { yyerrok; if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
+		| error { if (Flags.Pedantic) HandleError("Error in statement. Statement ignored.", E_PARSE, E_ERROR, LexerLineCount, LexerCharCount); }
 		;
 
 StatementLabel: V_INT ':' {

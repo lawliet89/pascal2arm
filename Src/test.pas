@@ -1,7 +1,7 @@
 PROGRAM HelloWorld;
 
 VAR
-	test, test2: integer;
+	test, test2: integer = 100;
 	float: real;
 	character: char;
 	bool: boolean;
@@ -66,12 +66,15 @@ BEGIN
 
 	test := 1 + 2 * test;*}
 
-	test := 5;
-	test := test MOD 2;
+	//test := 5;
+	//test := test MOD 2;
 
 	write(test);
 	write(123);
-	//write(test2);
-	//write(99);
-
+	write(character);
+	write('C');
+	write(test2);
+	write(99);
+	
+	test := test / 5 * 6;
 END.

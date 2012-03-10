@@ -37,6 +37,7 @@ struct Flags_T{
 	std::string AsmStdLibPath;	//Standard libary ASM file
 	std::string AsmStackPath;
 	
+	bool SaveRegisters;			//Should we save all registers to memory at the end?
 };	//There will be one object - Flags - defined in utility.cpp
 
 //Parse arguments and initialise flags
