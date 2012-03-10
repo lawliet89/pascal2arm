@@ -618,6 +618,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 				std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
 
 				Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+				Rd -> SetWrite();
 				result -> SetRm(Rm);
 				result -> SetRd(Rd);	
 			}
@@ -637,6 +638,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
 
 					Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+					Rd -> SetWrite();
 					result -> SetRm(Rm);
 					result -> SetRd(Rd);
 				}
@@ -660,6 +662,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					Rd -> SetSymbol(temp);
 				}
 				result -> SetRd(Rd);
+				Rd -> SetWrite();
 			}
 			else{
 				if (Rd == nullptr){		//i.e. it just wants the value of expession
@@ -679,6 +682,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					result -> SetRm(Rm);
 					result -> SetRd(Rd);
 				}
+				Rd -> SetWrite();
 			}
 		}
 		
