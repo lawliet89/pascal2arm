@@ -341,7 +341,7 @@ std::string AsmFile::GenerateCode(){
 	}
 
 	/** Code Proper **/
-
+	bool LoopDelta = false;
 	std::list<std::shared_ptr<AsmLine> >::iterator itList;
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
 	for (itList = CodeLines.begin(); itList != CodeLines.end(); itList++){
@@ -364,6 +364,14 @@ std::string AsmFile::GenerateCode(){
 		//Label
 		if (line -> GetLabel() != nullptr){
 			output << line -> GetLabel()->GetID();
+		}
+		
+		if (line -> IsInLoop() != LoopDelta){
+			LoopDelta = line -> IsInLoop();
+			if (LoopDelta)
+				GetCurrentBlock()->GetRegister()->SetInLoop();
+			else
+				GetCurrentBlock()->GetRegister()->SetInLoop(false);
 		}
 		
 		//Internal opcode handling
@@ -540,6 +548,8 @@ std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLi
 		line -> SetLabel(NextLabel);
 		NextLabel.reset();
 	}
+	if (IsInLoop())
+		line -> SetInLoop();
 	CodeLines.push_back(line);
 	
 	return line;
@@ -1307,7 +1317,7 @@ void AsmFile::PrintBlocks(){
  * 	AsmLine
  * */
 AsmLine::AsmLine(OpType_T Type, OpCode_T OpCode):
-	Type(Type), OpCode(OpCode), Condition(AL)
+	Type(Type), OpCode(OpCode), Condition(AL), InLoop(false)
 {
 	InitialiseStaticMaps();
 }
@@ -1319,7 +1329,8 @@ AsmLine::AsmLine(const AsmLine &obj):
 	Type(obj.Type),
 	Label(obj.Label),
 	Rd(obj.Rd), Rm(obj.Rm), Rn(obj.Rn), Ro(obj.Ro),
-	Comment(obj.Comment)
+	Comment(obj.Comment),
+	InLoop(obj.InLoop)
 {
 	InitialiseStaticMaps();
 }
@@ -1336,6 +1347,7 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
 		Rn = obj.Rn;
 		Ro = obj.Ro;
 		Comment = obj.Comment;
+		InLoop = obj.InLoop;
 	}
 	return *this;
 }
@@ -1559,13 +1571,13 @@ AsmCode AsmBlock::CheckSymbol(std::string id) throw(){
 
 /** AsmRegisters **/
 AsmRegister::AsmRegister(bool IsGlobal) : 
-	Registers(AsmUsableReg+1, AsmRegister::State_T(IsGlobal)), counter(0), InitialUse(0)
+	Registers(AsmUsableReg+1, AsmRegister::State_T(IsGlobal)), counter(0), InitialUse(0),  InLoop(false)
 {
 
 }
 
 AsmRegister::AsmRegister(unsigned FuncRegister):
-	Registers(AsmUsableReg, AsmRegister::State_T(false)), counter(0), InitialUse(FuncRegister-1)
+	Registers(AsmUsableReg, AsmRegister::State_T(false)), counter(0), InitialUse(FuncRegister-1), InLoop(false)
 {
 	for (unsigned i = 0; i < FuncRegister; i++){
 		GetRegister(i).Permanent = true;
@@ -1574,7 +1586,7 @@ AsmRegister::AsmRegister(unsigned FuncRegister):
 }
 
 AsmRegister::AsmRegister(const AsmRegister& obj):
-	Registers(obj.Registers), counter(obj.counter), InitialUse(obj.InitialUse)
+	Registers(obj.Registers), counter(obj.counter), InitialUse(obj.InitialUse), InLoop(obj.InLoop)
 {
 
 }
@@ -1585,6 +1597,7 @@ AsmRegister AsmRegister::operator=(const AsmRegister& obj)
 		Registers = obj.Registers;
 		counter = obj.counter;
 		InitialUse = obj.InitialUse;
+		InLoop = obj.InLoop;
 	}
 	
 	return *this;
@@ -1664,7 +1677,7 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 		State_T Register = GetRegister(result);
 		
 		//Check if register has been written to and if the variable is a temporary
-		if (Register.WrittenTo && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+		if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "\n";
 			output << "\tSTR R" << result << ", [R" << AsmScratch << "]\n";
 		}
@@ -1748,7 +1761,7 @@ std::string AsmRegister::SaveRegister(std::shared_ptr<Symbol> var){
 		//Might need to saved
 		State_T Register = GetRegister(result.second);
 		//Check if register has been written to and if the variable is a temporary
-		if (Register.WrittenTo  && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+		if ( (Register.WrittenTo || InLoop )  && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
 			output << "\tSTR R" << result.second << ", [R" << AsmScratch << "]\n";
 		}
@@ -1760,7 +1773,7 @@ std::string AsmRegister::SaveRegister(unsigned no){
 	State_T Register = GetRegister(no);
 	std::stringstream output;
 	
-	if (Register.WrittenTo && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+	if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
 		output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
 		output << "\tSTR R" << no << ", [R" << AsmScratch << "]\n";
 	}

@@ -922,6 +922,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 						std::shared_ptr<AsmLabel> label = Program.CreateForLabel();
 						Program.ForLabelStackPush(label);
 						Program.SetNextLabel(label);
+						Program.InLoopStackPush();
 					}
 					catch (AsmCode e){
 						if (e == SymbolNotExists){
@@ -947,6 +948,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				std::shared_ptr<AsmLine> line1 = Program.CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
 				line1 -> SetRd(IndexOp);
 				line1 -> SetRm(IndexOp);
+				line1 -> SetInLoop();
 				
 				//Create immediate 1
 				std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
@@ -960,6 +962,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				
 				std::shared_ptr<AsmLine> ToExpr = Program.FlattenExpression(std::dynamic_pointer_cast<Token_Expression>($6));
 				line2 -> SetRm(ToExpr -> GetRd());
+				line2 -> SetInLoop();
 				
 				//The branch line
 				std::shared_ptr<AsmLabel> label = Program.ForLabelStackPop();
@@ -968,6 +971,9 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				std::shared_ptr<AsmOp> LabelOp(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
 				LabelOp -> SetLabel(label);
 				branch -> SetRd(LabelOp);
+				branch -> SetInLoop();
+				
+				Program.InLoopStackPop();
 			}
 	;
 

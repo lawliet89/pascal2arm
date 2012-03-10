@@ -178,6 +178,7 @@ public:
 	void SetRn(std::shared_ptr<AsmOp> val){ Rn = val; }
 	void SetRo(std::shared_ptr<AsmOp> val){ Ro = val; }
 	void SetComment(std::string val){ Comment = val; }
+	void SetInLoop(bool val = true) { InLoop = val; }
 	
 	//Getters
 	OpCode_T GetOpCode() const { return OpCode; }
@@ -191,7 +192,8 @@ public:
 	std::shared_ptr<AsmOp> GetRo(){ return Ro; }
 	std::string GetComment() const{ return Comment; }
 	
-	std::string GetOpCodeStr() const;		//TODO Handle CC
+	std::string GetOpCodeStr() const;
+	bool IsInLoop() const { return InLoop; }
 	
 protected:
 	/** Data Members **/
@@ -205,6 +207,9 @@ protected:
 	std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;		//For some OpCode, there is an Ro
 	
 	std::string Comment;	
+	
+	//Line flags
+	bool InLoop;
 	
 	/** Constructor Protected **/
 	AsmLine(OpType_T Type, OpCode_T OpCode);
@@ -353,6 +358,9 @@ public:
 	bool GetWrittenTo(unsigned ID) const;
 	bool GetPermanent(unsigned ID) const;
 	
+	bool IsInLoop() const { return InLoop; }
+	void SetInLoop(bool val = true) { InLoop = val; }
+	
 	//Aggregate Getters
 	std::vector<int> GetListOfNotBelong();			//Returns a list of registers that do not belong to this scope 
 	
@@ -391,6 +399,9 @@ protected:
 	void SetPermanent(unsigned ID, bool val=true);
 	
 	std::pair<std::shared_ptr<Symbol>, unsigned> FindSymbol(std::shared_ptr<Symbol>);		//Iterate through the registers and see if symbol is already represented
+	
+	//If we are in a loop, variables are always saved because we don't know for sure if it will be written to
+	bool InLoop;
 };
 
 /*
@@ -503,7 +514,10 @@ public:
 		ForLabelStack.pop_back();
 		return result;
 	}
-	//If 
+	
+	void InLoopStackPush(){ InLoopStack.push_back(true); }
+	void InLoopStackPop() { InLoopStack.pop_back(); }
+	bool IsInLoop() { return !InLoopStack.empty(); }
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
@@ -532,5 +546,6 @@ protected:
 	std::vector<std::shared_ptr<AsmLine> > IfLineStack;
 	
 	std::vector<std::shared_ptr<AsmLabel> > ForLabelStack;
+	std::vector<bool> InLoopStack;
 };
 #endif
