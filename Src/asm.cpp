@@ -347,12 +347,39 @@ std::string AsmFile::GenerateCode(){
 		std::shared_ptr<AsmLine> line = *it;
 		std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;
 		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput, RoOutput;
+		AsmLine::OpCode_T OpCode;
+		
+		OpCode = line -> GetOpCode();
 		
 		Rd = line -> GetRd();
 		Rm = line -> GetRm();
 		Rn = line -> GetRn();
 		Ro = line -> GetRo();
+		
+		//Internal opcode handling
+		if (OpCode == AsmLine::SAVE){
+			if (Rd -> GetType() == AsmOp::Register){
+				output << GetCurrentBlock()->GetRegister()->SaveRegister(Rd -> GetSymbol());
+			}
+			continue;
+		}
+		else if (OpCode == AsmLine::WRITE_INT){
+			AsmOp::Type_T RdType = Rd -> GetType();
 
+			if (RdType == AsmOp::Register){
+				output << GetCurrentBlock()->GetRegister()->ForceVar(Rd -> GetSymbol(),0, true, false);
+			}
+			else if (RdType == AsmOp::Immediate){
+				output << GetCurrentBlock()->GetRegister()->SaveRegister(0);
+				GetCurrentBlock()->GetRegister()->EvictRegister(0);
+				GetCurrentBlock()->GetRegister()->IncrementCounter();
+				output << "\tMOV R0, ";
+				output << Rd -> GetImmediate() << "\n";
+			}
+			output << "\tBL PRINTR0_ ;Print integer\n";
+			continue;
+		}
+		
 		/** Rm **/ //TODO
 		if (Rm != nullptr){
 			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
@@ -517,13 +544,16 @@ AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::sh
 std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd, bool cmp){
 	std::shared_ptr<AsmLine> result;
 	
+//	if (Rd == nullptr){
+		//Let's create an Rd
+//		Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+//	}
+	
 	//Check for strict simplicity
 	std::shared_ptr<Token_Factor>simple = expr -> GetSimple();
 	
 	//This is a strictly simple expression - CMP doesn't make sense here
-	if (simple != nullptr){
-		//std::cout << expr -> GetLine() << ":" << expr -> GetColumn() << "\n";
-		
+	if (simple != nullptr){		
 		//Handle based on form
 		Token_Factor::Form_T Form = simple -> GetForm();
 		
@@ -531,31 +561,80 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 		if (Form == Token_Factor::VarRef){
 			if (simple -> IsNegate()){
 				result = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
+				if (Rd == nullptr){
+					//Let's create an Rd
+					Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					std::shared_ptr<Symbol> temp = CreateTempVar(expr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+					Rd -> SetSymbol(temp);
+				}
+				//Create AsmOp for variable
+				std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
+
+				Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+				result -> SetRm(Rm);
+				result -> SetRd(Rd);	
 			}
 			else{
-				result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
-			}
-			
-			//Create AsmOp for variable
-			std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
+				if (Rd == nullptr){		//i.e. it just wants the value of expession
+					//Fake line
+					result.reset(new AsmLine(AsmLine::Directive, AsmLine::NOP));
+					//Create AsmOp for variable
+					std::shared_ptr<AsmOp> Rd(new AsmOp( AsmOp::Register, AsmOp::Rd ) );
 
-			Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
-			result -> SetRm(Rm);
+					Rd -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+					result -> SetRd(Rd);
+				}
+				else{
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					//Create AsmOp for variable
+					std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
+
+					Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+					result -> SetRm(Rm);
+					result -> SetRd(Rd);
+				}
+							
+			}
+
 		}
 		//Constant
 		else if (Form == Token_Factor::Constant){
 			if (simple -> IsNegate()){
 				result = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
+			
+				std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Immediate, AsmOp::Rm ) );
+				Rm -> SetImmediate(simple -> GetValueToken() -> AsmValue());
+				
+				result -> SetRm(Rm);
+				if (Rd == nullptr){
+					//Let's create an Rd
+					Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					std::shared_ptr<Symbol> temp = CreateTempVar(expr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+					Rd -> SetSymbol(temp);
+				}
+				result -> SetRd(Rd);
 			}
 			else{
-				result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+				if (Rd == nullptr){		//i.e. it just wants the value of expession
+					//Fake line
+					result.reset(new AsmLine(AsmLine::Directive, AsmLine::NOP));
+					//Create AsmOp for variable
+					std::shared_ptr<AsmOp> Rd(new AsmOp( AsmOp::Immediate, AsmOp::Rd ) );
+
+					Rd -> SetImmediate(simple -> GetValueToken() -> AsmValue());
+					result -> SetRd(Rd);
+				}
+				else{
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					//Create AsmOp for variable
+					std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Immediate, AsmOp::Rm ) );
+					Rm -> SetImmediate(simple -> GetValueToken() -> AsmValue());
+					result -> SetRm(Rm);
+					result -> SetRd(Rd);
+				}
 			}
-			std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Immediate, AsmOp::Rm ) );
-			Rm -> SetImmediate(simple -> GetValueToken() -> AsmValue());
-			
-			result -> SetRm(Rm);
 		}
-		result -> SetRd(Rd);
+		
 	}
 	else{
 		//No? More hard work :(
@@ -569,6 +648,12 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			
 		}
 		else{
+			if (!cmp && Rd == nullptr){
+				//Let's create an Rd
+				Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+				std::shared_ptr<Symbol> temp = CreateTempVar(expr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+				Rd -> SetSymbol(temp);				
+			}
 			//In this case we definitely have to generate temporary variables already. We will use the existing Rd for LHS
 			std::shared_ptr<AsmLine> LHS;
 			std::shared_ptr<AsmOp> RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));
@@ -620,13 +705,21 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 
 //Terms plus minus
 std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimExpression> simexpr, std::shared_ptr<AsmOp> Rd){
-	std::shared_ptr<AsmOp> result = Rd;	//Most likely
+	std::shared_ptr<AsmOp> result;
 	std::shared_ptr<AsmLine> line;
 	
 	if (simexpr -> IsSimple()){
 		result = FlattenTerm(simexpr -> GetTerm(), Rd);
 	}
 	else{
+		if (Rd == nullptr){
+			//Let's create an Rd
+			Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+			std::shared_ptr<Symbol> temp = CreateTempVar(simexpr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+			Rd -> SetSymbol(temp);
+		}
+		result = Rd;
+
 		//It's a plus minus or xor
 		std::shared_ptr<AsmOp> LHS, RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));
 		LHS = FlattenSimExpression(simexpr -> GetSimExpression(), std::shared_ptr<AsmOp>( new AsmOp(*Rd)));		//Clone.
@@ -728,7 +821,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimEx
 }
 
 std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, std::shared_ptr<AsmOp> Rd){
-	std::shared_ptr<AsmOp> result = Rd;		//Most likely
+	std::shared_ptr<AsmOp> result;
 	std::shared_ptr<AsmLine> line;
 	
 	if (term -> IsSimple()){		//TODO Strict simplicity optimisation
@@ -736,8 +829,17 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 		//line  = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
 		//line -> SetRd(Rd);
 		//line -> SetRm(factor);
+		result = Rd;
 	}
 	else{
+		if (Rd == nullptr){
+			//Let's create an Rd
+			Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+			std::shared_ptr<Symbol> temp = CreateTempVar(term -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+			Rd -> SetSymbol(temp);
+			
+		}
+		result = Rd;
 		//It's a * / div mod and
 		std::shared_ptr<AsmOp> LHS, RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));		//RHS has to use a temp variable
 		LHS = FlattenTerm(term -> GetTerm(), std::shared_ptr<AsmOp>( new AsmOp(*Rd))); //Clone
@@ -859,6 +961,12 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 				
 			}
 			else if (Op == Divide || Op == Div){
+				//If LHS is a register, we have to check it's saved
+				if (LHS -> GetType() == AsmOp::Register){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::SAVE);
+					line2 -> SetRd(LHS);		
+				}
+				
 				//Okay if LHS or RHS are immediates, we have to move them into registries
 				if (LHS -> GetType() == AsmOp::Immediate){
 					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
@@ -919,7 +1027,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 					RdTemp -> SetSymbol(RHSTemp);
 					RHS = RdTemp;
 					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
-				}
+				}				
 				
 				//Since it's LHS/RHS, 	
 				line = CreateCodeLine(AsmLine::Processing, AsmLine::DivMod);
@@ -943,6 +1051,11 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 			//	line -> SetComment("Unsupported, for now");
 			//}
 			else if (Op == Mod){
+				//If LHS is a register, we have to check it's saved
+				if (LHS -> GetType() == AsmOp::Register){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::SAVE);
+					line2 -> SetRd(LHS);		
+				}
 				//Okay if LHS or RHS are immediates, we have to move them into registries
 				if (LHS -> GetType() == AsmOp::Immediate){
 					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
@@ -1028,8 +1141,13 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 }
 
 std::shared_ptr<AsmOp> AsmFile::FlattenFactor(std::shared_ptr<Token_Factor> factor, std::shared_ptr<AsmOp> Rd){
+	if (Rd == nullptr){
+		//Let's create an Rd
+		Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+		std::shared_ptr<Symbol> temp = CreateTempVar(factor -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+		Rd -> SetSymbol(temp);
+	}
 	std::shared_ptr<AsmOp> result = Rd;		//Most likely the case
-	
 	//Check form of factor
 	Token_Factor::Form_T form = factor->GetForm();
 	if (form == Token_Factor::Constant){
@@ -1061,6 +1179,19 @@ std::shared_ptr<AsmOp> AsmFile::FlattenFactor(std::shared_ptr<Token_Factor> fact
 	
 	return result;
 }	
+
+void AsmFile::CreateWriteLine(std::shared_ptr<Token_ExprList> list){
+	//We will only look at the first expression...
+	std::shared_ptr<Token_Expression> expr = list->GetList()[0];
+	std::shared_ptr<Token_Type> type = expr->GetType();
+	std::shared_ptr<AsmLine> line;
+	if (type->GetPrimary() == Token_Type::Integer){		
+		std::shared_ptr<AsmLine> exprLine = FlattenExpression(expr);
+		line = CreateCodeLine(AsmLine::Processing, AsmLine::WRITE_INT);	
+		line -> SetRd(exprLine -> GetRd());
+	}
+	
+}
 
 /** Compiler Debugging Methods **/
 void AsmFile::PrintSymbols(){  //TODO Print type of symbol and type of variable/function etc.
@@ -1437,10 +1568,11 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 		State_T Register = GetRegister(result);
 		
 		//Check if register has been written to and if the variable is a temporary
-		if (Register.WrittenTo && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+		if (Register.WrittenTo && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "\n";
 			output << "\tSTR R" << result << ", [R" << AsmScratch << "]\n";
 		}
+		EvictRegister(result);
 	}
 	if (sym != nullptr && load && !sym -> IsTemporary()){
 		//Load data into register
@@ -1511,4 +1643,83 @@ std::pair<std::shared_ptr<Symbol>, unsigned> AsmRegister::FindSymbol(std::shared
 	}
 	
 	return result;
+}
+
+std::string AsmRegister::SaveRegister(std::shared_ptr<Symbol> var){
+	std::stringstream output;
+	std::pair<std::shared_ptr<Symbol>, unsigned> result = FindSymbol(var);
+	if (result.first != nullptr){
+		//Might need to saved
+		State_T Register = GetRegister(result.second);
+		//Check if register has been written to and if the variable is a temporary
+		if (Register.WrittenTo  && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
+			output << "\tSTR R" << result.second << ", [R" << AsmScratch << "]\n";
+		}
+	}
+	return output.str();
+}
+
+std::string AsmRegister::SaveRegister(unsigned no){
+	State_T Register = GetRegister(no);
+	std::stringstream output;
+	
+	if (Register.WrittenTo && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+		output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
+		output << "\tSTR R" << no << ", [R" << AsmScratch << "]\n";
+	}
+	return output.str();
+}
+//Once evicted, the class will no longer have any idea about the register use unless this was called internally
+//Then this register will be thrown out if there is a need to clear any register accordingly. So make sure to update the LastUsed accordingly.
+//Probably best to only use it immediately.
+void AsmRegister::EvictRegister(unsigned no){		
+	State_T Register = GetRegister(no);
+	
+	Register.sym = nullptr;
+	Register.WrittenTo = false;
+	Register.LastUsed = counter;
+}
+
+std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load, bool write){
+	//Check if var already exists
+	std::stringstream result;
+	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);
+	State_T Register = GetRegister(no);
+	
+	if (sym.second == no)
+		//Trivial
+		return "";
+	//Force save no
+	result << SaveRegister(no);	
+	
+	if (sym.first != nullptr){
+		//Found
+		EvictRegister(no);
+		State_T Previous = GetRegister(sym.second);
+		//Assign
+		Register.sym = var;
+		Register.WrittenTo = Previous.WrittenTo;
+		result << "\tMOV R" << no << ", R" << sym.second << " ; force moving\n";
+	}
+	else{
+		//Not found
+		//Evict register
+		EvictRegister(no);
+		//Assign
+		Register.sym = var;
+		//Load?
+		if (Register.sym != nullptr && load && !Register.sym -> IsTemporary()){
+			//Load data into register
+			result << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << " ;Loading variable\n";
+			result << "\tLDR R" << no << ", [R" << AsmScratch << "]\n";
+		}
+	}
+
+	if (write)
+		Register.WrittenTo = true;
+	
+	counter++;
+	
+	return result.str();
 }

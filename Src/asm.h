@@ -142,7 +142,13 @@ public:
 		
 		
 		//Macros
-		DivMod=1000
+		DivMod=1000,
+		
+		
+		//Internal Use only
+		WRITE_INT=2000,	//Write int
+		WRITE_C,			//Write Char
+		SAVE			//Force Rd to be saved to memory if it was written
 	};
 	enum CC_T{	//Condition Code
 		CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
@@ -345,6 +351,12 @@ public:
 	//Aggregate Getters
 	std::vector<int> GetListOfNotBelong();			//Returns a list of registers that do not belong to this scope 
 	
+	//Special methods
+	std::string SaveRegister(std::shared_ptr<Symbol> var);		//Force save variable
+	std::string SaveRegister(unsigned no);			//Force save reg no
+	void EvictRegister(unsigned no);
+	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false);	//Force variable to be in register no
+	void IncrementCounter(){ counter++; }
 protected:
 	struct State_T{		//State of registers
 		std::shared_ptr<Symbol> sym;
@@ -451,6 +463,9 @@ public:
 	
 	//Take a factor and flatten it by generating AsmLines and return an AsmOp to refer to the term
 	std::shared_ptr<AsmOp> FlattenFactor(std::shared_ptr<Token_Factor> factor, std::shared_ptr<AsmOp> Rd=nullptr);
+	
+	//Hack -- Create Write()
+	void CreateWriteLine(std::shared_ptr<Token_ExprList> list);		//Only supports ONE expression 
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();

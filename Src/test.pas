@@ -69,4 +69,9 @@ BEGIN
 	test := 5;
 	test := test MOD 2;
 
+	write(test);
+	write(123);
+	//write(test2);
+	//write(99);
+
 END.

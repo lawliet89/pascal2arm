@@ -655,8 +655,8 @@ FuncCall: Identifier '(' ActualParamList ')' {
 	/* | Identifier */
 	;
 
-ActualParamList: ActualParamList ',' Expression
-		| Expression
+ActualParamList: ActualParamList ',' Expression { $$ = $1; std::dynamic_pointer_cast<Token_ExprList>($$) -> AddExpression(std::dynamic_pointer_cast<Token_Expression>($3)); }
+		| Expression {$$.reset(new Token_ExprList(std::dynamic_pointer_cast<Token_Expression>($1)));}
 		|
 		;
 		
@@ -746,7 +746,12 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 		/* += -= /= *= */
 		;
 
-ProcedureStatement: Identifier '(' ActualParamList ')'
+ProcedureStatement: Identifier '(' ActualParamList ')' {
+					//We are going to hack in write here
+					if ($1 -> GetStrValue() == "write"){
+						Program.CreateWriteLine(std::dynamic_pointer_cast<Token_ExprList>($3));
+					}
+			}
 		| Identifier
 		;
 
