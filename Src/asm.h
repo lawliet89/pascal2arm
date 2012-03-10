@@ -152,7 +152,7 @@ public:
 		SAVE			//Force Rd to be saved to memory if it was written
 	};
 	enum CC_T{	//Condition Code
-		CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
+		EQ, CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
 		AL=900,
 		NV=999
 	};

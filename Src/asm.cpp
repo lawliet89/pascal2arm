@@ -714,7 +714,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			//Generate a fake line with Rd set
 			result.reset(new AsmLine(AsmLine::Directive, AsmLine::NOP));
 			result -> SetRd(Rd);
-			
+			//Rd -> SetWrite();
 		}
 		else{
 			if (!cmp && Rd == nullptr){
@@ -739,36 +739,102 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			RHS = FlattenSimExpression(expr -> GetSimExpression(), RHS);
 			
 			Op_T Op = expr -> GetOp(); //TODO
-			if (Op == LT){
+			
+			if (cmp){
+				result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+				result -> SetRm(LHS->GetRd());
+				result -> SetRn(RHS);
+			}
+			else{
+				//We have to do acomparison first
+				result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+				result -> SetRm(LHS->GetRd());
+				result -> SetRn(RHS);
+				result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
 				
-			}
-			else if (Op == LTE){
+				std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rm));
+				One -> SetImmediate("1");
+				std::shared_ptr<AsmOp> Zero(new AsmOp(AsmOp::Immediate, AsmOp::Rm));
+				Zero -> SetImmediate("0");
 				
+				if (Op == LT){
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::LT);
+					result -> SetRd(Rd);
+					result -> SetRm(One);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::GE);
+					result -> SetRd(Rd);
+					result -> SetRm(Zero);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+					
+				}
+				else if (Op == LTE){
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::LE);
+					result -> SetRd(Rd);
+					result -> SetRm(One);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::GT);
+					result -> SetRd(Rd);
+					result -> SetRm(Zero);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+				}
+				else if (Op == GT){
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::GT);
+					result -> SetRd(Rd);
+					result -> SetRm(One);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::LE);
+					result -> SetRd(Rd);
+					result -> SetRm(Zero);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+				}
+				else if (Op == GTE){
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::GE);
+					result -> SetRd(Rd);
+					result -> SetRm(One);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::LT);
+					result -> SetRd(Rd);
+					result -> SetRm(Zero);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+				}
+				else if (Op == Equal){
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::EQ);
+					result -> SetRd(Rd);
+					result -> SetRm(One);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::NE);
+					result -> SetRd(Rd);
+					result -> SetRm(Zero);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+				}
+				else if (Op == NotEqual){
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::NE);
+					result -> SetRd(Rd);
+					result -> SetRm(One);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					result -> SetCC(AsmLine::EQ);
+					result -> SetRd(Rd);
+					result -> SetRm(Zero);
+					result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
+				}
+				else if (Op == In){
+					
+				}
+				Rd -> SetWrite();
 			}
-			else if (Op == GT){
-				
-			}
-			else if (Op == GTE){
-				
-			}
-			else if (Op == Equal){
-				if (cmp)
-					result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
-				else
-					result = CreateCodeLine(AsmLine::Processing, AsmLine::AND);
-			}
-			else if (Op == NotEqual){
-				
-			}
-			else if (Op == In){
-				
-			}
-			result -> SetRm(LHS->GetRd());
-			result -> SetRn(RHS);
-		}
-		if (!cmp){
-			result -> SetRd(Rd);		
-			Rd -> SetWrite();
 		}
 	}
 	result -> SetComment("Line " + ToString<int>(expr -> GetLine()));

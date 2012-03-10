@@ -87,4 +87,6 @@ BEGIN
 	 B := B + 1;
       end;
    write(B);
+   
+   bool := A > B;
 END.
