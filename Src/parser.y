@@ -827,18 +827,41 @@ IfStatement: K_IF Expression K_THEN Statement ElsePart
 	
 	*/
 
-IfStatement: IfTest IfBody IfElse;
+IfStatement: IfTest IfExecute;
 
 IfTest: K_IF Expression K_THEN{
-				std::shared_ptr<AsmLine> line = Program.FlattenExpression(std::dynamic_pointer_cast<Token_Expression>($2), nullptr, true);
+				//Expression
+				std::shared_ptr<Token_Expression> expr(std::dynamic_pointer_cast<Token_Expression>($2));
+				std::shared_ptr<AsmLine> line = Program.FlattenExpression(expr, nullptr, true), branch;
 				
+				std::shared_ptr<AsmLabel> label = Program.CreateIfElseLabel();
+				Program.IfLabelStackPush(label);
+				branch = Program.CreateCodeLine(AsmLine::Branch, AsmLine::B);
+				
+				//Handle Label
+				std::shared_ptr<AsmOp> OpLabel(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+				OpLabel -> SetLabel(label);
+				branch -> SetRd(OpLabel);
+				
+				Op_T Op = expr -> GetOp();
+				if (Op == Equal){
+					branch -> SetCC(AsmLine::NE);
+				}
 			}
+			
+IfExecute: IfBody IfElse
+		| IfBody 
+		;
+			
+IfBody: Statement
+		{
+			Program.SetNextLabel(Program.IfLabelStackPop());
+		}
 
-IfBody: Statement;
+;
 
 IfElse: K_ELSE Statement
-	|
-	;	
+;	
 
 
 ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression K_DO Statement

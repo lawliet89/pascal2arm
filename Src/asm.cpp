@@ -13,6 +13,7 @@ extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l	- DEBUG purposes
 /** Data Structures **/
 
 std::map<AsmLine::OpCode_T, std::string> AsmLine::OpCodeStr;
+std::map<AsmLine::CC_T, std::string> AsmLine::CCStr;
 
 /**
  * 	AsmFile
@@ -101,7 +102,7 @@ void AsmFile::PushBlock(std::shared_ptr<AsmBlock> block){
 }
 
 void AsmFile::PopBlock(){
-	BlockStack.pop_back();
+	BlockStack.pop_back();		//NOTE: calls destructor...
 }
 
 //Create block
@@ -451,6 +452,9 @@ std::string AsmFile::GenerateCode(){
 			else if (RdType == AsmOp::Immediate){
 				RdOutput.first = Rd -> GetImmediate();
 			}
+			else if (RdType == AsmOp::CodeLabel){
+				RdOutput.first = Rd->GetLabel()-> GetID();
+			}
 			output << RdOutput.second;
 		}
 		
@@ -489,10 +493,13 @@ std::string AsmFile::GenerateCode(){
 		//EOL
 		output << "\n";
 	}	
+	if (NextLabel != nullptr)
+		output << NextLabel -> GetID();
 	
 	if (Flags.SaveRegisters)
 		output << GetCurrentBlock()->GetRegister()->SaveAllRegisters();
 	
+	output << "\tSWI SWI_EXIT";
 	
 	/** StdLib **/
 	try{
@@ -526,6 +533,11 @@ std::shared_ptr<AsmLine> AsmFile::CreateDataLine(std::shared_ptr<AsmLabel> Label
 
 std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLine::OpCode_T OpCode){
 	std::shared_ptr<AsmLine> line(new AsmLine(OpType, OpCode));
+	
+	if (NextLabel != nullptr){
+		line -> SetLabel(NextLabel);
+		NextLabel.reset();
+	}
 	CodeLines.push_back(line);
 	
 	return line;
@@ -562,6 +574,14 @@ std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<S
 }
 
 /** Statement Methods **/
+std::shared_ptr<AsmLabel> AsmFile::CreateIfElseLabel(){
+		static unsigned counter = 0;
+		std::shared_ptr<AsmLabel> result = CreateLabel("IFELSE_" + ToString<unsigned>(counter));
+		
+		counter++;
+		return result;
+}
+
 AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
 	return *LHS == *RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
@@ -1273,7 +1293,7 @@ void AsmFile::PrintBlocks(){
  * 	AsmLine
  * */
 AsmLine::AsmLine(OpType_T Type, OpCode_T OpCode):
-	Type(Type), OpCode(OpCode)
+	Type(Type), OpCode(OpCode), Condition(AL)
 {
 	InitialiseStaticMaps();
 }
@@ -1307,7 +1327,10 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
 }
 
 std::string AsmLine::GetOpCodeStr() const{
-	return OpCodeStr[OpCode];
+	if (Condition == AL)
+		return OpCodeStr[OpCode];
+	else
+		return OpCodeStr[OpCode] + CCStr[Condition];
 }
 
 //Initialise 
@@ -1363,6 +1386,25 @@ void AsmLine::InitialiseStaticMaps(){
 		OpCodeStr[EQU] = "EQU";
 		
 		OpCodeStr[DivMod] = "DivMod";
+		
+		CCStr[CS] = "CS";
+		CCStr[SQ] = "SQ";
+		CCStr[VS] = "VS";
+		CCStr[GT] = "GT";
+		CCStr[GE] = "GE";
+		CCStr[PL] = "PL";
+		CCStr[HI] = "HI";
+		CCStr[HS] = "HS";
+		CCStr[CC] = "CC";
+		CCStr[NE] = "NE";
+		CCStr[VC] = "VC";
+		CCStr[LT] = "LT";
+		CCStr[LE] = "LE";
+		CCStr[MI] = "MI";
+		CCStr[LO] = "LO";
+		CCStr[LS] = "LS";
+		CCStr[AL] = "AL";
+		CCStr[NV] = "NV";
 	}
 }
 
@@ -1371,7 +1413,7 @@ void AsmLine::InitialiseStaticMaps(){
  * */
 
 AsmOp::AsmOp(Type_T Type, Position_T Position):
-	Type(Type), Position(Position), Scale(AsmOp::NoScale), sym(nullptr), OffsetAddressOp(nullptr), ScaleOp(nullptr), Write(false)
+	Type(Type), Position(Position), Scale(AsmOp::NoScale), sym(nullptr), OffsetAddressOp(nullptr), ScaleOp(nullptr), Write(false), Label(nullptr)
 {
 	
 }
@@ -1379,7 +1421,8 @@ AsmOp::AsmOp(Type_T Type, Position_T Position):
 AsmOp::AsmOp(const AsmOp &obj):
 	Type(obj.Type), Position(obj.Position), Scale(obj.Scale), sym(obj.sym), 
 	OffsetAddressOp(obj.OffsetAddressOp), ScaleOp(obj.ScaleOp),
-	ImmediateValue(obj.ImmediateValue), tok(obj.tok), Write(obj.Write)
+	ImmediateValue(obj.ImmediateValue), tok(obj.tok), Write(obj.Write),
+	Label(obj.Label)
 {
 	
 }
@@ -1396,6 +1439,7 @@ AsmOp AsmOp::operator=(const AsmOp& obj)
 		ImmediateValue = obj.ImmediateValue;
 		tok = obj.tok;
 		Write = obj.Write;
+		Label = obj.Label;
 	}
 	
 	return *this;

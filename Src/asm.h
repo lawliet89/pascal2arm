@@ -211,6 +211,7 @@ protected:
 	
 	/** Static Members **/
 	static std::map<AsmLine::OpCode_T, std::string> OpCodeStr;
+	static std::map<AsmLine::CC_T, std::string> CCStr;
 	static void InitialiseStaticMaps();
 };
 
@@ -250,7 +251,7 @@ public:
 	};
 	
 	enum Type_T{
-		Register, Immediate, Address, OffsetAddr
+		Register, Immediate, CodeLabel
 		//Note Complicated shit like LDR R0, [R1,R2,LSL #2]!
 	};
 	
@@ -274,6 +275,7 @@ public:
 	void SetImmediate(std::string val) { ImmediateValue = val; }
 	void SetToken(std::shared_ptr<Token> tok){ this -> tok = tok; }
 	void SetWrite(bool val = true){ Write = val; }
+	void SetLabel(std::shared_ptr<AsmLabel> val){ Label = val; }
 	
 	//Getters
 	Type_T GetType() const { return Type; }
@@ -286,6 +288,7 @@ public:
 	std::string GetImmediate() const { return ImmediateValue; }
 	std::shared_ptr<Token> GetToken() { return tok;}
 	bool IsWrite() const { return Write; }
+	std::shared_ptr<AsmLabel> GetLabel() { return Label ;}
 	
 protected:
 	Type_T Type;
@@ -294,6 +297,7 @@ protected:
 	bool WriteBack;			//The ! thing
 	std::shared_ptr<Symbol> sym;	//Symbol associated, if any
 	std::shared_ptr<Token> tok;		//Token associated, if any
+	std::shared_ptr<AsmLabel> Label;	//Label associated, if any
 	
 	std::shared_ptr<AsmOp> OffsetAddressOp;		//If the type is OffsetAddr -initialise to nullptr
 	std::shared_ptr<AsmOp> ScaleOp;
@@ -449,6 +453,7 @@ public:
 	
 	/** Label Related Methods **/
 	std::shared_ptr<AsmLabel> CreateLabel(std::string ID, std::shared_ptr<Symbol> sym=nullptr, std::shared_ptr<AsmLine> Line = nullptr) throw(AsmCode);
+	void SetNextLabel(std::shared_ptr<AsmLabel> label) { NextLabel = label; }
 	
 	/** Statement Related Methods **/
 	AsmCode TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS);	//Return AsmCode
@@ -471,6 +476,16 @@ public:
 	//Hack -- Create Write()
 	void CreateWriteLine(std::shared_ptr<Token_ExprList> list);		//Only supports ONE expression 
 	
+	/** Conditional Labels **/
+	std::shared_ptr<AsmLabel> CreateIfElseLabel();
+	void IfLabelStackPush(std::shared_ptr<AsmLabel> label){ IfLabelStack.push_back(label); }
+	std::shared_ptr<AsmLabel> IfLabelStackPop(){ 
+		std::shared_ptr<AsmLabel> result = *IfLabelStack.rbegin();
+		
+		IfLabelStack.pop_back();
+		return result;
+	}
+	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
 	void PrintBlocks();
@@ -491,5 +506,9 @@ protected:
 	std::vector<std::shared_ptr<AsmBlock> > BlockList; 
 	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
 	std::shared_ptr<AsmBlock> GlobalBlock;
+	
+	//Conditional labels
+	std::shared_ptr<AsmLabel> NextLabel;
+	std::vector<std::shared_ptr<AsmLabel> > IfLabelStack;
 };
 #endif
