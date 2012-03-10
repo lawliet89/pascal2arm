@@ -345,19 +345,23 @@ std::string AsmFile::GenerateCode(){
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
 	for (it = CodeLines.begin(); it < CodeLines.end(); it++){
 		std::shared_ptr<AsmLine> line = *it;
-		std::shared_ptr<AsmOp> Rd, Rm, Rn;
-		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput;
+		std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;
+		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput, RoOutput;
 		
 		Rd = line -> GetRd();
 		Rm = line -> GetRm();
 		Rn = line -> GetRn();
+		Ro = line -> GetRo();
 
 		/** Rm **/ //TODO
 		if (Rm != nullptr){
 			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
 			AsmOp::Type_T RmType = Rm -> GetType();
 			if (RmType == AsmOp::Register){
-				RmOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rm -> GetSymbol() );
+				if (Rm -> IsWrite())
+					RmOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rm -> GetSymbol() );
+				else
+					RmOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rm -> GetSymbol() );
 			}
 			else if (RmType == AsmOp::Immediate){
 				RmOutput.first = Rm -> GetImmediate();
@@ -370,7 +374,10 @@ std::string AsmFile::GenerateCode(){
 			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
 			AsmOp::Type_T RnType = Rn -> GetType();
 			if (RnType == AsmOp::Register){
-				RnOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rn -> GetSymbol() );
+				if (Rn -> IsWrite())
+					RnOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rn -> GetSymbol() );
+				else
+					RnOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rn -> GetSymbol() );
 			}
 			else if (RnType == AsmOp::Immediate){
 				RnOutput.first = Rn -> GetImmediate();
@@ -378,9 +385,37 @@ std::string AsmFile::GenerateCode(){
 			output << RnOutput.second;
 		}
 		
+		/** Ro **/
+		if (Ro != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RoType = Ro -> GetType();
+			if (RoType == AsmOp::Register){
+				if (Ro -> IsWrite())
+					RoOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Ro -> GetSymbol() );
+				else
+					RoOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Ro -> GetSymbol() );
+			}
+			else if (RoType == AsmOp::Immediate){
+				RoOutput.first = Ro -> GetImmediate();
+			}
+			output << RoOutput.second;
+		}
+		
 		/** Rd **/ //TODO More than just destination registers?
-		RdOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rd -> GetSymbol() );		//Because Rd can only be a register...
-		output << RdOutput.second;
+		if (Rd != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RdType = Rd -> GetType();
+			if (RdType == AsmOp::Register){
+				if (Rd -> IsWrite())
+					RdOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rd -> GetSymbol() );
+				else
+					RdOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rd -> GetSymbol() );
+			}
+			else if (RdType == AsmOp::Immediate){
+				RdOutput.first = Rd -> GetImmediate();
+			}
+			output << RdOutput.second;
+		}
 		
 		//Label
 		if (line -> GetLabel() != nullptr){
@@ -400,7 +435,9 @@ std::string AsmFile::GenerateCode(){
 		if (!RnOutput.first.empty())
 			//Rn
 			output << ", " << RnOutput.first;
-		
+		if (!RoOutput.first.empty())
+			//Ro
+			output << ", " << RoOutput.first;
 		//Comments
 		std::string comment = line -> GetComment();
 		if (!comment.empty())
@@ -651,13 +688,21 @@ std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimEx
 					result -> SetImmediate(ReturnToken -> AsmValue());
 					result -> SetToken(ReturnToken);
 				}
+				line = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+				line -> SetRd(Rd);
+				line -> SetRm(result);
+				line -> SetComment("Line " + ToString<int>(simexpr -> GetLine()));
 		}
 		else{
 			if (Op == Add){
 				line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
 			}
 			else if (Op == Subtract){
-				line = CreateCodeLine(AsmLine::Processing, AsmLine::SUB);
+				if (RHS -> GetType() == AsmOp::Register && LHS -> GetType() == AsmOp::Immediate){
+					line = CreateCodeLine(AsmLine::Processing, AsmLine::RSB);
+				}
+				else
+					line = CreateCodeLine(AsmLine::Processing, AsmLine::SUB);
 			}
 			else if (Op == Or){
 				line = CreateCodeLine(AsmLine::Processing, AsmLine::ORR);
@@ -665,10 +710,15 @@ std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimEx
 			else if (Op == Xor){
 				line = CreateCodeLine(AsmLine::Processing, AsmLine::EOR);
 			}
-			
+			if (RHS -> GetType() == AsmOp::Register && LHS -> GetType() == AsmOp::Immediate){
+				line -> SetRm(RHS);
+				line -> SetRn(LHS);
+			}
+			else{
+				line -> SetRm(LHS);
+				line -> SetRn(RHS);
+			}
 			line -> SetRd(Rd);
-			line -> SetRm(LHS);
-			line -> SetRn(RHS);
 			line -> SetComment("Line " + ToString<int>(simexpr -> GetLine()));
 			Rd -> SetType(AsmOp::Register);			//We've done calculation
 		}
@@ -751,30 +801,224 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 					result -> SetImmediate(ReturnToken -> AsmValue());
 					result -> SetToken(ReturnToken);
 				}
+				line = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+				line -> SetRd(Rd);
+				line -> SetRm(result);
+				line -> SetComment("Line " + ToString<int>(term -> GetLine()));
 		}
 		else{
-			if (Op == Multiply){		//TODO Rd and Rm must be different...?
+			if (Op == Multiply){		
+				//Okay if LHS or RHS are immediates, we have to move them into registries
+				if (LHS -> GetType() == AsmOp::Immediate){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					std::shared_ptr<Symbol> LHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(LHS);
+					RdTemp -> SetSymbol(LHSTemp);
+					LHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				
+				if (RHS -> GetType() == AsmOp::Immediate){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					RHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(RHS);
+					RdTemp -> SetSymbol(RHSTemp);
+					RHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				//Check to see if Rd == Rm
+				if (Rd -> GetType() == AsmOp::Register && LHS -> GetType() == AsmOp::Register && Rd -> GetSymbol() == LHS -> GetSymbol()){
+					//Rd cannot be the same as Rm or the compiler will complain of undefined behaviour.
+					//Check if Rm also = Rn
+					if (LHS -> GetSymbol() == RHS -> GetSymbol()){
+						//Let's create a temp variable for LHS
+						std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+						std::shared_ptr<Symbol> LHSTemp = CreateTempVar(term -> GetType());	
+						std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+						line2 -> SetRd(RdTemp);
+						line2 -> SetRm(LHS);
+						RdTemp -> SetSymbol(LHSTemp);
+						LHS = RdTemp;
+						line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+					}
+					else{
+						//Swap them
+						std::shared_ptr<AsmOp> temp = LHS;
+						LHS = RHS;
+						RHS = temp;
+					}
+				}
 				line = CreateCodeLine(AsmLine::Processing, AsmLine::MUL);
+				line -> SetRm(LHS);
+				line -> SetRn(RHS);
+				line -> SetRd(Rd);
+				
 			}
-			else if (Op == Divide){
-				line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
-				line -> SetComment("Unsupported, for now");
+			else if (Op == Divide || Op == Div){
+				//Okay if LHS or RHS are immediates, we have to move them into registries
+				if (LHS -> GetType() == AsmOp::Immediate){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					std::shared_ptr<Symbol> LHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(LHS);
+					RdTemp -> SetSymbol(LHSTemp);
+					LHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				
+				if (RHS -> GetType() == AsmOp::Immediate){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					RHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(RHS);
+					RdTemp -> SetSymbol(RHSTemp);
+					RHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				//Check if any of the registers are the same
+				//Check to see if Rd == Rm
+				if (Rd -> GetType() == AsmOp::Register && LHS -> GetType() == AsmOp::Register && Rd -> GetSymbol() == LHS -> GetSymbol()){
+					//Let's create a temp variable for LHS
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					std::shared_ptr<Symbol> LHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(LHS);
+					RdTemp -> SetSymbol(LHSTemp);
+					LHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				
+				//Check if Rd == RHS
+				if (Rd -> GetType() == AsmOp::Register && RHS -> GetType() == AsmOp::Register && Rd -> GetSymbol() == RHS -> GetSymbol()){
+					//Let's create a temp variable for RHS
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					std::shared_ptr<Symbol> RHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(RHS);
+					RdTemp -> SetSymbol(RHSTemp);
+					RHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				
+				//Check if LHS = RHS
+				if (LHS -> GetType() == AsmOp::Register && RHS -> GetType() == AsmOp::Register && LHS -> GetSymbol() == RHS -> GetSymbol()){
+					//Let's create a temp variable for RHS
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					std::shared_ptr<Symbol> RHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(RHS);
+					RdTemp -> SetSymbol(RHSTemp);
+					RHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				
+				//Since it's LHS/RHS, 	
+				line = CreateCodeLine(AsmLine::Processing, AsmLine::DivMod);
+				
+				line -> SetRd(Rd);
+				line -> SetRm(LHS);
+				line -> SetRn(RHS);
+				
+				//Create temporary variable
+				//std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+				std::shared_ptr<Symbol> DivTemp = CreateTempVar(term -> GetType());	
+				std::shared_ptr<AsmOp> Ro(new AsmOp(AsmOp::Register, AsmOp::Ro));
+				Ro -> SetSymbol(DivTemp);
+				line -> SetRo(Ro);
+				
+				Ro -> SetWrite();
+				LHS -> SetWrite();
 			}
-			else if (Op == Div){
-				line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
-				line -> SetComment("Unsupported, for now");
-			}
+			//else if (Op == Div){
+			//	line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
+			//	line -> SetComment("Unsupported, for now");
+			//}
 			else if (Op == Mod){
-				line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
-				line -> SetComment("Unsupported, for now");
+				//Okay if LHS or RHS are immediates, we have to move them into registries
+				if (LHS -> GetType() == AsmOp::Immediate){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					std::shared_ptr<Symbol> LHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(LHS);
+					RdTemp -> SetSymbol(LHSTemp);
+					LHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				
+				if (RHS -> GetType() == AsmOp::Immediate){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					RHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(RHS);
+					RdTemp -> SetSymbol(RHSTemp);
+					RHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+	
+				//Check if LHS = RHS
+				if (LHS -> GetType() == AsmOp::Register && RHS -> GetType() == AsmOp::Register && LHS -> GetSymbol() == RHS -> GetSymbol()){
+					//Let's create a temp variable for RHS
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					std::shared_ptr<Symbol> RHSTemp = CreateTempVar(term -> GetType());	
+					std::shared_ptr<AsmOp> RdTemp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+					line2 -> SetRd(RdTemp);
+					line2 -> SetRm(RHS);
+					RdTemp -> SetSymbol(RHSTemp);
+					RHS = RdTemp;
+					line2 -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				}
+				
+				//Since it's LHS/RHS, the macro wants Rd  = RHS, Rm = LHS, Rn = nothing, Ro = some temp variable				
+				line = CreateCodeLine(AsmLine::Processing, AsmLine::DivMod);
+				
+				//line -> SetRd(Rd);
+				line -> SetRm(LHS);
+				line -> SetRn(RHS);
+				
+				//Create a nothing Op
+				std::shared_ptr<AsmOp> nothing(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
+				nothing -> SetImmediate("\"\"");
+				line -> SetRd(nothing);
+				
+				//Create temporary variable
+				//std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+				std::shared_ptr<Symbol> DivTemp = CreateTempVar(term -> GetType());	
+				std::shared_ptr<AsmOp> Ro(new AsmOp(AsmOp::Register, AsmOp::Ro));
+				Ro -> SetSymbol(DivTemp);
+				line -> SetRo(Ro);
+				Ro -> SetWrite();
+				LHS -> SetWrite();
+				//Then let's MOV LHS to Rd
+				if (Rd -> GetSymbol() != LHS -> GetSymbol()){
+					std::shared_ptr<AsmLine> line2 = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+					line2 -> SetRd(Rd);
+					line2 -> SetRm(LHS);
+				}
 			}
 			else if (Op == And){
 				line = CreateCodeLine(AsmLine::Processing, AsmLine::AND);
+				if (RHS -> GetType() == AsmOp::Register && LHS -> GetType() == AsmOp::Immediate){		//Swap
+					line -> SetRm(RHS);
+					line -> SetRn(LHS);
+				}
+				else{
+					line -> SetRm(LHS);
+					line -> SetRn(RHS);
+				}
+				line -> SetRd(Rd);
 			}
 			
-			line -> SetRd(Rd);
-			line -> SetRm(LHS);
-			line -> SetRn(RHS);
 			line -> SetComment("Line " + ToString<int>(term -> GetLine()));
 			Rd -> SetType(AsmOp::Register);			//We've done calculation
 		}
@@ -869,7 +1113,7 @@ AsmLine::AsmLine(const AsmLine &obj):
 	Qualifier(obj.Qualifier),
 	Type(obj.Type),
 	Label(obj.Label),
-	Rd(obj.Rd), Rm(obj.Rm), Rn(obj.Rn),
+	Rd(obj.Rd), Rm(obj.Rm), Rn(obj.Rn), Ro(obj.Ro),
 	Comment(obj.Comment)
 {
 	InitialiseStaticMaps();
@@ -885,6 +1129,7 @@ AsmLine AsmLine::operator=(const AsmLine &obj){
 		Rd = obj.Rd;
 		Rm = obj.Rm;
 		Rn = obj.Rn;
+		Ro = obj.Ro;
 		Comment = obj.Comment;
 	}
 	return *this;
@@ -945,6 +1190,8 @@ void AsmLine::InitialiseStaticMaps(){
 		//OpCodeStr[DCFD] = "DCFD";
 		//OpCodeStr[DCFS] = "DCFS";
 		OpCodeStr[EQU] = "EQU";
+		
+		OpCodeStr[DivMod] = "DivMod";
 	}
 }
 
@@ -953,13 +1200,17 @@ void AsmLine::InitialiseStaticMaps(){
  * */
 
 AsmOp::AsmOp(Type_T Type, Position_T Position):
-	Type(Type), Position(Position), Scale(AsmOp::NoScale), sym(nullptr), OffsetAddressOp(nullptr), ScaleOp(nullptr)
-{}
+	Type(Type), Position(Position), Scale(AsmOp::NoScale), sym(nullptr), OffsetAddressOp(nullptr), ScaleOp(nullptr), Write(false)
+{
+	if (Position == Rd)
+		SetWrite();
+	
+}
 
 AsmOp::AsmOp(const AsmOp &obj):
 	Type(obj.Type), Position(obj.Position), Scale(obj.Scale), sym(obj.sym), 
 	OffsetAddressOp(obj.OffsetAddressOp), ScaleOp(obj.ScaleOp),
-	ImmediateValue(obj.ImmediateValue), tok(obj.tok)
+	ImmediateValue(obj.ImmediateValue), tok(obj.tok), Write(obj.Write)
 {
 	
 }
@@ -975,6 +1226,7 @@ AsmOp AsmOp::operator=(const AsmOp& obj)
 		ScaleOp = obj.ScaleOp;
 		ImmediateValue = obj.ImmediateValue;
 		tok = obj.tok;
+		Write = obj.Write;
 	}
 	
 	return *this;
@@ -1080,7 +1332,7 @@ AsmCode AsmBlock::CheckSymbol(std::string id) throw(){
 
 /** AsmRegisters **/
 AsmRegister::AsmRegister(bool IsGlobal) : 
-	Registers(AsmUsableReg, AsmRegister::State_T(IsGlobal)), counter(0), InitialUse(0)
+	Registers(AsmUsableReg+1, AsmRegister::State_T(IsGlobal)), counter(0), InitialUse(0)
 {
 
 }
@@ -1190,7 +1442,7 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 			output << "\tSTR R" << result << ", [R" << AsmScratch << "]\n";
 		}
 	}
-	if (sym != nullptr && load){
+	if (sym != nullptr && load && !sym -> IsTemporary()){
 		//Load data into register
 		output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << " ;Loading variable\n";
 		output << "\tLDR R" << ToReturn.first << ", [R" << AsmScratch << "]\n";

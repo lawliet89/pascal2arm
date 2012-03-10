@@ -98,10 +98,9 @@ public:
 	enum OpType_T{
 		Directive,		//Psuedo and directive
 		Processing,		//Data processing
-		Multiply,
-		Floating,
 		Data,			//Load store etc
 		Branch,
+		BranchLink,
 		Interrupt,//SWI etc.
 		CommentLine		//Purely comment
 	};
@@ -138,8 +137,12 @@ public:
 		DCFD,	//Double precision - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Caccijca.html
 		DCFS,	//Single - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Cacdagie.html
 		EQU, 	//http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Caccddic.html
-		NOP
+		NOP,
 		//INCLUDE	?
+		
+		
+		//Macros
+		DivMod=1000
 	};
 	enum CC_T{	//Condition Code
 		CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
@@ -166,6 +169,7 @@ public:
 	void SetRd(std::shared_ptr<AsmOp> val){ Rd = val; }
 	void SetRm(std::shared_ptr<AsmOp> val){ Rm = val; }
 	void SetRn(std::shared_ptr<AsmOp> val){ Rn = val; }
+	void SetRo(std::shared_ptr<AsmOp> val){ Ro = val; }
 	void SetComment(std::string val){ Comment = val; }
 	
 	//Getters
@@ -177,6 +181,7 @@ public:
 	std::shared_ptr<AsmOp> GetRd(){ return Rd; }
 	std::shared_ptr<AsmOp> GetRm(){ return Rm; }
 	std::shared_ptr<AsmOp> GetRn(){ return Rn; }
+	std::shared_ptr<AsmOp> GetRo(){ return Ro; }
 	std::string GetComment() const{ return Comment; }
 	
 	std::string GetOpCodeStr() const;		//TODO Handle CC
@@ -190,7 +195,7 @@ protected:
 	
 	std::shared_ptr<AsmLabel> Label;
 	
-	std::shared_ptr<AsmOp> Rd, Rm, Rn;
+	std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;		//For some OpCode, there is an Ro
 	
 	std::string Comment;	
 	
@@ -234,7 +239,7 @@ public:
 	 * */
 	
 	enum Position_T{
-		Rd, Rm, Rn
+		Rd, Rm, Rn, Ro
 	};
 	
 	enum Type_T{
@@ -261,6 +266,7 @@ public:
 	void SetScaleOp(std::shared_ptr<AsmOp> val) { ScaleOp = val; }
 	void SetImmediate(std::string val) { ImmediateValue = val; }
 	void SetToken(std::shared_ptr<Token> tok){ this -> tok = tok; }
+	void SetWrite(bool val = true){ Write = val; }
 	
 	//Getters
 	Type_T GetType() const { return Type; }
@@ -272,6 +278,7 @@ public:
 	std::shared_ptr<AsmOp> GetScaleOp() { return ScaleOp; }
 	std::string GetImmediate() const { return ImmediateValue; }
 	std::shared_ptr<Token> GetToken() { return tok;}
+	bool IsWrite() const { return Write; }
 	
 protected:
 	Type_T Type;
@@ -284,6 +291,7 @@ protected:
 	std::shared_ptr<AsmOp> OffsetAddressOp;		//If the type is OffsetAddr -initialise to nullptr
 	std::shared_ptr<AsmOp> ScaleOp;
 	std::string ImmediateValue;			//Value of immediate
+	bool Write;			//Is this written to?
 };
 
 /** AsmLabel

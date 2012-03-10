@@ -14,16 +14,26 @@ PROCEDURE testing;
 	END;
 	
 BEGIN
-	test := 5;		//Simple
+	{*test := 5;		//Simple
 	test2 := 6;
 	test := 1+2;
 	test := test + test2;
 	//Writeln('Hello World');
+	test := 5*6;
 	test := 5 * 6 + 5;
 
 	test := 5 + 6*5;
 
-	//test := -5 + -6;
+	test := -5 + -6;
+
+	test := 6 - test;
+	test := 6*test;
+
+	test := test * 77;
+
+	test := test * test;
+
+	test := test/test;
 	
 	//float := 3.59;
 	
@@ -41,6 +51,8 @@ BEGIN
 
 	bool := NOT bool;
 	bool := NOT TRUE;
+
+	test := 3;
 	//test2 := test;
 	//test := NOT test;
 
@@ -51,5 +63,10 @@ BEGIN
 	//test := unknown;
 
 	//test := test + float;
+
+	test := 1 + 2 * test;*}
+
+	test := 5;
+	test := test MOD 2;
 
 END.
