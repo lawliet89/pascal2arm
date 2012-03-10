@@ -72,3 +72,10 @@ std::string Token_Type::TypeToString(){
 	}
 	return str.str();
 }
+
+bool Token_Type::operator==(const Token_Type &obj){
+	return (obj.Primary == Primary && obj.Secondary == Secondary);
+}
+bool Token_Type::operator!=(const Token_Type &obj){
+	return !operator==(obj);
+}

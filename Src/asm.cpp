@@ -341,10 +341,10 @@ std::string AsmFile::GenerateCode(){
 
 	/** Code Proper **/
 
-	
+	std::list<std::shared_ptr<AsmLine> >::iterator itList;
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
-	for (it = CodeLines.begin(); it < CodeLines.end(); it++){
-		std::shared_ptr<AsmLine> line = *it;
+	for (itList = CodeLines.begin(); itList != CodeLines.end(); itList++){
+		std::shared_ptr<AsmLine> line = *itList;
 		std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;
 		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput, RoOutput;
 		AsmLine::OpCode_T OpCode;
@@ -355,6 +355,13 @@ std::string AsmFile::GenerateCode(){
 		Rm = line -> GetRm();
 		Rn = line -> GetRn();
 		Ro = line -> GetRo();
+		
+		unsigned OpCount = 0;
+		
+		//Label
+		if (line -> GetLabel() != nullptr){
+			output << line -> GetLabel()->GetID();
+		}
 		
 		//Internal opcode handling
 		if (OpCode == AsmLine::SAVE){
@@ -447,27 +454,33 @@ std::string AsmFile::GenerateCode(){
 			output << RdOutput.second;
 		}
 		
-		//Label
-		if (line -> GetLabel() != nullptr){
-			output << line -> GetLabel()->GetID();
-		}
 		output << "\t";
 		//Opcode
 		output << line -> GetOpCodeStr() << " ";
 		
-		if (!RdOutput.first.empty())
+		if (!RdOutput.first.empty()){
 			//Rd
 			output << RdOutput.first;
-		
-		if (!RmOutput.first.empty())
+			OpCount++;
+		}
+		if (!RmOutput.first.empty()){
 			//Rm
-			output << ", " << RmOutput.first;
-		if (!RnOutput.first.empty())
+			if (OpCount != 0 ) output << ", ";
+			output << RmOutput.first;
+			OpCount++;
+		}
+		if (!RnOutput.first.empty()){
 			//Rn
-			output << ", " << RnOutput.first;
-		if (!RoOutput.first.empty())
+			if (OpCount != 0 ) output << ", ";
+			output << RnOutput.first;
+			OpCount++;
+		}
+		if (!RoOutput.first.empty()){
 			//Ro
-			output << ", " << RoOutput.first;
+			if (OpCount != 0 ) output << ", ";
+			output << RoOutput.first;
+			OpCount++;
+		}
 		//Comments
 		std::string comment = line -> GetComment();
 		if (!comment.empty())
@@ -518,6 +531,13 @@ std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLi
 	return line;
 }
 
+std::pair<std::shared_ptr<AsmLine>, std::list<std::shared_ptr<AsmLine> >::iterator> AsmFile::CreateCodeLineIt(AsmLine::OpType_T OpType, AsmLine::OpCode_T OpCode){
+	std::pair<std::shared_ptr<AsmLine>, std::list<std::shared_ptr<AsmLine> >::iterator> result;
+	result.first = CreateCodeLine(OpType, OpCode);
+	result.second = CodeLines.end()--;
+	return result;
+}
+
 std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr){
 	std::shared_ptr<AsmLine> line;
 	
@@ -543,7 +563,7 @@ std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<S
 
 /** Statement Methods **/
 AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
-	return LHS == RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
+	return *LHS == *RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
 
 std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd, bool cmp){
@@ -663,8 +683,10 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			std::shared_ptr<AsmLine> LHS;
 			std::shared_ptr<AsmOp> RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));
 			//Flatten Expression on LHS
-			LHS = FlattenExpression(expr -> GetExpression(), std::shared_ptr<AsmOp>( new AsmOp(*Rd)));
-			
+			if (cmp)
+				LHS = FlattenExpression(expr -> GetExpression(), nullptr );
+			else
+				LHS = FlattenExpression(expr -> GetExpression(), std::shared_ptr<AsmOp>( new AsmOp(*Rd)));
 			std::shared_ptr<Symbol> RHSTemp = CreateTempVar(expr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
 			expr -> SetTempVar(RHSTemp);
 			RHS -> SetSymbol(RHSTemp);
@@ -673,7 +695,6 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			RHS = FlattenSimExpression(expr -> GetSimExpression(), RHS);
 			
 			Op_T Op = expr -> GetOp(); //TODO
-			
 			if (Op == LT){
 				
 			}
@@ -687,10 +708,10 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 				
 			}
 			else if (Op == Equal){
-				//if (cmp)
-				//	result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
-				//else
-				//	result = CreateCodeLine(AsmLine::Processing, AsmLine::AND);
+				if (cmp)
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+				else
+					result = CreateCodeLine(AsmLine::Processing, AsmLine::AND);
 			}
 			else if (Op == NotEqual){
 				
@@ -701,8 +722,10 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 			result -> SetRm(LHS->GetRd());
 			result -> SetRn(RHS);
 		}
-		if (!cmp)
+		if (!cmp){
 			result -> SetRd(Rd);		
+			Rd -> SetWrite();
+		}
 	}
 	result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
 	return result;
@@ -737,59 +760,60 @@ std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimEx
 		
 		Op_T Op = simexpr -> GetOp(); 
 		if (LHS -> GetType() == AsmOp::Immediate && RHS -> GetType() == AsmOp::Immediate){
-				//Can be simplified into an immediate
-				std::shared_ptr<Token> LHSToken(LHS -> GetToken()), RHSToken(RHS -> GetToken()), ReturnToken;
-				//NOTE Are we going to do type checks here?
-				if (LHSToken -> GetTokenType() == V_Int){
-					int LHSValue = GetValue<int>(LHSToken), RHSValue = GetValue<int>(RHSToken), ReturnValue;
-					switch (Op){
-						case Add:
-							ReturnValue = LHSValue + RHSValue;
-							break;
-						case Subtract:
-							ReturnValue = LHSValue - RHSValue;
-							break;
-						case Or:
-							ReturnValue = LHSValue | RHSValue;
-							break;
-						case Xor:
-							ReturnValue = LHSValue ^ RHSValue;
-						default:
-							ReturnValue = LHSValue;
-					}
-					ReturnToken.reset(new Token_Int(ReturnValue, V_Int));
-					
-					result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
-					result -> SetImmediate(ReturnToken -> AsmValue());
-					result -> SetToken(ReturnToken);
+			//Can be simplified into an immediate
+			std::shared_ptr<Token> LHSToken(LHS -> GetToken()), RHSToken(RHS -> GetToken()), ReturnToken;
+			//NOTE Are we going to do type checks here?
+			if (LHSToken -> GetTokenType() == V_Int){
+				int LHSValue = GetValue<int>(LHSToken), RHSValue = GetValue<int>(RHSToken), ReturnValue;
+				switch (Op){
+					case Add:
+						ReturnValue = LHSValue + RHSValue;
+						break;
+					case Subtract:
+						ReturnValue = LHSValue - RHSValue;
+						break;
+					case Or:
+						ReturnValue = LHSValue | RHSValue;
+						break;
+					case Xor:
+						ReturnValue = LHSValue ^ RHSValue;
+					default:
+						ReturnValue = LHSValue;
 				}
-				else if (LHSToken -> GetTokenType() == V_Character){
-					char LHSValue = GetValue<char>(LHSToken), RHSValue = GetValue<char>(RHSToken), ReturnValue;
-					switch (Op){
-						case Add:
-							ReturnValue = LHSValue + RHSValue;
-							break;
-						case Subtract:
-							ReturnValue = LHSValue - RHSValue;
-							break;
-						case Or:
-							ReturnValue = LHSValue | RHSValue;
-							break;
-						case Xor:
-							ReturnValue = LHSValue ^ RHSValue;
-						default:
-							ReturnValue = LHSValue;
-					}
-					ReturnToken.reset(new Token_Char(ReturnValue, true));
-					
-					result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
-					result -> SetImmediate(ReturnToken -> AsmValue());
-					result -> SetToken(ReturnToken);
+				ReturnToken.reset(new Token_Int(ReturnValue, V_Int));
+				
+				result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
+				result -> SetImmediate(ReturnToken -> AsmValue());
+				result -> SetToken(ReturnToken);
+			}
+			else if (LHSToken -> GetTokenType() == V_Character){
+				char LHSValue = GetValue<char>(LHSToken), RHSValue = GetValue<char>(RHSToken), ReturnValue;
+				switch (Op){
+					case Add:
+						ReturnValue = LHSValue + RHSValue;
+						break;
+					case Subtract:
+						ReturnValue = LHSValue - RHSValue;
+						break;
+					case Or:
+						ReturnValue = LHSValue | RHSValue;
+						break;
+					case Xor:
+						ReturnValue = LHSValue ^ RHSValue;
+					default:
+						ReturnValue = LHSValue;
 				}
-				line = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
-				line -> SetRd(Rd);
-				line -> SetRm(result);
-				line -> SetComment("Line " + ToString<int>(simexpr -> GetLine()));
+				ReturnToken.reset(new Token_Char(ReturnValue, true));
+				
+				result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
+				result -> SetImmediate(ReturnToken -> AsmValue());
+				result -> SetToken(ReturnToken);
+			}
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+			line -> SetRd(Rd);
+			line -> SetRm(result);
+			line -> SetComment("Line " + ToString<int>(simexpr -> GetLine()));
+			Rd -> SetWrite();
 		}
 		else{
 			if (Op == Add){
@@ -819,6 +843,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimEx
 			line -> SetRd(Rd);
 			line -> SetComment("Line " + ToString<int>(simexpr -> GetLine()));
 			Rd -> SetType(AsmOp::Register);			//We've done calculation
+			Rd -> SetWrite();
 		}
 	}
 	
@@ -857,61 +882,62 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 		
 		Op_T Op = term -> GetOp(); 
 		if (LHS -> GetType() == AsmOp::Immediate && RHS -> GetType() == AsmOp::Immediate){
-				//Can be simplified into an immediate
-				std::shared_ptr<Token> LHSToken(LHS -> GetToken()), RHSToken(RHS -> GetToken()), ReturnToken;
-				//NOTE Are we going to do type checks here?
-				if (LHSToken -> GetTokenType() == V_Int){
-					int LHSValue = GetValue<int>(LHSToken), RHSValue = GetValue<int>(RHSToken), ReturnValue;
-					switch (Op){
-						case Multiply:
-							ReturnValue = LHSValue * RHSValue;
-							break;
-						case Divide:
-						case Div:
-							ReturnValue = LHSValue / RHSValue;
-							break;
-						case Mod:
-							ReturnValue = LHSValue % RHSValue;
-							break;
-						case And:
-							ReturnValue = LHSValue & RHSValue;
-						default:
-							ReturnValue = LHSValue;
-					}
-					ReturnToken.reset(new Token_Int(ReturnValue, V_Int));
-					
-					result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
-					result -> SetImmediate(ReturnToken -> AsmValue());
-					result -> SetToken(ReturnToken);
+			//Can be simplified into an immediate
+			std::shared_ptr<Token> LHSToken(LHS -> GetToken()), RHSToken(RHS -> GetToken()), ReturnToken;
+			//NOTE Are we going to do type checks here?
+			if (LHSToken -> GetTokenType() == V_Int){
+				int LHSValue = GetValue<int>(LHSToken), RHSValue = GetValue<int>(RHSToken), ReturnValue;
+				switch (Op){
+					case Multiply:
+						ReturnValue = LHSValue * RHSValue;
+						break;
+					case Divide:
+					case Div:
+						ReturnValue = LHSValue / RHSValue;
+						break;
+					case Mod:
+						ReturnValue = LHSValue % RHSValue;
+						break;
+					case And:
+						ReturnValue = LHSValue & RHSValue;
+					default:
+						ReturnValue = LHSValue;
 				}
-				else if (LHSToken -> GetTokenType() == V_Character){
-					char LHSValue = GetValue<char>(LHSToken), RHSValue = GetValue<char>(RHSToken), ReturnValue;
-					switch (Op){
-						case Multiply:
-							ReturnValue = LHSValue * RHSValue;
-							break;
-						case Divide:
-						case Div:
-							ReturnValue = LHSValue / RHSValue;
-							break;
-						case Mod:
-							ReturnValue = LHSValue % RHSValue;
-							break;
-						case And:
-							ReturnValue = LHSValue & RHSValue;
-						default:
-							ReturnValue = LHSValue;
-					}
-					ReturnToken.reset(new Token_Char(ReturnValue, true));
-					
-					result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
-					result -> SetImmediate(ReturnToken -> AsmValue());
-					result -> SetToken(ReturnToken);
+				ReturnToken.reset(new Token_Int(ReturnValue, V_Int));
+				
+				result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
+				result -> SetImmediate(ReturnToken -> AsmValue());
+				result -> SetToken(ReturnToken);
+			}
+			else if (LHSToken -> GetTokenType() == V_Character){
+				char LHSValue = GetValue<char>(LHSToken), RHSValue = GetValue<char>(RHSToken), ReturnValue;
+				switch (Op){
+					case Multiply:
+						ReturnValue = LHSValue * RHSValue;
+						break;
+					case Divide:
+					case Div:
+						ReturnValue = LHSValue / RHSValue;
+						break;
+					case Mod:
+						ReturnValue = LHSValue % RHSValue;
+						break;
+					case And:
+						ReturnValue = LHSValue & RHSValue;
+					default:
+						ReturnValue = LHSValue;
 				}
-				line = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
-				line -> SetRd(Rd);
-				line -> SetRm(result);
-				line -> SetComment("Line " + ToString<int>(term -> GetLine()));
+				ReturnToken.reset(new Token_Char(ReturnValue, true));
+				
+				result.reset(new AsmOp(AsmOp::Immediate, AsmOp::Rd));
+				result -> SetImmediate(ReturnToken -> AsmValue());
+				result -> SetToken(ReturnToken);
+			}
+			line = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
+			line -> SetRd(Rd);
+			line -> SetRm(result);
+			line -> SetComment("Line " + ToString<int>(term -> GetLine()));
+			Rd -> SetWrite();
 		}
 		else{
 			if (Op == Multiply){		
@@ -963,6 +989,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 				line -> SetRm(LHS);
 				line -> SetRn(RHS);
 				line -> SetRd(Rd);
+				Rd -> SetWrite();
 				
 			}
 			else if (Op == Divide || Op == Div){
@@ -1050,6 +1077,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 				
 				Ro -> SetWrite();
 				LHS -> SetWrite();
+				Rd -> SetWrite();
 			}
 			//else if (Op == Div){
 			//	line = CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
@@ -1123,6 +1151,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 					line2 -> SetRd(Rd);
 					line2 -> SetRm(LHS);
 				}
+				Rd -> SetWrite();
 			}
 			else if (Op == And){
 				line = CreateCodeLine(AsmLine::Processing, AsmLine::AND);
@@ -1135,6 +1164,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 					line -> SetRn(RHS);
 				}
 				line -> SetRd(Rd);
+				Rd -> SetWrite();
 			}
 			
 			line -> SetComment("Line " + ToString<int>(term -> GetLine()));
@@ -1343,8 +1373,6 @@ void AsmLine::InitialiseStaticMaps(){
 AsmOp::AsmOp(Type_T Type, Position_T Position):
 	Type(Type), Position(Position), Scale(AsmOp::NoScale), sym(nullptr), OffsetAddressOp(nullptr), ScaleOp(nullptr), Write(false)
 {
-	if (Position == Rd)
-		SetWrite();
 	
 }
 

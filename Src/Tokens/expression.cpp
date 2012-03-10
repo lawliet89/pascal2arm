@@ -49,7 +49,7 @@ void Token_SimExpression::CheckType() throw(AsmCode){
 		
 		
 		//For now simple equivalence - TODO
-		if (LHS != RHS)
+		if (*LHS != *RHS)
 			throw TypeIncompatible;
 		
 		//Simple operator check - TODO
@@ -117,12 +117,12 @@ void Token_Expression::CheckType() throw(AsmCode){
 		
 		
 		//For now simple equivalence - TODO
-		if (LHS != RHS)
+		if (*LHS != *RHS)
 			throw TypeIncompatible;
 		
 		//Simple operator check - TODO
-		if ((int) Operator > (int) Op_T::In)
-			throw OperatorIncompatible;
+		//if ((int) Operator > (int) Op_T::In)
+		//	throw OperatorIncompatible;
 		
 		//With relational operators, this has become a boolean type 
 		Type = BoolType;

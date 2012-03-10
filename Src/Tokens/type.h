@@ -69,6 +69,10 @@ public:
 	virtual std::string AsmDefaultValue();
 
 	std::string TypeToString();
+	
+	//Comparing operators
+	bool operator==(const Token_Type &obj);
+	bool operator!=(const Token_Type &obj);
 protected:
 	P_Type Primary;
 	int Secondary;

@@ -40,7 +40,7 @@ void Token_Term::CheckType() throw(AsmCode){
 		RHS = Factor -> GetType();
 		
 		//For now simple equivalence - TODO
-		if (LHS != RHS)
+		if (*LHS != *RHS)
 			throw TypeIncompatible;
 		
 		//Simple operator check - TODO

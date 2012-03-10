@@ -64,7 +64,7 @@ BEGIN
 
 	//test := test + float;
 
-	test := 1 + 2 * test;*}
+	test := 1 + 2 * test;
 
 	//test := 5;
 	//test := test MOD 2;
@@ -76,5 +76,7 @@ BEGIN
 	write(test2);
 	write(99);
 	
-	test := test / 5 * 6;
+	test := test / 5 * 6;*}
+	if test = test2 then test2 := 6+5;
+	if test = 1 then test2 := 6*5;
 END.

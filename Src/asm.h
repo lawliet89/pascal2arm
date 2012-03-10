@@ -7,6 +7,7 @@
 #include <memory>	//C++11
 #include <map>
 #include <set>
+#include <list>
 #include "token.h"
 #include "Gen/all.h"
 #include "symbols.h"
@@ -443,6 +444,7 @@ public:
 	/** Line Related Methods **/
 	std::shared_ptr<AsmLine> CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value);	//Pass method with a completed label
 	std::shared_ptr<AsmLine> CreateCodeLine(AsmLine::OpType_T, AsmLine::OpCode_T);		//Create an empty line and add it to list
+	std::pair<std::shared_ptr<AsmLine>, std::list<std::shared_ptr<AsmLine> >::iterator> CreateCodeLineIt(AsmLine::OpType_T, AsmLine::OpCode_T);	
 	std::shared_ptr<AsmLine> CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr);		//For assignment statements
 	
 	/** Label Related Methods **/
@@ -475,9 +477,9 @@ public:
 	
 protected:
 	//Lines
-	std::vector<std::shared_ptr<AsmLine> > CodeLines;		//Lines for normal program code
+	std::list<std::shared_ptr<AsmLine> > CodeLines;		//Lines for normal program code
 	std::vector<std::shared_ptr<AsmLine> > DataLines;		//Lines for data declaration
-	std::vector<std::shared_ptr<AsmLine> > FunctionLines;	//Lines for procedures and functions
+	std::list<std::shared_ptr<AsmLine> > FunctionLines;	//Lines for procedures and functions
 	
 	//Storage of labels
 	std::map<std::string, std::shared_ptr<AsmLabel> > LabelList;		//List of labels

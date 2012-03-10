@@ -437,13 +437,13 @@ Expression:  Expression SimpleOp SimpleExpression {
 	| SimpleExpression { $$.reset(new Token_Expression(std::dynamic_pointer_cast<Token_SimExpression>($1)));}
 	;
 
-SimpleOp: '<'
-	| OP_LE
-	| '>'
-	| OP_GE
-	| '='
-	| OP_NOTEQUAL
-	| OP_IN
+SimpleOp: '<' { $$.reset(new Token_Int((int) Op_T::LT, T_Type::Operator)); }
+	| OP_LE { $$.reset(new Token_Int((int) Op_T::LTE, T_Type::Operator)); }
+	| '>' { $$.reset(new Token_Int((int) Op_T::GT, T_Type::Operator)); }
+	| OP_GE { $$.reset(new Token_Int((int) Op_T::GTE, T_Type::Operator)); }
+	| '=' { $$.reset(new Token_Int((int) Op_T::Equal, T_Type::Operator)); }
+	| OP_NOTEQUAL { $$.reset(new Token_Int((int) Op_T::NotEqual, T_Type::Operator)); }
+	| OP_IN { $$.reset(new Token_Int((int) Op_T::In, T_Type::Operator)); }
 	; 
 
 SimpleExpression: SimpleExpression TermOP Term {
@@ -816,12 +816,30 @@ Case: Case ',' CaseConstant
 CaseConstant: Constant
 	| Constant OP_DOTDOT Constant
 	;
+	
 ElsePart: K_ELSE Statement
 	;
 
+	/*
 IfStatement: K_IF Expression K_THEN Statement ElsePart
 	| K_IF Expression K_THEN Statement
 	;
+	
+	*/
+
+IfStatement: IfTest IfBody IfElse;
+
+IfTest: K_IF Expression K_THEN{
+				std::shared_ptr<AsmLine> line = Program.FlattenExpression(std::dynamic_pointer_cast<Token_Expression>($2), nullptr, true);
+				
+			}
+
+IfBody: Statement;
+
+IfElse: K_ELSE Statement
+	|
+	;	
+
 
 ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression K_DO Statement
 	;
