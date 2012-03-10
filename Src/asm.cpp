@@ -346,6 +346,8 @@ std::string AsmFile::GenerateCode(){
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
 	for (itList = CodeLines.begin(); itList != CodeLines.end(); itList++){
 		std::shared_ptr<AsmLine> line = *itList;
+		if (line -> GetCC() == AsmLine::NV)
+			continue;
 		std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;
 		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput, RoOutput;
 		AsmLine::OpCode_T OpCode;

@@ -77,6 +77,6 @@ BEGIN
 	write(99);
 	
 	test := test / 5 * 6;*}
-	if test = test2 then test2 := 6+5;
+	if test = test2 then test2 := 6+5 else test2 := 15;
 	if test = 1 then test2 := 6*5;
 END.

@@ -476,13 +476,20 @@ public:
 	//Hack -- Create Write()
 	void CreateWriteLine(std::shared_ptr<Token_ExprList> list);		//Only supports ONE expression 
 	
-	/** Conditional Labels **/
+	/** Conditional Stacks **/
 	std::shared_ptr<AsmLabel> CreateIfElseLabel();
 	void IfLabelStackPush(std::shared_ptr<AsmLabel> label){ IfLabelStack.push_back(label); }
 	std::shared_ptr<AsmLabel> IfLabelStackPop(){ 
 		std::shared_ptr<AsmLabel> result = *IfLabelStack.rbegin();
 		
 		IfLabelStack.pop_back();
+		return result;
+	}
+	void IfLineStackPush(std::shared_ptr<AsmLine> line){ IfLineStack.push_back(line); }
+	std::shared_ptr<AsmLine> IfLineStackPop(){ 
+		std::shared_ptr<AsmLine> result = *IfLineStack.rbegin();
+		
+		IfLineStack.pop_back();
 		return result;
 	}
 	
@@ -507,8 +514,9 @@ protected:
 	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
 	std::shared_ptr<AsmBlock> GlobalBlock;
 	
-	//Conditional labels
+	//Conditional stacks
 	std::shared_ptr<AsmLabel> NextLabel;
 	std::vector<std::shared_ptr<AsmLabel> > IfLabelStack;
+	std::vector<std::shared_ptr<AsmLine> > IfLineStack;
 };
 #endif

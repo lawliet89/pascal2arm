@@ -849,16 +849,31 @@ IfTest: K_IF Expression K_THEN{
 				}
 			}
 			
-IfExecute: IfBody IfElse
-		| IfBody 
+IfExecute: IfBody IfElse {
+				//There was an else
+				Program.SetNextLabel(Program.IfLabelStackPop());
+			}
+		| IfBody {
+			//Oh? Never came to be
+			std::shared_ptr<AsmLine> line = Program.IfLineStackPop();
+			line -> SetCC(AsmLine::NV);
+			Program.IfLabelStackPop();
+			
+		}
 		;
 			
-IfBody: Statement
-		{
+IfBody: Statement{
+			std::shared_ptr<AsmLine> line = Program.CreateCodeLine(AsmLine::Branch, AsmLine::B);		//NOTE: ORDER OF LINES ARE IMPORTANT
+			Program.IfLineStackPush(line);
 			Program.SetNextLabel(Program.IfLabelStackPop());
-		}
-
-;
+			std::shared_ptr<AsmLabel> label = Program.CreateIfElseLabel();
+			Program.IfLabelStackPush(label);		
+			
+			//Handle Label
+			std::shared_ptr<AsmOp> OpLabel(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+			OpLabel -> SetLabel(label);
+			line -> SetRd(OpLabel);
+		};
 
 IfElse: K_ELSE Statement
 ;	
