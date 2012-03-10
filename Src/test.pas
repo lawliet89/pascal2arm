@@ -5,6 +5,7 @@ VAR
 	float: real;
 	character: char;
 	bool: boolean;
+	A,B : integer;
 
 PROCEDURE testing;
 	VAR
@@ -76,7 +77,14 @@ BEGIN
 	write(test2);
 	write(99);
 	
-	test := test / 5 * 6;*}
+	test := test / 5 * 6;
 	if test = test2 then test2 := 6+5 else test2 := 15;
-	if test = 1 then test2 := 6*5;
+	if test = 1 then test2 := 6*5;*}
+   B:=4;
+   for A := 1 to 10 do
+      begin
+	 write(A);
+	 B := B + 1;
+      end;
+   write(B);
 END.

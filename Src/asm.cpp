@@ -584,6 +584,14 @@ std::shared_ptr<AsmLabel> AsmFile::CreateIfElseLabel(){
 		return result;
 }
 
+std::shared_ptr<AsmLabel> AsmFile::CreateForLabel(){
+		static unsigned counter = 0;
+		std::shared_ptr<AsmLabel> result = CreateLabel("FOR_" + ToString<unsigned>(counter));
+		
+		counter++;
+		return result;
+}
+
 AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
 	return *LHS == *RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
@@ -681,8 +689,8 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					Rm -> SetImmediate(simple -> GetValueToken() -> AsmValue());
 					result -> SetRm(Rm);
 					result -> SetRd(Rd);
+					Rd -> SetWrite();
 				}
-				Rd -> SetWrite();
 			}
 		}
 		

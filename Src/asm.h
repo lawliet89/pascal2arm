@@ -477,6 +477,7 @@ public:
 	void CreateWriteLine(std::shared_ptr<Token_ExprList> list);		//Only supports ONE expression 
 	
 	/** Conditional Stacks **/
+	//If Label Stacks
 	std::shared_ptr<AsmLabel> CreateIfElseLabel();
 	void IfLabelStackPush(std::shared_ptr<AsmLabel> label){ IfLabelStack.push_back(label); }
 	std::shared_ptr<AsmLabel> IfLabelStackPop(){ 
@@ -485,6 +486,7 @@ public:
 		IfLabelStack.pop_back();
 		return result;
 	}
+	//If Line Stacks
 	void IfLineStackPush(std::shared_ptr<AsmLine> line){ IfLineStack.push_back(line); }
 	std::shared_ptr<AsmLine> IfLineStackPop(){ 
 		std::shared_ptr<AsmLine> result = *IfLineStack.rbegin();
@@ -492,6 +494,16 @@ public:
 		IfLineStack.pop_back();
 		return result;
 	}
+	//For Line Stacks
+	std::shared_ptr<AsmLabel> CreateForLabel();
+	void ForLabelStackPush(std::shared_ptr<AsmLabel> label){ ForLabelStack.push_back(label); }
+	std::shared_ptr<AsmLabel> ForLabelStackPop(){ 
+		std::shared_ptr<AsmLabel> result = *ForLabelStack.rbegin();
+		
+		ForLabelStack.pop_back();
+		return result;
+	}
+	//If 
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
@@ -518,5 +530,7 @@ protected:
 	std::shared_ptr<AsmLabel> NextLabel;
 	std::vector<std::shared_ptr<AsmLabel> > IfLabelStack;
 	std::vector<std::shared_ptr<AsmLine> > IfLineStack;
+	
+	std::vector<std::shared_ptr<AsmLabel> > ForLabelStack;
 };
 #endif

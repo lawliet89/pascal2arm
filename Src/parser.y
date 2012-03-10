@@ -850,7 +850,7 @@ IfTest: K_IF Expression K_THEN{
 			}
 			
 IfExecute: IfBody IfElse {
-				//There was an else
+				//There was an elsestd::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
 				Program.SetNextLabel(Program.IfLabelStackPop());
 			}
 		| IfBody {
@@ -879,7 +879,96 @@ IfElse: K_ELSE Statement
 ;	
 
 
-ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression K_DO Statement
+ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE: This is $7
+					//Get Identifier symbol
+					try{
+						std::pair<std::shared_ptr<Symbol>, AsmCode> index(Program.GetSymbol($2 -> GetStrValue()));
+						//Check that index is a variable
+						if (index.first -> GetType() != Symbol::Variable){
+							std::stringstream msg;
+							msg << "In the for loop, identifier '" << $2 -> GetStrValue() << "' is not a variable.";
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2->GetLine(), $2->GetColumn());
+							YYERROR;
+						}
+						
+						std::shared_ptr<Token_Expression> FromExpr = std::dynamic_pointer_cast<Token_Expression>($4), ToExpr = std::dynamic_pointer_cast<Token_Expression>($6);
+						//std::shared_ptr<Symbol> FromVar = Program.CreateTempVar(FromExpr->GetType()), ToVar = Program.CreateTempVar(ToExpr -> GetType());
+						
+						//All three parts MUST be integers
+						std::shared_ptr<Token_Type> IntegerType = Program.GetTypeSymbol("integer").first->GetTokenDerived<Token_Type>();
+						
+						if (index.first -> GetTokenDerived<Token_Var>() -> GetVarType() != IntegerType){
+							std::stringstream msg;
+							msg << "In the for loop, variable '" << $2 -> GetStrValue() << "' must be of type integer.";
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2->GetLine(), $2->GetColumn());
+							YYERROR;
+						}
+						
+						if (FromExpr -> GetType() != IntegerType){
+							HandleError("In the for loop, the from expression must be of type integer.", E_PARSE, E_ERROR, $4->GetLine(), $4->GetColumn());
+							YYERROR;
+						}
+						
+						if (ToExpr -> GetType() != IntegerType){
+							HandleError("In the for loop, the to expression must be of type integer.", E_PARSE, E_ERROR, $6->GetLine(), $6->GetColumn());
+							YYERROR;
+						}			
+						
+						/** Checks are done **/
+						//Set index to become FromExpr
+						Program.CreateAssignmentLine(index.first, FromExpr);
+						
+						//Create branch label
+						std::shared_ptr<AsmLabel> label = Program.CreateForLabel();
+						Program.ForLabelStackPush(label);
+						Program.SetNextLabel(label);
+					}
+					catch (AsmCode e){
+						if (e == SymbolNotExists){
+							std::stringstream msg;
+							msg << "Unknown identifier '" << $2 -> GetStrValue() << "'.";
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2->GetLine(), $2->GetColumn());
+						}
+						else{
+							std::stringstream msg;
+							msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+						}
+						YYERROR;
+					}
+			} K_DO Statement {
+				//NOTE: Statement is $9
+				//Increment index by one
+				std::pair<std::shared_ptr<Symbol>, AsmCode> index(Program.GetSymbol($2 -> GetStrValue()));
+				
+				std::shared_ptr<AsmOp> IndexOp(new AsmOp(AsmOp::Register, AsmOp::Rd));
+				IndexOp -> SetWrite();
+				IndexOp -> SetSymbol(index.first);
+				std::shared_ptr<AsmLine> line1 = Program.CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
+				line1 -> SetRd(IndexOp);
+				line1 -> SetRm(IndexOp);
+				
+				//Create immediate 1
+				std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
+				One -> SetImmediate("1");
+				line1 -> SetRn(One);
+				
+				IndexOp.reset(new AsmOp(*IndexOp));		//Clone IndexOp
+				//Create Compare
+				std::shared_ptr<AsmLine> line2 = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+				line2 -> SetRd(IndexOp);
+				
+				std::shared_ptr<AsmLine> ToExpr = Program.FlattenExpression(std::dynamic_pointer_cast<Token_Expression>($6));
+				line2 -> SetRm(ToExpr -> GetRd());
+				
+				//The branch line
+				std::shared_ptr<AsmLabel> label = Program.ForLabelStackPop();
+				std::shared_ptr<AsmLine> branch = Program.CreateCodeLine(AsmLine::Branch, AsmLine::B);
+				branch -> SetCC(AsmLine::LE);
+				std::shared_ptr<AsmOp> LabelOp(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+				LabelOp -> SetLabel(label);
+				branch -> SetRd(LabelOp);
+			}
 	;
 
 RepeatStatement: K_REPEAT StatementList K_UNTIL Expression
