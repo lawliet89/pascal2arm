@@ -267,6 +267,7 @@ public:
 	
 	
 	AsmOp(Type_T Type, Position_T Position);
+	AsmOp(std::shared_ptr<AsmOp> ptr);
 	~AsmOp() { }
 	AsmOp(const AsmOp &obj);
 	AsmOp operator=(const AsmOp &obj);

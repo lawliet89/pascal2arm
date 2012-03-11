@@ -664,7 +664,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
 
 					Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
-					Rd -> SetWrite();
+					//Rd -> SetWrite();
 					result -> SetRm(Rm);
 					result -> SetRd(Rd);
 				}
@@ -732,31 +732,36 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 				Rd -> SetSymbol(temp);				
 			}
 			//In this case we definitely have to generate temporary variables already. We will use the existing Rd for LHS
-			std::shared_ptr<AsmLine> LHS;
-			std::shared_ptr<AsmOp> RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));
+			std::shared_ptr<AsmLine> LHSLine;
+			std::shared_ptr<AsmOp> LHS, RHS(new AsmOp(AsmOp::Register, AsmOp::Rd));
 			//Flatten Expression on LHS
 			if (cmp)
-				LHS = FlattenExpression(expr -> GetExpression(), nullptr );
+				LHSLine = FlattenExpression(expr -> GetExpression(), nullptr );
 			else
-				LHS = FlattenExpression(expr -> GetExpression(), std::shared_ptr<AsmOp>( new AsmOp(*Rd)));
+				LHSLine = FlattenExpression(expr -> GetExpression(), std::shared_ptr<AsmOp>( new AsmOp(*Rd)));
 			std::shared_ptr<Symbol> RHSTemp = CreateTempVar(expr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
 			expr -> SetTempVar(RHSTemp);
 			RHS -> SetSymbol(RHSTemp);
 			//and generate a temporary variable for RHS
 			//Flatten expression on RHS
-			RHS = FlattenSimExpression(expr -> GetSimExpression(), RHS);
+			RHS = std::shared_ptr<AsmOp>(new AsmOp(FlattenSimExpression(expr -> GetSimExpression(), RHS)));	//Clone
+			LHS = LHSLine -> GetRd();	
+			LHS  = std::shared_ptr<AsmOp>(new AsmOp(LHS));//Clone
+			
+			RHS -> SetWrite(false);
+			LHS -> SetWrite(false);
 			
 			Op_T Op = expr -> GetOp(); //TODO
 			
 			if (cmp){
 				result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
-				result -> SetRm(LHS->GetRd());
+				result -> SetRm(LHS);
 				result -> SetRn(RHS);
 			}
 			else{
-				//We have to do acomparison first
+				//We have to do a comparison first
 				result = CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
-				result -> SetRm(LHS->GetRd());
+				result -> SetRm(LHS);
 				result -> SetRn(RHS);
 				result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
 				
@@ -876,6 +881,12 @@ std::shared_ptr<AsmOp> AsmFile::FlattenSimExpression(std::shared_ptr<Token_SimEx
 		
 		RHS = FlattenTerm(simexpr -> GetTerm(), RHS);
 		
+		//Clone
+		LHS = std::shared_ptr<AsmOp>(new AsmOp(LHS));
+		RHS = std::shared_ptr<AsmOp>(new AsmOp(RHS));
+		LHS -> SetWrite(false);
+		RHS -> SetWrite(false);
+		
 		Op_T Op = simexpr -> GetOp(); 
 		if (LHS -> GetType() == AsmOp::Immediate && RHS -> GetType() == AsmOp::Immediate){
 			//Can be simplified into an immediate
@@ -994,6 +1005,12 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 		RHS -> SetSymbol(RHSTemp);			
 
 		RHS = FlattenFactor(term -> GetFactor(), RHS);
+		
+		//Clone
+		LHS = std::shared_ptr<AsmOp>(new AsmOp(LHS));
+		RHS = std::shared_ptr<AsmOp>(new AsmOp(RHS));
+		LHS -> SetWrite(false);
+		RHS -> SetWrite(false);
 		
 		Op_T Op = term -> GetOp(); 
 		if (LHS -> GetType() == AsmOp::Immediate && RHS -> GetType() == AsmOp::Immediate){
@@ -1520,6 +1537,15 @@ AsmOp::AsmOp(const AsmOp &obj):
 	OffsetAddressOp(obj.OffsetAddressOp), ScaleOp(obj.ScaleOp),
 	ImmediateValue(obj.ImmediateValue), tok(obj.tok), Write(obj.Write),
 	Label(obj.Label)
+{
+	
+}
+
+AsmOp::AsmOp(std::shared_ptr<AsmOp> ptr):
+	Type(ptr->Type), Position(ptr->Position), Scale(ptr->Scale), sym(ptr->sym), 
+	OffsetAddressOp(ptr->OffsetAddressOp), ScaleOp(ptr->ScaleOp),
+	ImmediateValue(ptr->ImmediateValue), tok(ptr->tok), Write(ptr->Write),
+	Label(ptr->Label)
 {
 	
 }
