@@ -437,7 +437,7 @@ public:
 	std::string SaveRegister(std::shared_ptr<Symbol> var);		//Force save variable
 	std::string SaveRegister(unsigned no);			//Force save reg no
 	void EvictRegister(unsigned no);
-	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false, bool save=true);	//Force variable to be in register no
+	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false, bool save=true, bool move=true);	//Force variable to be in register no
 	void IncrementCounter(){ counter++; }
 	std::string SaveAllRegisters();
 	unsigned GetCounter() const { return counter; }
@@ -451,8 +451,8 @@ protected:
 		bool BelongToScope;		//Set whether current register belong to scope
 		unsigned LastUsed;		//Counter where register was last used
 		bool Permanent;		//Set to disallow storage of this to memory. Used in a function for R0-R3
-		
-		State_T(bool IsGlobal=false): WrittenTo(false), BelongToScope(IsGlobal), Permanent(false), LastUsed(0){}
+		bool WrittenBefore;	//Written to at all in its life.
+		State_T(bool IsGlobal=false): WrittenTo(false), BelongToScope(IsGlobal), Permanent(false), LastUsed(0), WrittenBefore(false){}
 	};
 	
 	std::vector<State_T> Registers;

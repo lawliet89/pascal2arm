@@ -424,19 +424,20 @@ std::string AsmFile::GenerateCode(){
 				output << "\tSWI SWI_WriteC\n";
 			continue;
 		}
-		else if (OpCode == AsmLine::FUNCALL){
-			//Force Rd to be zero
-			output << Reg->ForceVar(Rd -> GetSymbol(),0, true, false);
+		else if (OpCode == AsmLine::FUNCALL){			
+			//Force save the variable in R4
+			//output << Reg -> SaveRegister(4);
 			
 			//Force the params into their respective positions
 			if (Rm != nullptr)
-				output << Reg->ForceVar(Rm -> GetSymbol(),1, true, false);
+				output << Reg->ForceVar(Rm -> GetSymbol(),0, true, false);
 			if (Rn != nullptr)
-				output << Reg->ForceVar(Rn -> GetSymbol(),2, true, false);
+				output << Reg->ForceVar(Rn -> GetSymbol(),1, true, false);
 			if (Ro != nullptr)
-				output << Reg->ForceVar(Ro -> GetSymbol(),3, true, false);
+				output << Reg->ForceVar(Ro -> GetSymbol(),2, true, false);
 			
-			//output << "\tBL " << ;
+			//Force Rd to be R4
+			output << Reg->ForceVar(Rd -> GetSymbol(),4, false, true, true, false);
 			
 			continue;
 		}
@@ -654,8 +655,8 @@ std::string AsmFile::GenerateCode(){
 			
 			std::vector<unsigned> list = Reg->GetListOfNotBelong();
 			for (std::vector<unsigned>::iterator itReg = list.begin(); itReg != list.end(); itReg++){
-				if (sym -> GetType() == Symbol::Function && *itReg == 0)
-					continue;		//We won't save R0 since we are going to be using it as return
+				if (sym -> GetType() == Symbol::Function && *itReg == 4)
+					continue;		//We won't save R4 since we are going to be using it as return
 				output << "R" << *itReg << ",";
 			}
 			output << "R14}; save to stack\n";
@@ -666,16 +667,18 @@ std::string AsmFile::GenerateCode(){
 				output << GetCurrentBlock()->NextLabel -> GetID();	
 			
 			if (sym -> GetType() == Symbol::Function){
-				//Move return value to R0
+				//Move return value to R4
 				std::pair<std::string, std::string> ReturnString = Reg -> GetVarRead( sym );
-				output << ReturnString.second;
-				output << "\tMOV R0, " << ReturnString.first << "; return value\n";
+				if (ReturnString.first != "R4"){
+					output << ReturnString.second;
+					output << "\tMOV R4, " << ReturnString.first << "; return value\n";
+				}
 			}
 			
 			output << "\tLDMED SP!, {";
 			
 			for (std::vector<unsigned>::iterator itReg = list.begin(); itReg != list.end(); itReg++){
-				if (sym -> GetType() == Symbol::Function && *itReg == 0)
+				if (sym -> GetType() == Symbol::Function && *itReg == 4)
 					continue; //We won't save R0 since we are going to be using it as return
 				output << "R" << *itReg << ",";
 			}
@@ -889,6 +892,7 @@ std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> s
 		//Then Rd will be set to temp to prevent saving
 		sym -> SetTemporary();
 	}
+	Rd -> SetWrite();
 	
 	return line;
 }
@@ -1987,19 +1991,22 @@ AsmLabel AsmLabel::operator=(const AsmLabel& obj)
 
 int AsmBlock::count = 0;
 
-AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok), Register(new AsmRegister(type == AsmBlock::Global)), InLoopCount(0)
+AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok), InLoopCount(0)
 {
 	if (type == Global){
 		ID = "GLOBAL";
+		Register.reset(new AsmRegister(true));
 	}
-	else if (TokenAssoc != nullptr)
-		ID = TokenAssoc -> GetStrValue();
 	else{
-		std::stringstream temp;
-		temp << "block_" << count;
-		ID = temp.str();
+		Register.reset(new AsmRegister);
+		if (TokenAssoc != nullptr)
+			ID = TokenAssoc -> GetStrValue();
+		else{
+			std::stringstream temp;
+			temp << "block_" << count;
+			ID = temp.str();
+		}
 	}
-	
 	count++;
 }
 
@@ -2230,12 +2237,14 @@ std::pair<std::string, std::string> AsmRegister::GetVarWrite(std::shared_ptr<Sym
 		result.first = "R" + ToString<unsigned>(ID.first);
 		GetRegister(ID.first).LastUsed = counter;
 		GetRegister(ID.first).WrittenTo = true;
+		GetRegister(ID.first).WrittenBefore = true;
 	}
 	else{
 		//Found
 		result.first = "R" + ToString<unsigned>(sym.second);
 		GetRegister(sym.second).LastUsed = counter;
 		GetRegister(sym.second).WrittenTo = true;
+		GetRegister(sym.second).WrittenBefore = true;
 	}
 	counter++;
 	return result;
@@ -2278,7 +2287,7 @@ std::string AsmRegister::SaveRegister(unsigned no){
 	State_T &Register = GetRegister(no);
 	std::stringstream output;
 	
-	if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp() && Register.sym -> GetLabel()){
+	if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp() && Register.sym -> GetLabel() != nullptr){
 		output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
 		output << "\tSTR R" << no << ", [R" << AsmScratch << "]\n";
 	}
@@ -2295,7 +2304,7 @@ void AsmRegister::EvictRegister(unsigned no){
 	Register.LastUsed = counter;
 }
 
-std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load, bool write, bool save){
+std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load, bool write, bool save, bool move){
 	//Check if var already exists
 	std::stringstream result;
 	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);		//Find if var already exists elsewhere
@@ -2316,7 +2325,9 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 		//Assign
 		Register.sym = var;
 		Register.WrittenTo = Previous.WrittenTo;
-		result << "\tMOV R" << no << ", R" << sym.second << " ; force moving\n";
+		if (move)
+			result << "\tMOV R" << no << ", R" << sym.second << " ; force moving\n"; 
+		EvictRegister(sym.second);
 	}
 	else{
 		//Not found
@@ -2336,6 +2347,8 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 		Register.WrittenTo = true;
 	
 	counter++;
+	if (InitialUse <= no)
+		InitialUse = ++no;
 	
 	return result.str();
 }
@@ -2368,7 +2381,7 @@ std::vector<unsigned> AsmRegister::GetListOfNotBelong(){
 	
 	for (unsigned i = 0; i <= end; i++){
 		State_T &Register = GetRegister(i);
-		if (Register.WrittenTo && !Register.BelongToScope)
+		if (Register.WrittenBefore && !Register.BelongToScope)
 			result.push_back(i);
 	}
 	return result;
