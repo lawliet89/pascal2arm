@@ -20,7 +20,7 @@ std::map<AsmLine::CC_T, std::string> AsmLine::CCStr;
  * */
 
 //Constructor
-AsmFile::AsmFile(){
+AsmFile::AsmFile(): InLoopCount(0){
 	CreateGlobalScope();
 }
 
@@ -587,19 +587,27 @@ std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<S
 
 /** Statement Methods **/
 std::shared_ptr<AsmLabel> AsmFile::CreateIfElseLabel(){
-		static unsigned counter = 0;
-		std::shared_ptr<AsmLabel> result = CreateLabel("IFELSE_" + ToString<unsigned>(counter));
-		
-		counter++;
-		return result;
+	static unsigned counter = 0;
+	std::shared_ptr<AsmLabel> result = CreateLabel("IFELSE_" + ToString<unsigned>(counter));
+	
+	counter++;
+	return result;
 }
 
 std::shared_ptr<AsmLabel> AsmFile::CreateForLabel(){
-		static unsigned counter = 0;
-		std::shared_ptr<AsmLabel> result = CreateLabel("FOR_" + ToString<unsigned>(counter));
-		
-		counter++;
-		return result;
+	static unsigned counter = 0;
+	std::shared_ptr<AsmLabel> result = CreateLabel("FOR_" + ToString<unsigned>(counter));
+	
+	counter++;
+	return result;
+}
+
+std::shared_ptr<AsmLabel> AsmFile::CreateWhileLabel(){
+	static unsigned counter = 0;
+	std::shared_ptr<AsmLabel> result = CreateLabel("WHILE_" + ToString<unsigned>(counter));
+	
+	counter++;
+	return result;
 }
 
 AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
@@ -965,10 +973,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenTerm(std::shared_ptr<Token_Term> term, st
 	std::shared_ptr<AsmLine> line;
 	
 	if (term -> IsSimple()){		//TODO Strict simplicity optimisation
-		/*std::shared_ptr<AsmOp> factor =*/ FlattenFactor(term -> GetFactor(), Rd);
-		//line  = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
-		//line -> SetRd(Rd);
-		//line -> SetRm(factor);
+		Rd = FlattenFactor(term -> GetFactor(), Rd);
 		result = Rd;
 	}
 	else{

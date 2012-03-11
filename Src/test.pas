@@ -5,7 +5,7 @@ VAR
 	float: real;
 	character: char;
 	bool: boolean;
-	A,B : integer;
+	A,B, C : integer;
 
 PROCEDURE testing;
 	VAR
@@ -79,7 +79,8 @@ BEGIN
 	
 	test := test / 5 * 6;
 	if test = test2 then test2 := 6+5 else test2 := 15;
-	if test = 1 then test2 := 6*5;*}
+	if test = 1 then test2 := 6*5;
+	
    B:=4;
    for A := 1 to 10 do
       begin
@@ -88,5 +89,13 @@ BEGIN
       end;
    write(B);
    
-   bool := A > B;
+   bool := A > B;*}
+   A:=1;
+   B:=4;
+   while (A < B) do
+      begin
+	 write(A);
+	 A := A + 1;
+      end;
+   write(B);
 END.

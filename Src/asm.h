@@ -515,9 +515,26 @@ public:
 		return result;
 	}
 	
-	void InLoopStackPush(){ InLoopStack.push_back(true); }
-	void InLoopStackPop() { InLoopStack.pop_back(); }
-	bool IsInLoop() { return !InLoopStack.empty(); }
+	//WhileLabelStack
+	std::shared_ptr<AsmLabel> CreateWhileLabel();
+	void WhileStartLabelStackPush(std::shared_ptr<AsmLabel> label){ WhileStartLabelStack.push_back(label); }
+	std::shared_ptr<AsmLabel> WhileStartLabelStackPop(){ 
+		std::shared_ptr<AsmLabel> result = *WhileStartLabelStack.rbegin();
+		
+		WhileStartLabelStack.pop_back();
+		return result;
+	}
+	
+	void WhileEndLabelStackPush(std::shared_ptr<AsmLabel> label){ WhileEndLabelStack.push_back(label); }
+	std::shared_ptr<AsmLabel> WhileEndLabelStackPop(){ 
+		std::shared_ptr<AsmLabel> result = *WhileEndLabelStack.rbegin();
+		
+		WhileEndLabelStack.pop_back();
+		return result;
+	}
+	void InLoopStackPush(){ InLoopCount++; }
+	void InLoopStackPop() { InLoopCount--; }
+	bool IsInLoop() { return (InLoopCount != 0); }
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
@@ -546,6 +563,9 @@ protected:
 	std::vector<std::shared_ptr<AsmLine> > IfLineStack;
 	
 	std::vector<std::shared_ptr<AsmLabel> > ForLabelStack;
-	std::vector<bool> InLoopStack;
+	std::vector<std::shared_ptr<AsmLabel> > WhileStartLabelStack;
+	std::vector<std::shared_ptr<AsmLabel> > WhileEndLabelStack;
+	
+	unsigned InLoopCount;
 };
 #endif

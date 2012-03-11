@@ -836,6 +836,18 @@ IfTest: K_IF Expression K_THEN{
 				
 				std::shared_ptr<AsmLabel> label = Program.CreateIfElseLabel();
 				Program.IfLabelStackPush(label);
+				Op_T Op = expr -> GetOp();
+				if (Op == None){
+					//Goodness this is problematic -- probably because this is a boolean variable or something
+					//Create one more line to see if this is equal to true or not
+					//Create immediate 1
+					std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
+					One -> SetImmediate("1");
+					std::shared_ptr<AsmLine> LineTrueTest = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+					LineTrueTest -> SetRd(line -> GetRd());
+					LineTrueTest -> SetRn(One);
+				}
+				
 				branch = Program.CreateCodeLine(AsmLine::Branch, AsmLine::B);
 				
 				//Handle Label
@@ -843,11 +855,24 @@ IfTest: K_IF Expression K_THEN{
 				OpLabel -> SetLabel(label);
 				branch -> SetRd(OpLabel);
 				
-				Op_T Op = expr -> GetOp();
+				
 				if (Op == Equal){
 					branch -> SetCC(AsmLine::NE);
 				}
-			}
+				else if (Op == LT)
+					branch -> SetCC(AsmLine::GE);
+				else if (Op == LTE)
+					branch -> SetCC(AsmLine::GT);	
+				else if (Op == GT)
+					branch -> SetCC(AsmLine::LE);
+				else if (Op == GTE)
+					branch -> SetCC(AsmLine::LT);
+				else if (Op == NotEqual)
+					branch -> SetCC(AsmLine::EQ);
+				else if (Op == None){
+					branch -> SetCC(AsmLine::LT);
+				}
+			};
 			
 IfExecute: IfBody IfElse {
 				//There was an elsestd::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
@@ -886,7 +911,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 						//Check that index is a variable
 						if (index.first -> GetType() != Symbol::Variable){
 							std::stringstream msg;
-							msg << "In the for loop, identifier '" << $2 -> GetStrValue() << "' is not a variable.";
+							msg << "In the for loop header, identifier '" << $2 -> GetStrValue() << "' is not a variable.";
 							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2->GetLine(), $2->GetColumn());
 							YYERROR;
 						}
@@ -899,18 +924,18 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 						
 						if (index.first -> GetTokenDerived<Token_Var>() -> GetVarType() != IntegerType){
 							std::stringstream msg;
-							msg << "In the for loop, variable '" << $2 -> GetStrValue() << "' must be of type integer.";
+							msg << "In the for loop header, variable '" << $2 -> GetStrValue() << "' must be of type integer.";
 							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2->GetLine(), $2->GetColumn());
 							YYERROR;
 						}
 						
 						if (FromExpr -> GetType() != IntegerType){
-							HandleError("In the for loop, the from expression must be of type integer.", E_PARSE, E_ERROR, $4->GetLine(), $4->GetColumn());
+							HandleError("In the for loop header, the from expression must be of type integer.", E_PARSE, E_ERROR, $4->GetLine(), $4->GetColumn());
 							YYERROR;
 						}
 						
 						if (ToExpr -> GetType() != IntegerType){
-							HandleError("In the for loop, the to expression must be of type integer.", E_PARSE, E_ERROR, $6->GetLine(), $6->GetColumn());
+							HandleError("In the for loop header, the to expression must be of type integer.", E_PARSE, E_ERROR, $6->GetLine(), $6->GetColumn());
 							YYERROR;
 						}			
 						
@@ -948,7 +973,6 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				std::shared_ptr<AsmLine> line1 = Program.CreateCodeLine(AsmLine::Processing, AsmLine::ADD);
 				line1 -> SetRd(IndexOp);
 				line1 -> SetRm(IndexOp);
-				line1 -> SetInLoop();
 				
 				//Create immediate 1
 				std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
@@ -962,7 +986,6 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				
 				std::shared_ptr<AsmLine> ToExpr = Program.FlattenExpression(std::dynamic_pointer_cast<Token_Expression>($6));
 				line2 -> SetRm(ToExpr -> GetRd());
-				line2 -> SetInLoop();
 				
 				//The branch line
 				std::shared_ptr<AsmLabel> label = Program.ForLabelStackPop();
@@ -971,7 +994,6 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				std::shared_ptr<AsmOp> LabelOp(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
 				LabelOp -> SetLabel(label);
 				branch -> SetRd(LabelOp);
-				branch -> SetInLoop();
 				
 				Program.InLoopStackPop();
 			}
@@ -980,7 +1002,96 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 RepeatStatement: K_REPEAT StatementList K_UNTIL Expression
 		;
 
-WhileStatement: K_WHILE Expression K_DO Statement
+WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
+					std::shared_ptr<Token_Expression> expr = std::dynamic_pointer_cast<Token_Expression>($2);
+					if (expr -> GetType() != Program.GetTypeSymbol("boolean").first->GetTokenDerived<Token_Type>()){
+						HandleError("In the while loop header, expression must evaluate to type boolean. ", E_PARSE, E_ERROR, $2->GetLine(), $2->GetColumn());
+						YYERROR;
+					}
+					std::shared_ptr<AsmLine> line1 = Program.FlattenExpression(expr, nullptr, true);
+					
+					std::shared_ptr<AsmLabel> labelStart = Program.CreateWhileLabel();
+					Program.WhileStartLabelStackPush(labelStart);
+					
+					std::shared_ptr<AsmLabel> labelEnd = Program.CreateWhileLabel();
+					Program.WhileEndLabelStackPush(labelEnd);
+					Op_T Op = expr -> GetOp();
+					if (Op == None){
+						//Goodness this is problematic -- probably because this is a boolean variable or something
+						//Create one more line to see if this is equal to true or not
+						//Create immediate 1
+						std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
+						One -> SetImmediate("1");
+						std::shared_ptr<AsmLine> LineTrueTest = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+						LineTrueTest -> SetRd(line1 -> GetRd());
+						LineTrueTest -> SetRn(One);
+					}					
+					std::shared_ptr<AsmLine> branch = Program.CreateCodeLine(AsmLine::Processing, AsmLine::B);
+					std::shared_ptr<AsmOp> OpLabel(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+					OpLabel -> SetLabel(labelEnd);
+					branch -> SetRd(OpLabel);
+					
+					
+					
+					if (Op == Equal){
+						branch -> SetCC(AsmLine::NE);
+					}
+					else if (Op == LT)
+						branch -> SetCC(AsmLine::GE);
+					else if (Op == LTE)
+						branch -> SetCC(AsmLine::GT);	
+					else if (Op == GT)
+						branch -> SetCC(AsmLine::LE);
+					else if (Op == GTE)
+						branch -> SetCC(AsmLine::LT);
+					else if (Op == NotEqual)
+						branch -> SetCC(AsmLine::EQ);
+					else if (Op == None)
+						branch -> SetCC(AsmLine::LT);
+						
+					Program.SetNextLabel(labelStart);
+					Program.InLoopStackPush();
+					
+				} K_DO Statement{ //NOTE: Statement is $5
+					std::shared_ptr<Token_Expression> expr = std::dynamic_pointer_cast<Token_Expression>($2);
+					std::shared_ptr<AsmLine> line1 = Program.FlattenExpression(expr, nullptr, true);
+					Op_T Op = expr -> GetOp();
+					
+					if (Op == None){
+						//Goodness this is problematic -- probably because this is a boolean variable or something
+						//Create one more line to see if this is equal to true or not
+						//Create immediate 1
+						std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
+						One -> SetImmediate("1");
+						std::shared_ptr<AsmLine> LineTrueTest = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
+						LineTrueTest -> SetRd(line1 -> GetRd());
+						LineTrueTest -> SetRn(One);
+					}
+					std::shared_ptr<AsmLine> branch = Program.CreateCodeLine(AsmLine::Processing, AsmLine::B);
+					std::shared_ptr<AsmOp> OpLabel(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+					OpLabel -> SetLabel(Program.WhileStartLabelStackPop());
+					branch -> SetRd(OpLabel);
+					
+					
+					if (Op == Equal){
+						branch -> SetCC(AsmLine::EQ);
+					}
+					else if (Op == LT)
+						branch -> SetCC(AsmLine::LT);
+					else if (Op == LTE)
+						branch -> SetCC(AsmLine::LE);	
+					else if (Op == GT)
+						branch -> SetCC(AsmLine::GT);
+					else if (Op == GTE)
+						branch -> SetCC(AsmLine::GE);
+					else if (Op == NotEqual)
+						branch -> SetCC(AsmLine::NE);
+					else if (Op == None)
+						branch -> SetCC(AsmLine::GE);
+						
+					Program.SetNextLabel(Program.WhileEndLabelStackPop());
+					Program.InLoopStackPop();
+				}
 		;
 
 %%
