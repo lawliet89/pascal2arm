@@ -146,9 +146,18 @@ BlockTypeDeclaration: K_TYPE TypeList
 			|;
 BlockVarDeclaration: K_VAR VarList
 			|;
-BlockProcFuncDeclaration: ProcList
-			| FuncList
+			
+/* 
+BlockProcFuncDeclaration: ProcList | FuncList ;
+*/
+BlockProcFuncDeclaration: ProcFuncList
 			|;
+
+ProcFuncList: ProcFuncList ProcDeclaration
+			| ProcFuncList FuncDeclaration
+			| ProcDeclaration
+			| FuncDeclaration
+			;
 
 /* Generic Stuff */
 Identifier: V_IDENTIFIER {
@@ -235,14 +244,6 @@ VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
 		| IdentifierList ':' Type ';' {
 			Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1),std::static_pointer_cast<Token_Type>($3));
 		};
-
-ProcList: ProcList ProcDeclaration
-	| ProcDeclaration
-	;
-
-FuncList: FuncList FuncDeclaration
-	| FuncDeclaration
-	;
 
 /* Types */
 Type: SimpleType { $$ = $1; }
@@ -365,7 +366,8 @@ Constant: Identifier
 
 /* Prodcedures and functions */
 FormalParamList: '(' FormalParam ')' { $$ = $2; }
-				| { $$.reset(); }
+				| '(' ')'{ $$.reset(new Token_FormalParam()); }
+				| { $$.reset(new Token_FormalParam()); }
 		;
 
 FormalParam:  FormalParam ';' ParamDeclaration { $$ = $1; std::static_pointer_cast<Token_FormalParam>($$)->Merge( std::static_pointer_cast<Token_FormalParam>($3) ); }
@@ -389,7 +391,7 @@ ValueParam:	IdentifierList ':' Type {
 	/*	| Identifier ':' Type '=' DefaultParamValue  */
 		;
 VarParam: K_VAR IdentifierList ':' Type {
-				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1), std::static_pointer_cast<Token_Type>($3));
+				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($2), std::static_pointer_cast<Token_Type>($4));
 				std::shared_ptr<Token_FormalParam> param(new Token_FormalParam());
 				param->AddParams(vars, true, true);
 				
@@ -405,16 +407,61 @@ SubroutineBlock: Block
 		;
 
 ProcDeclaration: ProcHeader ';' SubroutineBlock ';'{
-				//Pop Block
+				std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.GetSymbol($1 -> GetStrValue());
+				//std::shared_ptr<Token_Func> function = sym.first->GetTokenDerived<Token_Func>();
+				
+				std::shared_ptr<AsmLine> line = Program.CreateCodeLine(AsmLine::Directive, AsmLine::BLOCKPOP);
+				std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
+				Rd -> SetSymbol(sym.first);		
+				line -> SetRd(Rd);
 				Program.PopBlock();
 			}
 		;
 
-ProcHeader: K_PROCEDURE Identifier FormalParamList{
-			//Create the token for the procedure
-			//TODO
-			Program.CreateProcFuncSymbol($2 -> GetStrValue());
-		};
+ProcHeader: K_PROCEDURE Identifier {	//NOTE This is $3
+					//Check that identifier is not defined in this scope
+					//AsmCode sym = Program.CheckSymbol($2->GetStrValue());
+					try{
+						//Create a new block and a new function
+						std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.CreateProcFuncSymbol($2 -> GetStrValue(),false);		//Block is also pushed
+						//Then create a to push block
+						std::shared_ptr<AsmLine> line = Program.CreateCodeLine(AsmLine::Directive, AsmLine::BLOCKPUSH);
+						std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
+						Rd -> SetSymbol(sym.first);
+						line -> SetRd(Rd);
+						
+					}
+					catch(AsmCode sym){
+						if (sym == SymbolExistsInCurrentBlock){
+							std::stringstream msg;
+							msg << "Identifier '" << $2->GetStrValue() << "' has already been declared in this scope."	;			
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+							YYERROR;
+						}
+						else if (sym == SymbolReserved){
+							std::stringstream msg;
+							msg << "Identifier '" << $2->GetStrValue() << "' is a reserved identifier.";				
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+							YYERROR;
+						}
+						else if (sym == SymbolExistsInOuterBlock && Flags.Pedantic){
+							std::stringstream msg;
+							msg << "Identifier '" << $2->GetStrValue() << "' might occlude another symbol defined in an outer scope.";				
+							HandleError(msg.str().c_str(), E_PARSE, E_WARNING, $2 -> GetLine(), $2 -> GetColumn());
+						}
+					}
+
+				} FormalParamList{ //NOTE $4
+					//Get function
+					std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.GetSymbol($2 -> GetStrValue());
+					std::shared_ptr<Token_Func> function = sym.first->GetTokenDerived<Token_Func>();
+					
+					//Let's deal with formal param
+					std::shared_ptr<Token_FormalParam> params = std::static_pointer_cast<Token_FormalParam>($4);
+					function -> SetParams(params);
+					
+					$$=$2;
+				};
 
 FuncDeclaration: FuncHeader ';' SubroutineBlock ';' {
 				std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.GetSymbol($1 -> GetStrValue());
@@ -755,55 +802,82 @@ SignedConstant: Signed_Int { $$ = $1; }
 		;
 		
 FuncCall: Identifier '(' ActualParamList ')' {
-				std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
-				//Type and form of symbol
-				Symbol::Type_T SymType = sym.first -> GetType();
-				if (SymType != Symbol::Function){
-					std::stringstream msg;
-					msg << "Identifier '" << $1 -> GetStrValue() << "' is not a function.";
-					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
-					YYERROR;
-				}
-				
-				//Check for parameters matching - TODO for optional parameters support.
-				std::vector<Token_FormalParam::Param_T> FormalParams = sym.first -> GetTokenDerived<Token_Func>() -> GetParams() -> GetParams();
-				std::vector<std::shared_ptr<Token_Expression> > ActualExpr = std::static_pointer_cast<Token_ExprList>($3) -> GetList();
-				if (FormalParams.size() != ActualExpr.size()){
-					std::stringstream msg;
-					msg << "Function '" << $1 -> GetStrValue() << "' expects " << FormalParams.size() << " parameter(s) but " << ActualExpr.size() << " were provided." ;
-					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
-					YYERROR;
-				}
-				unsigned count = FormalParams.size();
-				//Check for parameter type matching
-				bool IsError = false;
-				for (unsigned i = 0; i < count; i++){
-					std::shared_ptr<Token_Type> LHS = FormalParams[i].Variable -> GetVarType(), RHS =  ActualExpr[i]->GetType();
-					if (Program.TypeCompatibilityCheck(LHS, RHS) != TypeCompatible ){
+				try{
+					std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
+					//Type and form of symbol
+					Symbol::Type_T SymType = sym.first -> GetType();
+					if (SymType != Symbol::Function){
 						std::stringstream msg;
-						msg << "Function '" << $1 -> GetStrValue() << "' expects parameter " << i+1 <<" to be of type " << LHS -> TypeToString() << "\n\tbut type " << RHS -> TypeToString() << " provided.";
+						msg << "Identifier '" << $1 -> GetStrValue() << "' is not a function.";
 						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
-						IsError = true;
+						YYERROR;
+					}
+					
+					//Check for parameters matching - TODO for optional parameters support.
+					std::vector<Token_FormalParam::Param_T> FormalParams = sym.first -> GetTokenDerived<Token_Func>() -> GetParams() -> GetParams();
+					std::vector<std::shared_ptr<Token_Expression> > ActualExpr = std::static_pointer_cast<Token_ExprList>($3) -> GetList();
+					if (FormalParams.size() != ActualExpr.size()){
+						std::stringstream msg;
+						msg << "Function '" << $1 -> GetStrValue() << "' expects " << FormalParams.size() << " parameter(s) but " << ActualExpr.size() << " were provided." ;
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+						YYERROR;
+					}
+					unsigned count = FormalParams.size();
+					//Check for parameter type matching
+					bool IsError = false;
+					for (unsigned i = 0; i < count; i++){
+						std::shared_ptr<Token_Type> LHS = FormalParams[i].Variable -> GetVarType(), RHS =  ActualExpr[i]->GetType();
+						if (Program.TypeCompatibilityCheck(LHS, RHS) != TypeCompatible ){
+							std::stringstream msg;
+							msg << "Function '" << $1 -> GetStrValue() << "' expects parameter " << i+1 <<" to be of type " << LHS -> TypeToString() << "\n\tbut type " << RHS -> TypeToString() << " provided.";
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+							IsError = true;
+						}
+						//If parameter is a reference, RHS MUST be a variable
+						if (FormalParams[i].Reference){
+							//Then it will be a strictly simple expression -- otherwise it fails
+							std::shared_ptr<Token_Factor> exprvar = ActualExpr[i] -> GetSimple();
+							bool fail = false;
+							if (exprvar == nullptr)
+								fail = true;
+							else if (exprvar -> GetForm() != Token_Factor::VarRef){
+								//Check form
+								fail = true;
+							}
+							if (fail){
+								std::stringstream msg;
+								msg << "Function '" << $1 -> GetStrValue() << "' expects parameter " << i+1 <<" to be a variable reference.";
+								HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+								IsError = true;
+							}
+						}
+					}
+					
+					if (IsError){
+						YYERROR;
+					}
+					std::shared_ptr<Token_Func> func = sym.first->GetTokenDerived<Token_Func>();
+					//Time to create the factor
+					std::shared_ptr<Token_Factor> factor( new Token_Factor(Token_Factor::FuncCall, $3, func->GetReturnType()));
+					factor -> SetFuncToken(func);
+					
+					$$ = std::static_pointer_cast<Token>(factor);
+				}
+				catch (AsmCode e){
+					if (e == SymbolNotExists){
+						std::stringstream msg;
+						msg << "Identifier '" << $1 -> GetStrValue() << "' does not exist." ;
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+						YYERROR;
 					}
 				}
-				
-				if (IsError){
-					YYERROR;
-				}
-				std::shared_ptr<Token_Func> func = sym.first->GetTokenDerived<Token_Func>();
-				//Time to create the factor
-				std::shared_ptr<Token_Factor> factor( new Token_Factor(Token_Factor::FuncCall, $3, func->GetReturnType()));
-				factor -> SetFuncToken(func);
-				
-				$$ = std::static_pointer_cast<Token>(factor);
-				
 			}
 	/* | Identifier */
 	;
 
 ActualParamList: ActualParamList ',' Expression { $$ = $1; std::static_pointer_cast<Token_ExprList>($$) -> AddExpression(std::static_pointer_cast<Token_Expression>($3)); }
 		| Expression {$$.reset(new Token_ExprList(std::static_pointer_cast<Token_Expression>($1)));}
-		|
+		| {$$.reset(new Token_ExprList());}
 		;
 		
 SetConstructors: '[' SetGroupList ']'
@@ -911,10 +985,92 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 		;
 
 ProcedureStatement: Identifier '(' ActualParamList ')' {
-					//We are going to hack in write here
-					if ($1 -> GetStrValue() == "write"){
-						Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
+				//We are going to hack in write here
+				if ($1 -> GetStrValue() == "write"){
+					Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
+				}
+				else{
+					try{
+						std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
+						//Type and form of symbol
+						Symbol::Type_T SymType = sym.first -> GetType();
+						if (SymType != Symbol::Procedure){
+							std::stringstream msg;
+							msg << "Identifier '" << $1 -> GetStrValue() << "' is not a procedure.";
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+							YYERROR;
+						}
+						
+						//Check for parameters matching - TODO for optional parameters support.
+						std::vector<Token_FormalParam::Param_T> FormalParams = sym.first -> GetTokenDerived<Token_Func>() -> GetParams() -> GetParams();
+						std::vector<std::shared_ptr<Token_Expression> > ActualExpr = std::static_pointer_cast<Token_ExprList>($3) -> GetList();
+						if (FormalParams.size() != ActualExpr.size()){
+							std::stringstream msg;
+							msg << "Procedure '" << $1 -> GetStrValue() << "' expects " << FormalParams.size() << " parameter(s) but " << ActualExpr.size() << " were provided." ;
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+							YYERROR;
+						}
+						unsigned count = FormalParams.size();
+						//Check for parameter type matching
+						bool IsError = false;
+						for (unsigned i = 0; i < count; i++){
+							std::shared_ptr<Token_Type> LHS = FormalParams[i].Variable -> GetVarType(), RHS =  ActualExpr[i]->GetType();
+							if (Program.TypeCompatibilityCheck(LHS, RHS) != TypeCompatible ){
+								std::stringstream msg;
+								msg << "Procedure '" << $1 -> GetStrValue() << "' expects parameter " << i+1 <<" to be of type " << LHS -> TypeToString() << "\n\tbut type " << RHS -> TypeToString() << " provided.";
+								HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+								IsError = true;
+							}
+						}
+						
+						if (IsError){
+							YYERROR;
+						}
+						
+						//Okay time to generate some code
+						//TODO - More than three args
+						std::shared_ptr<Token_Func> func = sym.first->GetTokenDerived<Token_Func>();
+						std::shared_ptr<AsmLine> line = Program.CreateCodeLine(AsmLine::Directive, AsmLine::FUNCALL);
+						
+						line -> SetRd(nullptr);	//To signify it's a procedure call
+						
+						std::vector<std::shared_ptr<Token_Expression> >::iterator it;
+						unsigned i = 0;
+						for (it = ActualExpr.begin(); it < ActualExpr.end() && i < 3; it++, i++){
+							std::shared_ptr<Token_Expression> expr = *it;
+							
+							//OK create a new operator
+							std::shared_ptr<AsmOp> ExprRd(new AsmOp(AsmOp::Register, AsmOp::Rm));
+							ExprRd -> SetSymbol(FormalParams[i].Variable->GetSymbol());
+							std::shared_ptr<AsmLine> line2 = Program.FlattenExpression(expr);
+							
+							std::shared_ptr<AsmOp> Ri( new AsmOp(*(line2->GetRd())) );
+							
+							switch (i){
+								case 0:
+									line -> SetRm(Ri); break;
+								case 1: 
+									line -> SetRn(Ri); break;
+								case 2:
+									line -> SetRo(Ri); break;
+							}
+						}
+						
+						//Create branch line
+						std::shared_ptr<AsmLine> branch = Program.CreateCodeLine(AsmLine::BranchLink, AsmLine::BL);
+						std::shared_ptr<AsmOp> BranchOp(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+						BranchOp -> SetLabel(func -> GetSymbol()->GetLabel());
+						branch -> SetRd(BranchOp);
 					}
+					catch (AsmCode e){
+						if (e == SymbolNotExists){
+							std::stringstream msg;
+							msg << "Identifier '" << $1 -> GetStrValue() << "' does not exist." ;
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+							YYERROR;
+						}
+					}
+				}
 			}
 		| Identifier
 		;

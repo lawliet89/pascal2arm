@@ -435,9 +435,9 @@ std::string AsmFile::GenerateCode(){
 				output << Reg->ForceVar(Rn -> GetSymbol(),1, true, false);
 			if (Ro != nullptr)
 				output << Reg->ForceVar(Ro -> GetSymbol(),2, true, false);
-			
-			//Force Rd to be R4
-			output << Reg->ForceVar(Rd -> GetSymbol(),4, false, true, true, false);
+			if (Rd != nullptr)
+				//Force Rd to be R4
+				output << Reg->ForceVar(Rd -> GetSymbol(),4, false, true, true, false);
 			
 			continue;
 		}
@@ -621,14 +621,22 @@ std::string AsmFile::GenerateCode(){
 			for (paramIt = params.begin(); paramIt < params.end(); paramIt++, i++){
 				Token_FormalParam::Param_T param = *paramIt;
 				Reg -> SetSymbol(i, param.Variable->GetSymbol());
+				
+				//It's a reference - it belongs to the scope
+				if (param.Reference){
+					Reg->SetBelongToScope(i, true);
+				}
+				else{
+					Reg->SetBelongToScope(i, false);
+				}
 			}
 			
 			if (sym -> GetType() == Symbol::Function){
 				//Return variable - in the last used for now
-				Reg -> SetSymbol(i, sym);
-				Reg -> SetPermanent(i);
+				Reg -> SetSymbol(4, sym);
+				Reg -> SetPermanent(4);
 				//Reg -> SetBelongToScope(i);
-				Reg -> SetInitialUse(++i);
+				Reg -> SetInitialUse(5);
 			}
 			//Label for next line
 			//CurrentOutput << Rd -> GetSymbol() -> GetLabel() -> GetID();
@@ -647,6 +655,8 @@ std::string AsmFile::GenerateCode(){
 				output << (*paramIt).Variable -> GetID() << ": " << (*paramIt).Variable -> GetVarType() -> TypeToString();
 				output << "\n";
 			}
+			if (func -> IsFunction())
+				output << "; R4 - Return Value : " << func -> GetReturnType() -> TypeToString() << "\n";
 			
 			output << "; ------------------------------------------------------\n";
 			//STMED
@@ -668,11 +678,11 @@ std::string AsmFile::GenerateCode(){
 			
 			if (sym -> GetType() == Symbol::Function){
 				//Move return value to R4
-				std::pair<std::string, std::string> ReturnString = Reg -> GetVarRead( sym );
-				if (ReturnString.first != "R4"){
-					output << ReturnString.second;
-					output << "\tMOV R4, " << ReturnString.first << "; return value\n";
-				}
+				//std::pair<std::string, std::string> ReturnString = Reg -> GetVarRead( sym );
+				//if (ReturnString.first != "R4"){
+				//	output << ReturnString.second;
+				//	output << "\tMOV R4, " << ReturnString.first << "; return value\n";
+				//}
 			}
 			
 			output << "\tLDMED SP!, {";
@@ -731,7 +741,23 @@ std::string AsmFile::GenerateCode(){
 			//	CurrentOutput << "\tLDMED SP!, {R0}; retrieve R0\n";
 			continue;
 		}
-		
+		else if (OpCode == AsmLine::FUNCALL){			
+			//Force save the variable in R4
+			//output << Reg -> SaveRegister(4);
+			
+			//Force the params into their respective positions
+			if (Rm != nullptr)
+				CurrentOutput << Reg->ForceVar(Rm -> GetSymbol(),0, true, false);
+			if (Rn != nullptr)
+				CurrentOutput << Reg->ForceVar(Rn -> GetSymbol(),1, true, false);
+			if (Ro != nullptr)
+				CurrentOutput << Reg->ForceVar(Ro -> GetSymbol(),2, true, false);
+			if (Rd != nullptr)
+				//Force Rd to be R4
+				output << Reg->ForceVar(Rd -> GetSymbol(),4, false, true, true, false);
+			
+			continue;
+		}
 		
 		/** Rm **/ //TODO
 		if (Rm != nullptr){

@@ -38,6 +38,7 @@ public:
 	std::shared_ptr<Token_FormalParam> GetParams() { return Params; }
 	std::shared_ptr<Symbol> GetSymbol() { return sym; }
 	bool GetHasReturn() const { return HasReturn; }
+	bool IsFunction() const { return Type == Function && ReturnType != nullptr; }
 	
 protected:
 	Type_T Type;
