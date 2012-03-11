@@ -9,6 +9,6 @@ function incr(X: integer):integer;
 
 begin
    A:=1;
-   B:=incr(A);
+   //B:=incr(A);
    write(B);
 end.

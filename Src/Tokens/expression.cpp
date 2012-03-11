@@ -168,7 +168,7 @@ std::shared_ptr<Token_Factor> Token_Expression::GetSimple(){
 	else{
 		//Check that form is type
 		if (Factor -> GetForm() == Token_Factor::Expression){
-			return std::dynamic_pointer_cast<Token_Expression>(Factor -> GetValueToken()) -> GetSimple();
+			return std::static_pointer_cast<Token_Expression>(Factor -> GetValueToken()) -> GetSimple();
 		}
 	}
 	

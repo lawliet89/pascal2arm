@@ -46,7 +46,7 @@ BISON := bison
 ifdef DEBUG_BUILD
 CXXFLAGS := -g -pedantic -std=c++0x -Wall -Wextra -Werror=return-type -Wno-reorder
 else
-CXXFLAGS := -pedantic -std=c++0x
+CXXFLAGS := -pedantic -std=c++0x -Wall -Wextra -Werror=return-type -Wno-reorder
 endif
 
 ifdef BISON_DEBUG

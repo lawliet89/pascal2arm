@@ -379,11 +379,23 @@ ParamDeclaration: ValueParam
 		;
 
 ValueParam:	IdentifierList ':' Type {
+				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1), std::dynamic_pointer_cast<Token_Type>($3));
+				std::shared_ptr<Token_FormalParam> param(new Token_FormalParam());
+				param->AddParams(vars);
+				
+				$$ = std::dynamic_pointer_cast<Token>(param);
 				
 			}
 	/*	| Identifier ':' Type '=' DefaultParamValue  */
 		;
-VarParam: K_VAR IdentifierList ':' Type
+VarParam: K_VAR IdentifierList ':' Type {
+				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1), std::dynamic_pointer_cast<Token_Type>($3));
+				std::shared_ptr<Token_FormalParam> param(new Token_FormalParam());
+				param->AddParams(vars, true, true);
+				
+				$$ = std::dynamic_pointer_cast<Token>(param);
+				
+			}
 		;
 		
 SubroutineBlock: Block
@@ -404,7 +416,9 @@ ProcHeader: K_PROCEDURE Identifier FormalParamList{
 			Program.CreateProcFuncSymbol($2 -> GetStrValue());
 		};
 
-FuncDeclaration: FuncHeader ';' SubroutineBlock ';'
+FuncDeclaration: FuncHeader ';' SubroutineBlock ';' {
+				Program.PopBlock();
+			}
 		;
 
 FuncHeader: K_FUNCTION Identifier {	//NOTE This is $3
@@ -438,7 +452,7 @@ FuncHeader: K_FUNCTION Identifier {	//NOTE This is $3
 					//Get function
 					std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.GetSymbol($2 -> GetStrValue());
 					std::shared_ptr<Token_Func> function = sym.first->GetTokenDerived<Token_Func>();
-					function -> SetReturnType(std::dynamic_pointer_cast<Token_Type>($6));
+					function -> SetReturnType(std::dynamic_pointer_cast<Token_Type>($6));		//And pushed
 					
 					//Let's deal with formal param
 					
@@ -774,7 +788,7 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 
 				std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
 				//Check that symbol is a variable
-				if (sym.first -> GetType() != Symbol::Variable){
+				if (sym.first -> GetType() != Symbol::Variable){		//TODO allow assignment to function
 					std::stringstream msg;
 					msg << "Identifier '" << $1 -> GetStrValue() << "' is not a variable.";
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
@@ -879,8 +893,8 @@ IfTest: K_IF Expression K_THEN{
 				std::shared_ptr<Token_Expression> expr(std::dynamic_pointer_cast<Token_Expression>($2));
 				std::shared_ptr<AsmLine> line = Program.FlattenExpression(expr, nullptr, true), branch;
 				
-				std::shared_ptr<AsmLabel> label = Program.CreateIfElseLabel();
-				Program.IfLabelStackPush(label);
+				std::shared_ptr<AsmLabel> label = Program.GetCurrentBlock()->CreateIfElseLabel();
+				Program.GetCurrentBlock()->IfLabelStackPush(label);
 				Op_T Op = expr -> GetOp();
 				if (Op == None){
 					//Goodness this is problematic -- probably because this is a boolean variable or something
@@ -921,24 +935,24 @@ IfTest: K_IF Expression K_THEN{
 			
 IfExecute: IfBody IfElse {
 				//There was an else
-				Program.SetNextLabel(Program.IfLabelStackPop());
-				Program.IfLineStackPop();
+				Program.GetCurrentBlock()->SetNextLabel(Program.GetCurrentBlock()->IfLabelStackPop());
+				Program.GetCurrentBlock()->IfLineStackPop();
 			}
 		| IfBody {
 			//Oh? Never came to be
-			std::shared_ptr<AsmLine> line = Program.IfLineStackPop();
+			std::shared_ptr<AsmLine> line = Program.GetCurrentBlock()->IfLineStackPop();
 			line -> SetCC(AsmLine::NV);
-			Program.IfLabelStackPop();
+			Program.GetCurrentBlock()->IfLabelStackPop();
 			
 		}
 		;
 			
 IfBody: Statement{
 			std::shared_ptr<AsmLine> line = Program.CreateCodeLine(AsmLine::Branch, AsmLine::B);		//NOTE: ORDER OF LINES ARE IMPORTANT
-			Program.IfLineStackPush(line);
-			Program.SetNextLabel(Program.IfLabelStackPop());
-			std::shared_ptr<AsmLabel> label = Program.CreateIfElseLabel();
-			Program.IfLabelStackPush(label);		
+			Program.GetCurrentBlock()->IfLineStackPush(line);
+			Program.GetCurrentBlock()->SetNextLabel(Program.GetCurrentBlock()->IfLabelStackPop());
+			std::shared_ptr<AsmLabel> label = Program.GetCurrentBlock()->CreateIfElseLabel();
+			Program.GetCurrentBlock()->IfLabelStackPush(label);		
 			
 			//Handle Label
 			std::shared_ptr<AsmOp> OpLabel(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
@@ -990,10 +1004,10 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 						Program.CreateAssignmentLine(index.first, FromExpr);
 						
 						//Create branch label
-						std::shared_ptr<AsmLabel> label = Program.CreateForLabel();
-						Program.ForLabelStackPush(label);
-						Program.SetNextLabel(label);
-						Program.InLoopStackPush();
+						std::shared_ptr<AsmLabel> label = Program.GetCurrentBlock()->CreateForLabel();
+						Program.GetCurrentBlock()->ForLabelStackPush(label);
+						Program.GetCurrentBlock()->SetNextLabel(label);
+						Program.GetCurrentBlock()->InLoopStackPush();
 					}
 					catch (AsmCode e){
 						if (e == SymbolNotExists){
@@ -1034,14 +1048,14 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				line2 -> SetRm(ToExpr -> GetRd());
 				
 				//The branch line
-				std::shared_ptr<AsmLabel> label = Program.ForLabelStackPop();
+				std::shared_ptr<AsmLabel> label = Program.GetCurrentBlock()->ForLabelStackPop();
 				std::shared_ptr<AsmLine> branch = Program.CreateCodeLine(AsmLine::Branch, AsmLine::B);
 				branch -> SetCC(AsmLine::LE);
 				std::shared_ptr<AsmOp> LabelOp(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
 				LabelOp -> SetLabel(label);
 				branch -> SetRd(LabelOp);
 				
-				Program.InLoopStackPop();
+				Program.GetCurrentBlock()->InLoopStackPop();
 			}
 	;
 
@@ -1056,11 +1070,11 @@ WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
 					}
 					std::shared_ptr<AsmLine> line1 = Program.FlattenExpression(expr, nullptr, true);
 					
-					std::shared_ptr<AsmLabel> labelStart = Program.CreateWhileLabel();
-					Program.WhileStartLabelStackPush(labelStart);
+					std::shared_ptr<AsmLabel> labelStart = Program.GetCurrentBlock()->CreateWhileLabel();
+					Program.GetCurrentBlock()->WhileStartLabelStackPush(labelStart);
 					
-					std::shared_ptr<AsmLabel> labelEnd = Program.CreateWhileLabel();
-					Program.WhileEndLabelStackPush(labelEnd);
+					std::shared_ptr<AsmLabel> labelEnd = Program.GetCurrentBlock()->CreateWhileLabel();
+					Program.GetCurrentBlock()->WhileEndLabelStackPush(labelEnd);
 					Op_T Op = expr -> GetOp();
 					if (Op == None){
 						//Goodness this is problematic -- probably because this is a boolean variable or something
@@ -1095,8 +1109,8 @@ WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
 					else if (Op == None)
 						branch -> SetCC(AsmLine::LT);
 						
-					Program.SetNextLabel(labelStart);
-					Program.InLoopStackPush();
+					Program.GetCurrentBlock()->SetNextLabel(labelStart);
+					Program.GetCurrentBlock()->InLoopStackPush();
 					
 				} K_DO Statement{ //NOTE: Statement is $5
 					std::shared_ptr<Token_Expression> expr = std::dynamic_pointer_cast<Token_Expression>($2);
@@ -1115,7 +1129,7 @@ WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
 					}
 					std::shared_ptr<AsmLine> branch = Program.CreateCodeLine(AsmLine::Processing, AsmLine::B);
 					std::shared_ptr<AsmOp> OpLabel(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
-					OpLabel -> SetLabel(Program.WhileStartLabelStackPop());
+					OpLabel -> SetLabel(Program.GetCurrentBlock()->WhileStartLabelStackPop());
 					branch -> SetRd(OpLabel);
 					
 					
@@ -1135,8 +1149,8 @@ WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
 					else if (Op == None)
 						branch -> SetCC(AsmLine::GE);
 						
-					Program.SetNextLabel(Program.WhileEndLabelStackPop());
-					Program.InLoopStackPop();
+					Program.GetCurrentBlock()->SetNextLabel(Program.GetCurrentBlock()->WhileEndLabelStackPop());
+					Program.GetCurrentBlock()->InLoopStackPop();
 				}
 		;
 

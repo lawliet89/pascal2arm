@@ -8,7 +8,7 @@
 extern Flags_T Flags;
 extern std::stringstream OutputString;		//op.cpp
 extern unsigned LexerCharCount, LexerLineCount;		//In lexer.l	- DEBUG purposes
-
+extern AsmFile Program;		//elsewhere
 
 /** Data Structures **/
 
@@ -20,7 +20,7 @@ std::map<AsmLine::CC_T, std::string> AsmLine::CCStr;
  * */
 
 //Constructor
-AsmFile::AsmFile(): InLoopCount(0){
+AsmFile::AsmFile(){
 	CreateGlobalScope();
 }
 
@@ -221,16 +221,19 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::GetTypeSymbol(std::string i
 }
 
 //Create symbol from list - outputs pedantic errors
-void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::string AsmInitialValue){
+std::vector<std::shared_ptr<Token_Var> > AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std::shared_ptr<Token_Type> type, std::string AsmInitialValue){
 	std::map <std::string, std::shared_ptr<Token> > list = IDList->GetList();
 	std::map <std::string, std::shared_ptr<Token> >::iterator it;
+	
+	std::vector<std::shared_ptr<Token_Var> > result;
 	
 	for (it=list.begin() ; it != list.end(); it++ ){
 		std::pair<std::string, std::shared_ptr<Token> > value;
 		value = *it;
 		std::shared_ptr<Token_Var> ptr(new Token_Var(value.first, type));	
+		result.push_back(ptr);
 		try{
-			std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, value.first, std::dynamic_pointer_cast<Token>(ptr));	
+			std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Variable, value.first, std::static_pointer_cast<Token>(ptr));	
 			ptr -> SetSymbol(sym.first);		
 			
 			if (Flags.Pedantic && sym.second == SymbolExistsInOuterBlock){
@@ -277,6 +280,7 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 			}
 		}
 	}
+	return result;
 		
 }
 
@@ -516,8 +520,8 @@ std::string AsmFile::GenerateCode(){
 		//EOL
 		output << "\n";
 	}	
-	if (NextLabel != nullptr)
-		output << NextLabel -> GetID();
+	if (GetCurrentBlock()->NextLabel != nullptr)
+		output << GetCurrentBlock()->NextLabel -> GetID();
 	
 	if (Flags.SaveRegisters)
 		output << GetCurrentBlock()->GetRegister()->SaveAllRegisters();
@@ -557,11 +561,11 @@ std::shared_ptr<AsmLine> AsmFile::CreateDataLine(std::shared_ptr<AsmLabel> Label
 std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLine::OpCode_T OpCode){
 	std::shared_ptr<AsmLine> line(new AsmLine(OpType, OpCode));
 	
-	if (NextLabel != nullptr){
-		line -> SetLabel(NextLabel);
-		NextLabel.reset();
+	if (GetCurrentBlock()->NextLabel != nullptr){
+		line -> SetLabel(GetCurrentBlock()->NextLabel);
+		GetCurrentBlock()->NextLabel.reset();
 	}
-	if (IsInLoop())
+	if (GetCurrentBlock()->IsInLoop())
 		line -> SetInLoop();
 	
 	if (GetCurrentBlock()-> IsGlobal())
@@ -602,30 +606,6 @@ std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<S
 }
 
 /** Statement Methods **/
-std::shared_ptr<AsmLabel> AsmFile::CreateIfElseLabel(){
-	static unsigned counter = 0;
-	std::shared_ptr<AsmLabel> result = CreateLabel("IFELSE_" + ToString<unsigned>(counter));
-	
-	counter++;
-	return result;
-}
-
-std::shared_ptr<AsmLabel> AsmFile::CreateForLabel(){
-	static unsigned counter = 0;
-	std::shared_ptr<AsmLabel> result = CreateLabel("FOR_" + ToString<unsigned>(counter));
-	
-	counter++;
-	return result;
-}
-
-std::shared_ptr<AsmLabel> AsmFile::CreateWhileLabel(){
-	static unsigned counter = 0;
-	std::shared_ptr<AsmLabel> result = CreateLabel("WHILE_" + ToString<unsigned>(counter));
-	
-	counter++;
-	return result;
-}
-
 AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
 	return *LHS == *RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
@@ -659,7 +639,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 				//Create AsmOp for variable
 				std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
 
-				Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+				Rm -> SetSymbol( std::static_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
 				Rd -> SetWrite();
 				result -> SetRm(Rm);
 				result -> SetRd(Rd);	
@@ -671,7 +651,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					//Create AsmOp for variable
 					std::shared_ptr<AsmOp> Rd(new AsmOp( AsmOp::Register, AsmOp::Rd ) );
 
-					Rd -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+					Rd -> SetSymbol( std::static_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
 					result -> SetRd(Rd);
 				}
 				else{
@@ -679,7 +659,7 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					//Create AsmOp for variable
 					std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
 
-					Rm -> SetSymbol( std::dynamic_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+					Rm -> SetSymbol( std::static_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
 					//Rd -> SetWrite();
 					result -> SetRm(Rm);
 					result -> SetRd(Rd);
@@ -1618,7 +1598,7 @@ AsmLabel AsmLabel::operator=(const AsmLabel& obj)
 
 int AsmBlock::count = 0;
 
-AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok), Register(new AsmRegister(type == AsmBlock::Global))
+AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type), TokenAssoc(tok), Register(new AsmRegister(type == AsmBlock::Global)), InLoopCount(0)
 {
 	if (type == Global){
 		ID = "GLOBAL";
@@ -1681,6 +1661,31 @@ AsmCode AsmBlock::CheckSymbol(std::string id) throw(){
 			return SymbolExistsInCurrentBlock;
 	}
 }
+
+std::shared_ptr<AsmLabel> AsmBlock::CreateIfElseLabel(){
+	static unsigned counter = 0;
+	std::shared_ptr<AsmLabel> result = Program.CreateLabel("IFELSE_" + ToString<unsigned>(counter));		//TODO Clean up
+	
+	counter++;
+	return result;
+}
+
+std::shared_ptr<AsmLabel> AsmBlock::CreateForLabel(){
+	static unsigned counter = 0;
+	std::shared_ptr<AsmLabel> result = Program.CreateLabel("FOR_" + ToString<unsigned>(counter));//TODO Clean up
+	
+	counter++;
+	return result;
+}
+
+std::shared_ptr<AsmLabel> AsmBlock::CreateWhileLabel(){
+	static unsigned counter = 0;
+	std::shared_ptr<AsmLabel> result = Program.CreateLabel("WHILE_" + ToString<unsigned>(counter));		//TODO clean up
+	
+	counter++;
+	return result;
+}
+
 
 /** AsmRegisters **/
 AsmRegister::AsmRegister(bool IsGlobal) : 

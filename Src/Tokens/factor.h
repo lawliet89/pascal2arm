@@ -33,7 +33,7 @@ public:
 	virtual const void * operator()() const { return (void *) &value; }
 	std::shared_ptr<Token> GetValueToken(){ return value; }
 	template <typename T> std::shared_ptr<T> GetTokenDerived(){
-		return std::dynamic_pointer_cast<T>( value );
+		return std::static_pointer_cast<T>( value );
 	}
 	
 	void SetNegate(bool val=true){ Negate = val; }

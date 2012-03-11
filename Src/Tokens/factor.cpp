@@ -27,7 +27,7 @@ Token_Factor Token_Factor::operator=(const Token_Factor& obj)
 
 std::shared_ptr<Token_Type> Token_Factor::GetType(){
 	if (Form == Expression)
-		return std::dynamic_pointer_cast<Token_Expression>(value) -> GetType();
+		return std::static_pointer_cast<Token_Expression>(value) -> GetType();
 	else
 		return Type;
 }
