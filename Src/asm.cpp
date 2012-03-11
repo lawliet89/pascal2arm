@@ -359,6 +359,7 @@ std::string AsmFile::GenerateCode(){
 		Rn = line -> GetRn();
 		Ro = line -> GetRo();
 		
+		std::shared_ptr<AsmRegister> Reg = GetCurrentBlock()->GetRegister();
 		unsigned OpCount = 0;
 		
 		//Label
@@ -369,15 +370,15 @@ std::string AsmFile::GenerateCode(){
 		if (line -> IsInLoop() != LoopDelta){
 			LoopDelta = line -> IsInLoop();
 			if (LoopDelta)
-				GetCurrentBlock()->GetRegister()->SetInLoop();
+				Reg->SetInLoop();
 			else
-				GetCurrentBlock()->GetRegister()->SetInLoop(false);
+				Reg->SetInLoop(false);
 		}
 		
 		//Internal opcode handling
 		if (OpCode == AsmLine::SAVE){
 			if (Rd -> GetType() == AsmOp::Register){
-				output << GetCurrentBlock()->GetRegister()->SaveRegister(Rd -> GetSymbol());
+				output << Reg->SaveRegister(Rd -> GetSymbol());
 			}
 			continue;
 		}
@@ -385,12 +386,12 @@ std::string AsmFile::GenerateCode(){
 			AsmOp::Type_T RdType = Rd -> GetType();
 
 			if (RdType == AsmOp::Register){
-				output << GetCurrentBlock()->GetRegister()->ForceVar(Rd -> GetSymbol(),0, true, false);
+				output << Reg->ForceVar(Rd -> GetSymbol(),0, true, false);
 			}
 			else if (RdType == AsmOp::Immediate){
-				output << GetCurrentBlock()->GetRegister()->SaveRegister(0);
-				GetCurrentBlock()->GetRegister()->EvictRegister(0);
-				GetCurrentBlock()->GetRegister()->IncrementCounter();
+				output << Reg->SaveRegister(0);
+				Reg->EvictRegister(0);
+				Reg->IncrementCounter();
 				output << "\tMOV R0, ";
 				output << Rd -> GetImmediate() << "\n";
 			}
@@ -407,9 +408,9 @@ std::string AsmFile::GenerateCode(){
 			AsmOp::Type_T RmType = Rm -> GetType();
 			if (RmType == AsmOp::Register){
 				if (Rm -> IsWrite())
-					RmOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rm -> GetSymbol() );
+					RmOutput = Reg -> GetVarWrite( Rm -> GetSymbol() );
 				else
-					RmOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rm -> GetSymbol() );
+					RmOutput = Reg -> GetVarRead( Rm -> GetSymbol() );
 			}
 			else if (RmType == AsmOp::Immediate){
 				RmOutput.first = Rm -> GetImmediate();
@@ -423,9 +424,9 @@ std::string AsmFile::GenerateCode(){
 			AsmOp::Type_T RnType = Rn -> GetType();
 			if (RnType == AsmOp::Register){
 				if (Rn -> IsWrite())
-					RnOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rn -> GetSymbol() );
+					RnOutput = Reg -> GetVarWrite( Rn -> GetSymbol() );
 				else
-					RnOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rn -> GetSymbol() );
+					RnOutput = Reg -> GetVarRead( Rn -> GetSymbol() );
 			}
 			else if (RnType == AsmOp::Immediate){
 				RnOutput.first = Rn -> GetImmediate();
@@ -439,9 +440,9 @@ std::string AsmFile::GenerateCode(){
 			AsmOp::Type_T RoType = Ro -> GetType();
 			if (RoType == AsmOp::Register){
 				if (Ro -> IsWrite())
-					RoOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Ro -> GetSymbol() );
+					RoOutput = Reg -> GetVarWrite( Ro -> GetSymbol() );
 				else
-					RoOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Ro -> GetSymbol() );
+					RoOutput = Reg -> GetVarRead( Ro -> GetSymbol() );
 			}
 			else if (RoType == AsmOp::Immediate){
 				RoOutput.first = Ro -> GetImmediate();
@@ -455,9 +456,9 @@ std::string AsmFile::GenerateCode(){
 			AsmOp::Type_T RdType = Rd -> GetType();
 			if (RdType == AsmOp::Register){
 				if (Rd -> IsWrite())
-					RdOutput = GetCurrentBlock()->GetRegister() -> GetVarWrite( Rd -> GetSymbol() );
+					RdOutput = Reg -> GetVarWrite( Rd -> GetSymbol() );
 				else
-					RdOutput = GetCurrentBlock()->GetRegister() -> GetVarRead( Rd -> GetSymbol() );
+					RdOutput = Reg -> GetVarRead( Rd -> GetSymbol() );
 			}
 			else if (RdType == AsmOp::Immediate){
 				RdOutput.first = Rd -> GetImmediate();
@@ -1759,7 +1760,7 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 		unsigned result, counter=UINT_MAX;
 		bool candidate = false;
 		for (unsigned i = 0; i < AsmUsableReg; i++){
-			State_T Register = GetRegister(i);
+			State_T &Register = GetRegister(i);
 			if (!Register.Permanent && Register.LastUsed < counter){
 				counter = Register.LastUsed;
 				result = i;
@@ -1771,7 +1772,7 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 			throw;
 		
 		ToReturn.first = result;
-		State_T Register = GetRegister(result);
+		State_T &Register = GetRegister(result);
 		
 		//Check if register has been written to and if the variable is a temporary
 		if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
@@ -1856,7 +1857,7 @@ std::string AsmRegister::SaveRegister(std::shared_ptr<Symbol> var){
 	std::pair<std::shared_ptr<Symbol>, unsigned> result = FindSymbol(var);
 	if (result.first != nullptr){
 		//Might need to saved
-		State_T Register = GetRegister(result.second);
+		State_T &Register = GetRegister(result.second);
 		//Check if register has been written to and if the variable is a temporary
 		if ( (Register.WrittenTo || InLoop )  && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
@@ -1867,7 +1868,7 @@ std::string AsmRegister::SaveRegister(std::shared_ptr<Symbol> var){
 }
 
 std::string AsmRegister::SaveRegister(unsigned no){
-	State_T Register = GetRegister(no);
+	State_T &Register = GetRegister(no);
 	std::stringstream output;
 	
 	if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
@@ -1880,7 +1881,7 @@ std::string AsmRegister::SaveRegister(unsigned no){
 //Then this register will be thrown out if there is a need to clear any register accordingly. So make sure to update the LastUsed accordingly.
 //Probably best to only use it immediately.
 void AsmRegister::EvictRegister(unsigned no){		
-	State_T Register = GetRegister(no);
+	State_T &Register = GetRegister(no);
 	
 	Register.sym = nullptr;
 	Register.WrittenTo = false;
@@ -1890,12 +1891,13 @@ void AsmRegister::EvictRegister(unsigned no){
 std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load, bool write){
 	//Check if var already exists
 	std::stringstream result;
-	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);
-	State_T Register = GetRegister(no);
+	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);		//Find if var already exists elsewhere
+	State_T &Register = GetRegister(no);
 	
 	if (sym.first != nullptr && sym.second == no)
 		//Trivial
 		return "";
+	
 	//Force save no
 	result << SaveRegister(no);	
 	

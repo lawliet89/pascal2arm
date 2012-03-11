@@ -372,6 +372,7 @@ public:
 	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false);	//Force variable to be in register no
 	void IncrementCounter(){ counter++; }
 	std::string SaveAllRegisters();
+	unsigned GetCounter() const { return counter; }
 	
 protected:
 	struct State_T{		//State of registers
