@@ -56,6 +56,7 @@ public:
 	void AddChildBlock(std::shared_ptr<AsmBlock> block){ ChildBlocks.push_back(block); }
 	void SetToken(std::shared_ptr<Token> tok){ TokenAssoc = tok; }
 	void SetID(std::string ID){ this->ID = ID; }
+	void SetBlockSymbol(std::shared_ptr<Symbol> sym) { BlockSymbol = sym; }
 	
 	//Getters
 	std::shared_ptr<Symbol> GetSymbol(std::string) throw(AsmCode);
@@ -67,6 +68,7 @@ public:
 	Type_T GetType() const{ return Type; }
 	std::shared_ptr<AsmRegister> GetRegister(){ return Register; }
 	bool IsGlobal() const { return Type == Global; }
+	std::shared_ptr<Symbol> GetBlockSymbol() { return BlockSymbol; }
 	
 	/** Conditional Stacks **/
 	//If Label Stacks
@@ -124,6 +126,7 @@ protected:
 	std::vector<std::shared_ptr<AsmBlock> > ChildBlocks;	//List of child blocks declared in this block - this is different from BlockStack!
 	std::shared_ptr<Token> TokenAssoc;		//Associated token, if any
 	std::string ID;
+	std::shared_ptr<Symbol> BlockSymbol;
 	
 	std::shared_ptr<AsmRegister> Register;
 	
@@ -210,8 +213,8 @@ public:
 		WRITE_INT=2000,	//Write int
 		WRITE_C,			//Write Char
 		SAVE,			//Force Rd to be saved to memory if it was written
-		BLOCKPUSH,		//Push a block -- used to signify beginning of a function
-		BLOCKPOP		//Pop a block -- used to signify end of a function 
+		BLOCKPUSH,		//Push a block -- used to signify beginning of a function -- Rd should be the SYMBOL of the block.
+		BLOCKPOP		//Pop a block -- used to signify end of a function  -- Rd should be the SYMBOL of the block.
 	};
 	enum CC_T{	//Condition Code
 		EQ, CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
@@ -405,6 +408,8 @@ protected:
  * */
 class AsmRegister{
 public:	
+	friend class AsmFile;
+	
 	AsmRegister(bool IsGlobal=false);
 	AsmRegister(unsigned FuncRegister);		//If this is inside a function, use this to set the number of initial registers that area already assigned. Assign symbols if neccessary
 	~AsmRegister() { }
@@ -425,16 +430,18 @@ public:
 	void SetInLoop(bool val = true) { InLoop = val; }
 	
 	//Aggregate Getters
-	std::vector<int> GetListOfNotBelong();			//Returns a list of registers that do not belong to this scope 
+	std::vector<unsigned> GetListOfNotBelong();			//Returns a list of registers that do not belong to this scope 
 	
 	//Special methods
 	std::string SaveRegister(std::shared_ptr<Symbol> var);		//Force save variable
 	std::string SaveRegister(unsigned no);			//Force save reg no
 	void EvictRegister(unsigned no);
-	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false);	//Force variable to be in register no
+	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false, bool save=true);	//Force variable to be in register no
 	void IncrementCounter(){ counter++; }
 	std::string SaveAllRegisters();
 	unsigned GetCounter() const { return counter; }
+	
+	void SetFunctionRegisters(unsigned count);
 	
 protected:
 	struct State_T{		//State of registers
@@ -461,7 +468,7 @@ protected:
 	void SetSymbol(unsigned ID, std::shared_ptr<Symbol> sym);
 	void SetWrittenTo(unsigned ID, bool val=true);
 	void SetPermanent(unsigned ID, bool val=true);
-	
+	void SetInitialUse(unsigned val) { InitialUse = val; }
 	std::pair<std::shared_ptr<Symbol>, unsigned> FindSymbol(std::shared_ptr<Symbol>);		//Iterate through the registers and see if symbol is already represented
 	
 	//If we are in a loop, variables are always saved because we don't know for sure if it will be written to

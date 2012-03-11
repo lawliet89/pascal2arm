@@ -29,9 +29,12 @@ public:
 	
 	//Merge
 	void Merge(Token_FormalParam &obj);
+	void Merge(std::shared_ptr<Token_FormalParam> ptr) { return Merge(*ptr); }
 	
 	//Add via vars
 	void AddParams(std::vector<std::shared_ptr<Token_Var> > list, bool Required=true, bool Reference=false);
+	
+	unsigned GetSize() const { return Params.size(); }
 	
 protected:
 	std::vector<Param_T> Params;		//List of parameters

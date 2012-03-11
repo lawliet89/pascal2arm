@@ -1,13 +1,13 @@
 #include "func.h"
 
 Token_Func::Token_Func(std::string ID, Token_Func::Type_T type): 
-	Token(ID, FuncProc), Type(type)
+	Token(ID, FuncProc), Type(type), HasReturn(false)
 {
 
 }
 
 Token_Func::Token_Func(const Token_Func &obj):
-	Token(obj), Type(obj.Type), Params(obj.Params), block(obj.block)
+	Token(obj), ReturnType(obj.ReturnType), Params(obj.Params), block(obj.block), sym(obj.sym), HasReturn(obj.HasReturn)
 {
 	
 }
@@ -15,9 +15,11 @@ Token_Func::Token_Func(const Token_Func &obj):
 Token_Func Token_Func::operator=(const Token_Func &obj){
 	if (&obj != this){
 		Token::operator=(obj);
-		Type = obj.Type;
+		ReturnType = obj.ReturnType;
 		Params = obj.Params;
 		block = obj.block;
+		sym = obj.sym;
+		HasReturn = obj.HasReturn;
 	}
 	return *this;
 }

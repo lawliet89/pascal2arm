@@ -27,14 +27,17 @@ public:
 	
 	void SetReturnType(std::shared_ptr<Token_Type> ReturnType){ this -> ReturnType = ReturnType; }
 	void SetBlock(std::shared_ptr<AsmBlock> block) { this -> block = block; }
-	void SetParam(std::shared_ptr<Token_FormalParam> Params) { this -> Params = Params; }
-	
+	void SetParams(std::shared_ptr<Token_FormalParam> Params) { this -> Params = Params; }
+	void SetSymbol(std::shared_ptr<Symbol> sym){ this -> sym = sym; }
+	void SetHasReturn(bool val=true){ HasReturn = val; }
 	//Getters
 	Type_T GetType() const{ return Type; }
 	std::string GetID() const{ return GetStrValue(); }
 	std::shared_ptr<Token_Type> GetReturnType(){ return ReturnType; }
 	std::shared_ptr<AsmBlock> GetBlock(){ return block; }
 	std::shared_ptr<Token_FormalParam> GetParams() { return Params; }
+	std::shared_ptr<Symbol> GetSymbol() { return sym; }
+	bool GetHasReturn() const { return HasReturn; }
 	
 protected:
 	Type_T Type;
@@ -43,6 +46,8 @@ protected:
 	std::shared_ptr<Token_Type> ReturnType;	//Return type of function, if any
 	std::shared_ptr<AsmBlock> block;
 	std::shared_ptr<Token_FormalParam> Params;
+	
+	bool HasReturn;
 	
 };
 

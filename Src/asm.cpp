@@ -301,6 +301,13 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcFuncSymbol(std::s
 		result = CreateSymbol(Symbol::Procedure, ID, tok);
 	}
 	tok -> SetBlock(block);
+	block -> SetBlockSymbol(result.first);
+	tok -> SetSymbol(result.first);
+	
+	//Create label
+	std::shared_ptr<AsmLabel> label(new AsmLabel("func_" + ID, result.first));
+	result.first -> SetLabel(label);
+	result.first -> SetBlock(block);
 	
 	if (push)
 		PushBlock(block);
@@ -537,7 +544,279 @@ std::string AsmFile::GenerateCode(){
 	}
 	
 	/** User functions/procedures **/
-	
+	std::vector<std::string> LineStacks;
+	std::stringstream CurrentOutput;
+	LoopDelta = false;
+	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
+	for (itList = FunctionLines.begin(); itList != FunctionLines.end(); itList++){
+		std::shared_ptr<AsmLine> line = *itList;
+		if (line -> GetCC() == AsmLine::NV)
+			continue;
+		std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;
+		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput, RoOutput;
+		AsmLine::OpCode_T OpCode;
+		
+		OpCode = line -> GetOpCode();
+		
+		Rd = line -> GetRd();
+		Rm = line -> GetRm();
+		Rn = line -> GetRn();
+		Ro = line -> GetRo();
+		
+		std::shared_ptr<AsmRegister> Reg = GetCurrentBlock()->GetRegister();
+		unsigned OpCount = 0;
+		
+		
+		
+		//Label
+		if (line -> GetLabel() != nullptr){
+			CurrentOutput << line -> GetLabel()->GetID();
+		}
+		
+		if (line -> IsInLoop() != LoopDelta){
+			LoopDelta = line -> IsInLoop();
+			if (LoopDelta)
+				Reg->SetInLoop();
+			else
+				Reg->SetInLoop(false);
+		}
+		
+		//Internal opcode handling
+		if (OpCode == AsmLine::BLOCKPUSH){		
+			if (!CurrentOutput.str().empty()){
+				LineStacks.push_back(CurrentOutput.str());
+				CurrentOutput.clear();
+				CurrentOutput.str("");
+			}
+			std::shared_ptr<Symbol> sym = Rd -> GetSymbol();
+			std::shared_ptr<Token_Func> func = sym->GetTokenDerived<Token_Func>();
+			std::vector<Token_FormalParam::Param_T> params = func -> GetParams()->GetParams();
+			//Push in the block
+			PushBlock(sym -> GetBlock());
+			
+			//Okay, time to handle the memory
+			Reg = GetCurrentBlock()->GetRegister();
+			Reg -> SetFunctionRegisters(params.size());
+			
+			std::vector<Token_FormalParam::Param_T>::iterator paramIt;
+			unsigned i = 0;
+			
+			for (paramIt = params.begin(); paramIt < params.end(); paramIt++, i++){
+				Token_FormalParam::Param_T param = *paramIt;
+				Reg -> SetSymbol(i, param.Variable->GetSymbol());
+			}
+			
+			if (sym -> GetType() == Symbol::Function){
+				//Return variable - in the last used for now
+				Reg -> SetSymbol(i, sym);
+				Reg -> SetPermanent(i);
+				//Reg -> SetBelongToScope(i);
+				Reg -> SetInitialUse(++i);
+			}
+			//Label for next line
+			//CurrentOutput << Rd -> GetSymbol() -> GetLabel() -> GetID();
+			continue;
+		}
+		else if (OpCode == AsmLine::BLOCKPOP){
+			std::shared_ptr<Symbol> sym = Rd -> GetSymbol();
+			std::shared_ptr<Token_Func> func = sym->GetTokenDerived<Token_Func>();
+			std::vector<Token_FormalParam::Param_T> params = func -> GetParams()->GetParams();
+			
+			output << "; ------------------------------------------------------\n";
+			output << "; " << sym -> GetLabel() -> GetID() << "\n";
+			unsigned i = 0;
+			for (std::vector<Token_FormalParam::Param_T>::iterator paramIt = params.begin(); paramIt < params.end(); i++, paramIt++){
+				output << "; R" << i << " - ";
+				output << (*paramIt).Variable -> GetID() << ": " << (*paramIt).Variable -> GetVarType() -> TypeToString();
+				output << "\n";
+			}
+			
+			output << "; ------------------------------------------------------\n";
+			//STMED
+			output << sym -> GetLabel() -> GetID();
+			output << "\tSTMED SP!, {";
+			
+			std::vector<unsigned> list = Reg->GetListOfNotBelong();
+			for (std::vector<unsigned>::iterator itReg = list.begin(); itReg != list.end(); itReg++){
+				if (sym -> GetType() == Symbol::Function && *itReg == 0)
+					continue;		//We won't save R0 since we are going to be using it as return
+				output << "R" << *itReg << ",";
+			}
+			output << "R14}; save to stack\n";
+			
+			output << CurrentOutput.str();
+			
+			if (GetCurrentBlock()->NextLabel != nullptr)
+				output << GetCurrentBlock()->NextLabel -> GetID();	
+			
+			if (sym -> GetType() == Symbol::Function){
+				//Move return value to R0
+				std::pair<std::string, std::string> ReturnString = Reg -> GetVarRead( sym );
+				output << ReturnString.second;
+				output << "\tMOV R0, " << ReturnString.first << "; return value\n";
+			}
+			
+			output << "\tLDMED SP!, {";
+			
+			for (std::vector<unsigned>::iterator itReg = list.begin(); itReg != list.end(); itReg++){
+				if (sym -> GetType() == Symbol::Function && *itReg == 0)
+					continue; //We won't save R0 since we are going to be using it as return
+				output << "R" << *itReg << ",";
+			}
+			output << "R15}; return\n";
+			
+			if (!LineStacks.empty()){
+				CurrentOutput.clear();
+				CurrentOutput.str(*LineStacks.rbegin());
+				LineStacks.pop_back();
+			}
+			else{
+				CurrentOutput.clear();
+				CurrentOutput.str("");				
+			}
+			continue;
+		}		
+		else if (OpCode == AsmLine::SAVE){
+			if (Rd -> GetType() == AsmOp::Register){
+				CurrentOutput << Reg->SaveRegister(Rd -> GetSymbol());
+			}
+			continue;
+		}
+		else if (OpCode == AsmLine::WRITE_INT || OpCode == AsmLine::WRITE_C){
+			AsmOp::Type_T RdType = Rd -> GetType();
+			bool save = true;
+			
+			//if (GetCurrentBlock()->GetBlockSymbol()->GetTokenDerived<Token_Func>()->GetParams()->GetSize() > 0)			//WOW WOW WOW this is getting out of hand
+			//	save = false;
+			
+			//if (!save)
+				//No where to save -- so we use the stack
+			//	CurrentOutput << "\tSTMED SP!, {R0}; save R0\n";
+			if (RdType == AsmOp::Register){
+				CurrentOutput << Reg->ForceVar(Rd -> GetSymbol(),0, true, false, save);
+			}
+			else if (RdType == AsmOp::Immediate){
+				if (save) 
+					CurrentOutput << Reg->SaveRegister(0);
+				Reg->EvictRegister(0);
+				Reg->IncrementCounter();
+				CurrentOutput << "\tMOV R0, ";
+				CurrentOutput << Rd -> GetImmediate() << "\n";
+			}
+			if (OpCode == AsmLine::WRITE_INT)
+				CurrentOutput << "\tBL PRINTR0_ ;Print integer\n";
+			else
+				CurrentOutput << "\tSWI SWI_WriteC\n";
+			
+			//if (!save)
+			//	CurrentOutput << "\tLDMED SP!, {R0}; retrieve R0\n";
+			continue;
+		}
+		
+		
+		/** Rm **/ //TODO
+		if (Rm != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RmType = Rm -> GetType();
+			if (RmType == AsmOp::Register){
+				if (Rm -> IsWrite())
+					RmOutput = Reg -> GetVarWrite( Rm -> GetSymbol() );
+				else
+					RmOutput = Reg -> GetVarRead( Rm -> GetSymbol() );
+			}
+			else if (RmType == AsmOp::Immediate){
+				RmOutput.first = Rm -> GetImmediate();
+			}
+			CurrentOutput << RmOutput.second;
+		}
+		
+		/** Rn **/ //TODO
+		if (Rn != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RnType = Rn -> GetType();
+			if (RnType == AsmOp::Register){
+				if (Rn -> IsWrite())
+					RnOutput = Reg -> GetVarWrite( Rn -> GetSymbol() );
+				else
+					RnOutput = Reg -> GetVarRead( Rn -> GetSymbol() );
+			}
+			else if (RnType == AsmOp::Immediate){
+				RnOutput.first = Rn -> GetImmediate();
+			}
+			CurrentOutput << RnOutput.second;
+		}
+		
+		/** Ro **/
+		if (Ro != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RoType = Ro -> GetType();
+			if (RoType == AsmOp::Register){
+				if (Ro -> IsWrite())
+					RoOutput = Reg -> GetVarWrite( Ro -> GetSymbol() );
+				else
+					RoOutput = Reg -> GetVarRead( Ro -> GetSymbol() );
+			}
+			else if (RoType == AsmOp::Immediate){
+				RoOutput.first = Ro -> GetImmediate();
+			}
+			CurrentOutput << RoOutput.second;
+		}
+		
+		/** Rd **/ //TODO More than just destination registers?
+		if (Rd != nullptr){
+			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
+			AsmOp::Type_T RdType = Rd -> GetType();
+			if (RdType == AsmOp::Register){
+				if (Rd -> IsWrite())
+					RdOutput = Reg -> GetVarWrite( Rd -> GetSymbol() );
+				else
+					RdOutput = Reg -> GetVarRead( Rd -> GetSymbol() );
+			}
+			else if (RdType == AsmOp::Immediate){
+				RdOutput.first = Rd -> GetImmediate();
+			}
+			else if (RdType == AsmOp::CodeLabel){
+				RdOutput.first = Rd->GetLabel()-> GetID();
+			}
+			CurrentOutput << RdOutput.second;
+		}
+		
+		CurrentOutput << "\t";
+		//Opcode
+		CurrentOutput << line -> GetOpCodeStr() << " ";
+		
+		if (!RdOutput.first.empty()){
+			//Rd
+			CurrentOutput << RdOutput.first;
+			OpCount++;
+		}
+		if (!RmOutput.first.empty()){
+			//Rm
+			if (OpCount != 0 ) CurrentOutput << ", ";
+			CurrentOutput << RmOutput.first;
+			OpCount++;
+		}
+		if (!RnOutput.first.empty()){
+			//Rn
+			if (OpCount != 0 ) CurrentOutput << ", ";
+			CurrentOutput << RnOutput.first;
+			OpCount++;
+		}
+		if (!RoOutput.first.empty()){
+			//Ro
+			if (OpCount != 0 ) CurrentOutput << ", ";
+			CurrentOutput << RoOutput.first;
+			OpCount++;
+		}
+		//Comments
+		std::string comment = line -> GetComment();
+		if (!comment.empty())
+			CurrentOutput << " ;" << comment;
+		
+		//EOL
+		CurrentOutput << "\n";
+	}
+	output << CurrentOutput.str();	//For global scoped functions
 	
 	output << "\n\tEND";
 	return output.str();
@@ -571,7 +850,7 @@ std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLi
 	if (GetCurrentBlock()-> IsGlobal())
 		CodeLines.push_back(line);
 	else
-		CodeLines.push_back(line);
+		FunctionLines.push_back(line);
 	return line;
 }
 
@@ -590,6 +869,11 @@ std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> s
 	
 	line = FlattenExpression(expr, Rd);
 	
+	if (sym -> GetType() == Symbol::Function){
+		//Then Rd will be set to temp to prevent saving
+		sym -> SetTemporary();
+	}
+	
 	return line;
 }
 
@@ -607,7 +891,7 @@ std::shared_ptr<AsmLabel> AsmFile::CreateLabel(std::string ID, std::shared_ptr<S
 
 /** Statement Methods **/
 AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::shared_ptr<Token_Type> RHS){
-	return *LHS == *RHS ? TypeCompatible : TypeIncompatible;	//TODO more checks
+	return (*LHS) == (*RHS) ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
 
 std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd, bool cmp){
@@ -1615,7 +1899,7 @@ AsmBlock::AsmBlock(AsmBlock::Type_T type, std::shared_ptr<Token> tok): Type(type
 }
 
 AsmBlock::AsmBlock(const AsmBlock& obj): 
-	SymbolList(obj.SymbolList), Type(obj.Type), ChildBlocks(obj.ChildBlocks), TokenAssoc(obj.TokenAssoc), ID(obj.ID), Register(obj.Register)
+	SymbolList(obj.SymbolList), Type(obj.Type), ChildBlocks(obj.ChildBlocks), TokenAssoc(obj.TokenAssoc), ID(obj.ID), Register(obj.Register), BlockSymbol(obj.BlockSymbol)
 {
 }
 
@@ -1627,6 +1911,7 @@ AsmBlock AsmBlock::operator=(const AsmBlock &obj){
 		TokenAssoc = obj.TokenAssoc;
 		ID = obj.ID;
 		Register = obj.Register;
+		BlockSymbol = obj.BlockSymbol;
 	}
 	return *this;
 }
@@ -1701,6 +1986,7 @@ AsmRegister::AsmRegister(unsigned FuncRegister):
 		GetRegister(i).Permanent = true;
 		GetRegister(i).BelongToScope = true;
 	}
+	InitialUse = FuncRegister;
 }
 
 AsmRegister::AsmRegister(const AsmRegister& obj):
@@ -1792,13 +2078,9 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 			throw;
 		
 		ToReturn.first = result;
-		State_T &Register = GetRegister(result);
+		//State_T &Register = GetRegister(result);
 		
-		//Check if register has been written to and if the variable is a temporary
-		if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
-			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "\n";
-			output << "\tSTR R" << result << ", [R" << AsmScratch << "]\n";
-		}
+		SaveRegister(result);
 		EvictRegister(result);
 	}
 	if (sym != nullptr && load && !sym -> IsTemporary()){
@@ -1878,8 +2160,8 @@ std::string AsmRegister::SaveRegister(std::shared_ptr<Symbol> var){
 	if (result.first != nullptr){
 		//Might need to saved
 		State_T &Register = GetRegister(result.second);
-		//Check if register has been written to and if the variable is a temporary
-		if ( (Register.WrittenTo || InLoop )  && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+		//Check if register has been written to and if the variable is a temporary and if it's permanent
+		if ( (Register.WrittenTo || InLoop )  && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp() && Register.sym -> GetLabel() != nullptr){
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
 			output << "\tSTR R" << result.second << ", [R" << AsmScratch << "]\n";
 		}
@@ -1891,7 +2173,7 @@ std::string AsmRegister::SaveRegister(unsigned no){
 	State_T &Register = GetRegister(no);
 	std::stringstream output;
 	
-	if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp()){
+	if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp() && Register.sym -> GetLabel()){
 		output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
 		output << "\tSTR R" << no << ", [R" << AsmScratch << "]\n";
 	}
@@ -1908,7 +2190,7 @@ void AsmRegister::EvictRegister(unsigned no){
 	Register.LastUsed = counter;
 }
 
-std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load, bool write){
+std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load, bool write, bool save){
 	//Check if var already exists
 	std::stringstream result;
 	std::pair<std::shared_ptr<Symbol>, unsigned> sym = FindSymbol(var);		//Find if var already exists elsewhere
@@ -1918,8 +2200,9 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 		//Trivial
 		return "";
 	
-	//Force save no
-	result << SaveRegister(no);	
+	if (save)
+		//Force save no
+		result << SaveRegister(no);	
 	
 	if (sym.first != nullptr){
 		//Found
@@ -1962,4 +2245,26 @@ std::string AsmRegister::SaveAllRegisters(){
 		result << SaveRegister(i);
 	
 	return result.str();
+}
+
+void AsmRegister::SetFunctionRegisters(unsigned count){
+	for (unsigned i = 0; i < count; i++){
+		GetRegister(i).Permanent = true;
+		GetRegister(i).BelongToScope = true;
+	}	
+	InitialUse = count;
+}
+std::vector<unsigned> AsmRegister::GetListOfNotBelong(){
+	std::vector<unsigned> result;
+	unsigned end = InitialUse;
+	
+	if (end > AsmUsableReg)
+		end = AsmUsableReg;
+	
+	for (unsigned i = 0; i <= end; i++){
+		State_T &Register = GetRegister(i);
+		if (Register.WrittenTo && !Register.BelongToScope)
+			result.push_back(i);
+	}
+	return result;
 }

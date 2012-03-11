@@ -160,7 +160,7 @@ IdentifierList: IdentifierList ',' Identifier
 			{
 				$$ = $1;
 				try{
-					dynamic_cast<Token_IDList*>($$.get()) -> AddID($3);
+					std::static_pointer_cast<Token_IDList>($$) -> AddID($3);
 				}
 				catch (AsmCode e){
 					if (e == SymbolExists){
@@ -207,8 +207,8 @@ VarList:	VarList VarDeclaration
 VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
 			//Handle expression
 			//Check expression Type
-			std::shared_ptr<Token_Expression> expr = std::dynamic_pointer_cast<Token_Expression>($5);
-			std::shared_ptr<Token_Type> type = std::dynamic_pointer_cast<Token_Type>($3);
+			std::shared_ptr<Token_Expression> expr = std::static_pointer_cast<Token_Expression>($5);
+			std::shared_ptr<Token_Type> type = std::static_pointer_cast<Token_Type>($3);
 			
 			
 			if (Program.TypeCompatibilityCheck(expr->GetType(), type) != TypeCompatible){
@@ -230,10 +230,10 @@ VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
 				YYERROR;
 			}
 			
-			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1), type, line -> GetRd()->GetImmediate());
+			Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1), type, line -> GetRd()->GetImmediate());
 		}
 		| IdentifierList ':' Type ';' {
-			Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1),std::dynamic_pointer_cast<Token_Type>($3));
+			Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1),std::static_pointer_cast<Token_Type>($3));
 		};
 
 ProcList: ProcList ProcDeclaration
@@ -364,36 +364,36 @@ Constant: Identifier
 	;
 
 /* Prodcedures and functions */
-FormalParamList: '(' FormalParam ')'
-				|
+FormalParamList: '(' FormalParam ')' { $$ = $2; }
+				| { $$.reset(); }
 		;
 
-FormalParam:  FormalParam ';' ParamDeclaration 
-	| ParamDeclaration
+FormalParam:  FormalParam ';' ParamDeclaration { $$ = $1; std::static_pointer_cast<Token_FormalParam>($$)->Merge( std::static_pointer_cast<Token_FormalParam>($3) ); }
+	| ParamDeclaration { $$ = $1; }
 	;
 
-ParamDeclaration: ValueParam
-		| VarParam
+ParamDeclaration: ValueParam { $$ = $1; }
+		| VarParam { $$ = $1; }
 	/*	| OutParam
 		| ConstantParam */
 		;
 
 ValueParam:	IdentifierList ':' Type {
-				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1), std::dynamic_pointer_cast<Token_Type>($3));
+				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1), std::static_pointer_cast<Token_Type>($3));
 				std::shared_ptr<Token_FormalParam> param(new Token_FormalParam());
 				param->AddParams(vars);
 				
-				$$ = std::dynamic_pointer_cast<Token>(param);
+				$$ = std::static_pointer_cast<Token>(param);
 				
 			}
 	/*	| Identifier ':' Type '=' DefaultParamValue  */
 		;
 VarParam: K_VAR IdentifierList ':' Type {
-				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::dynamic_pointer_cast<Token_IDList>($1), std::dynamic_pointer_cast<Token_Type>($3));
+				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1), std::static_pointer_cast<Token_Type>($3));
 				std::shared_ptr<Token_FormalParam> param(new Token_FormalParam());
 				param->AddParams(vars, true, true);
 				
-				$$ = std::dynamic_pointer_cast<Token>(param);
+				$$ = std::static_pointer_cast<Token>(param);
 				
 			}
 		;
@@ -417,6 +417,19 @@ ProcHeader: K_PROCEDURE Identifier FormalParamList{
 		};
 
 FuncDeclaration: FuncHeader ';' SubroutineBlock ';' {
+				std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.GetSymbol($1 -> GetStrValue());
+				std::shared_ptr<Token_Func> function = sym.first->GetTokenDerived<Token_Func>();
+				
+				if (!function -> GetHasReturn()){
+					std::stringstream msg;
+					msg << "In function '" << $1 -> GetStrValue() <<  "', no write to the function return variable was performed. Return value is undefined.";
+					HandleError(msg.str().c_str(), E_PARSE, E_WARNING, $1 -> GetLine(), $1 -> GetColumn());
+				}
+				
+				std::shared_ptr<AsmLine> line = Program.CreateCodeLine(AsmLine::Directive, AsmLine::BLOCKPOP);
+				std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
+				Rd -> SetSymbol(sym.first);		
+				line -> SetRd(Rd);
 				Program.PopBlock();
 			}
 		;
@@ -426,7 +439,13 @@ FuncHeader: K_FUNCTION Identifier {	//NOTE This is $3
 					//AsmCode sym = Program.CheckSymbol($2->GetStrValue());
 					try{
 						//Create a new block and a new function
-						Program.CreateProcFuncSymbol($2 -> GetStrValue(),true);
+						std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.CreateProcFuncSymbol($2 -> GetStrValue(),true);		//Block is also pushed
+						//Then create a to push block
+						std::shared_ptr<AsmLine> line = Program.CreateCodeLine(AsmLine::Directive, AsmLine::BLOCKPUSH);
+						std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
+						Rd -> SetSymbol(sym.first);
+						line -> SetRd(Rd);
+						
 					}
 					catch(AsmCode sym){
 						if (sym == SymbolExistsInCurrentBlock){
@@ -452,17 +471,20 @@ FuncHeader: K_FUNCTION Identifier {	//NOTE This is $3
 					//Get function
 					std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.GetSymbol($2 -> GetStrValue());
 					std::shared_ptr<Token_Func> function = sym.first->GetTokenDerived<Token_Func>();
-					function -> SetReturnType(std::dynamic_pointer_cast<Token_Type>($6));		//And pushed
+					function -> SetReturnType(std::static_pointer_cast<Token_Type>($6));
 					
 					//Let's deal with formal param
+					std::shared_ptr<Token_FormalParam> params = std::static_pointer_cast<Token_FormalParam>($4);
+					function -> SetParams(params);
 					
+					$$=$2;
 				}
 			;
 
 /* Expression */
 Expression:  Expression SimpleOp SimpleExpression {
-			std::shared_ptr<Token_Expression> LHS(std::dynamic_pointer_cast<Token_Expression>($1));
-			std::shared_ptr<Token_SimExpression> RHS(std::dynamic_pointer_cast<Token_SimExpression>($3));
+			std::shared_ptr<Token_Expression> LHS(std::static_pointer_cast<Token_Expression>($1));
+			std::shared_ptr<Token_SimExpression> RHS(std::static_pointer_cast<Token_SimExpression>($3));
 			//Operator
 			Op_T Op = (Op_T) GetValue<int>($2);
 			try{
@@ -487,10 +509,10 @@ Expression:  Expression SimpleOp SimpleExpression {
 				YYERROR;
 			}
 		}
-	| SimpleExpression { $$.reset(new Token_Expression(std::dynamic_pointer_cast<Token_SimExpression>($1)));}
+	| SimpleExpression { $$.reset(new Token_Expression(std::static_pointer_cast<Token_SimExpression>($1)));}
 	;
 
-SimpleOp: '<' { $$.reset(new Token_Int((int) Op_T::LT, T_Type::Operator)); }
+SimpleOp: '<' { $$.reset(new Token_Int((int) Op_T::LT, T_Type::Operator)); } 
 	| OP_LE { $$.reset(new Token_Int((int) Op_T::LTE, T_Type::Operator)); }
 	| '>' { $$.reset(new Token_Int((int) Op_T::GT, T_Type::Operator)); }
 	| OP_GE { $$.reset(new Token_Int((int) Op_T::GTE, T_Type::Operator)); }
@@ -500,8 +522,8 @@ SimpleOp: '<' { $$.reset(new Token_Int((int) Op_T::LT, T_Type::Operator)); }
 	; 
 
 SimpleExpression: SimpleExpression TermOP Term {
-			std::shared_ptr<Token_SimExpression> LHS(std::dynamic_pointer_cast<Token_SimExpression>($1));
-			std::shared_ptr<Token_Term> RHS(std::dynamic_pointer_cast<Token_Term>($3));
+			std::shared_ptr<Token_SimExpression> LHS(std::static_pointer_cast<Token_SimExpression>($1));
+			std::shared_ptr<Token_Term> RHS(std::static_pointer_cast<Token_Term>($3));
 			//Operator
 			Op_T Op = (Op_T) GetValue<int>($2);
 			try{
@@ -526,7 +548,7 @@ SimpleExpression: SimpleExpression TermOP Term {
 				YYERROR;
 			}
 		}
-		| Term { $$.reset(new Token_SimExpression(std::dynamic_pointer_cast<Token_Term>($1)));	}
+		| Term { $$.reset(new Token_SimExpression(std::static_pointer_cast<Token_Term>($1)));	}
 		;
 
 TermOP: '+' { $$.reset(new Token_Int((int) Op_T::Add, T_Type::Operator)); }
@@ -536,8 +558,8 @@ TermOP: '+' { $$.reset(new Token_Int((int) Op_T::Add, T_Type::Operator)); }
 	;
 
 Term:  Term FactorOP Factor{
-			std::shared_ptr<Token_Term> LHS(std::dynamic_pointer_cast<Token_Term>($1));
-			std::shared_ptr<Token_Factor> RHS(std::dynamic_pointer_cast<Token_Factor>($3));
+			std::shared_ptr<Token_Term> LHS(std::static_pointer_cast<Token_Term>($1));
+			std::shared_ptr<Token_Factor> RHS(std::static_pointer_cast<Token_Factor>($3));
 			//Operator
 			Op_T Op = (Op_T) GetValue<int>($2);
 			try{
@@ -563,7 +585,7 @@ Term:  Term FactorOP Factor{
 			}
 		}
 	| Factor {
-			$$.reset(new Token_Term(std::dynamic_pointer_cast<Token_Factor>($1)));
+			$$.reset(new Token_Term(std::static_pointer_cast<Token_Factor>($1)));
 		}
 	;
 
@@ -589,19 +611,19 @@ Factor: '(' Expression ')' {
 				//Determine type
 				switch($1 -> GetTokenType()){
 					case V_Character:
-						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("char").first->GetValue());
+						FactorType = std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("char").first->GetValue());
 						break;
 					case V_Int:
-						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("integer").first->GetValue());
+						FactorType = std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("integer").first->GetValue());
 						break;
 					case V_Real:
-						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("real").first->GetValue());
+						FactorType = std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("real").first->GetValue());
 						break;
 					case V_Boolean:
-						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("boolean").first->GetValue());
+						FactorType = std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("boolean").first->GetValue());
 						break;	
 					case V_String:
-						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("string").first->GetValue());
+						FactorType = std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("string").first->GetValue());
 						break;	
 					//V_Nil
 					default:
@@ -614,8 +636,8 @@ Factor: '(' Expression ')' {
 	| OP_NOT Factor { 
 					//You can only NOT a boolean
 					$$ = $2; 
-					std::shared_ptr<Token_Factor> RHS = std::dynamic_pointer_cast<Token_Factor>($$);
-					if (RHS -> GetType() != std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("boolean").first->GetValue())){
+					std::shared_ptr<Token_Factor> RHS = std::static_pointer_cast<Token_Factor>($$);
+					if (RHS -> GetType() != std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("boolean").first->GetValue())){
 						std::stringstream msg;
 						msg << "You can only NOT a boolean. Factor is of type '" << RHS -> GetType() -> TypeToString() << "'";
 						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2->GetLine(), $2 -> GetColumn());
@@ -629,10 +651,10 @@ Factor: '(' Expression ')' {
 				//Determine type
 				switch($1 -> GetTokenType()){
 					case V_Int:
-						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("integer").first->GetValue());
+						FactorType = std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("integer").first->GetValue());
 						break;
 					case V_Real:
-						FactorType = std::dynamic_pointer_cast<Token_Type>(Program.GetTypeSymbol("real").first->GetValue());
+						FactorType = std::static_pointer_cast<Token_Type>(Program.GetTypeSymbol("real").first->GetValue());
 						break;
 					default:
 						FactorType = nullptr;	//Recipe for segmentation fault
@@ -738,8 +760,8 @@ FuncCall: Identifier '(' ActualParamList ')' {
 	/* | Identifier */
 	;
 
-ActualParamList: ActualParamList ',' Expression { $$ = $1; std::dynamic_pointer_cast<Token_ExprList>($$) -> AddExpression(std::dynamic_pointer_cast<Token_Expression>($3)); }
-		| Expression {$$.reset(new Token_ExprList(std::dynamic_pointer_cast<Token_Expression>($1)));}
+ActualParamList: ActualParamList ',' Expression { $$ = $1; std::static_pointer_cast<Token_ExprList>($$) -> AddExpression(std::static_pointer_cast<Token_Expression>($3)); }
+		| Expression {$$.reset(new Token_ExprList(std::static_pointer_cast<Token_Expression>($1)));}
 		|
 		;
 		
@@ -788,16 +810,34 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 
 				std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
 				//Check that symbol is a variable
-				if (sym.first -> GetType() != Symbol::Variable){		//TODO allow assignment to function
+				if (sym.first -> GetType() != Symbol::Variable){
 					std::stringstream msg;
-					msg << "Identifier '" << $1 -> GetStrValue() << "' is not a variable.";
-					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
-					throw SymbolIsNotAVariable;	//Skip rest of execution
+					//Check to see if we are in a function
+					std::shared_ptr<AsmBlock> CurrentBlock = Program.GetCurrentBlock();
+					if (CurrentBlock -> GetType() != AsmBlock::Function){
+						msg << "Identifier '" << $1 -> GetStrValue() << "' is not a variable or a function return variable that is not applicable in this scope.";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+						YYERROR;
+					}
+					else{
+						//Let's check if this is the correct function
+						if (CurrentBlock -> GetBlockSymbol() != sym.first){
+							msg << "Identifier '" << $1 -> GetStrValue() << "' is a function return variable that does not belong to this scope.";
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+							YYERROR;
+						}
+						else{
+							sym.first->GetTokenDerived<Token_Func>()->SetHasReturn();
+						}
+					}
+					
 				}					
-				RHS = std::dynamic_pointer_cast<Token_Expression>($3);
+				RHS = std::static_pointer_cast<Token_Expression>($3);
 				//Check that variable type matches expression
-				
-				LHS_T = sym.first->GetTokenDerived<Token_Var>()->GetVarType();
+				if (sym.first -> GetType() != Symbol::Variable)
+					LHS_T = sym.first->GetTokenDerived<Token_Func>()->GetReturnType();
+				else
+					LHS_T = sym.first->GetTokenDerived<Token_Var>()->GetVarType();
 				RHS_T = RHS -> GetType();
 				if (Program.TypeCompatibilityCheck(LHS_T, RHS_T) != TypeCompatible){
 					std::stringstream msg;
@@ -805,7 +845,7 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 					msg << "'\n\tand expression has type '" << RHS_T -> TypeToString() << "'"; 
 					
 					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
-					throw TypeIncompatible;
+					YYERROR;
 				}
 
 				//Generate that assignment line!
@@ -832,7 +872,7 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 ProcedureStatement: Identifier '(' ActualParamList ')' {
 					//We are going to hack in write here
 					if ($1 -> GetStrValue() == "write"){
-						Program.CreateWriteLine(std::dynamic_pointer_cast<Token_ExprList>($3));
+						Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
 					}
 			}
 		| Identifier
@@ -890,7 +930,7 @@ IfStatement: IfTest IfExecute;
 
 IfTest: K_IF Expression K_THEN{
 				//Expression
-				std::shared_ptr<Token_Expression> expr(std::dynamic_pointer_cast<Token_Expression>($2));
+				std::shared_ptr<Token_Expression> expr(std::static_pointer_cast<Token_Expression>($2));
 				std::shared_ptr<AsmLine> line = Program.FlattenExpression(expr, nullptr, true), branch;
 				
 				std::shared_ptr<AsmLabel> label = Program.GetCurrentBlock()->CreateIfElseLabel();
@@ -976,7 +1016,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 							YYERROR;
 						}
 						
-						std::shared_ptr<Token_Expression> FromExpr = std::dynamic_pointer_cast<Token_Expression>($4), ToExpr = std::dynamic_pointer_cast<Token_Expression>($6);
+						std::shared_ptr<Token_Expression> FromExpr = std::static_pointer_cast<Token_Expression>($4), ToExpr = std::static_pointer_cast<Token_Expression>($6);
 						//std::shared_ptr<Symbol> FromVar = Program.CreateTempVar(FromExpr->GetType()), ToVar = Program.CreateTempVar(ToExpr -> GetType());
 						
 						//All three parts MUST be integers
@@ -1044,7 +1084,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				std::shared_ptr<AsmLine> line2 = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
 				line2 -> SetRd(IndexOp);
 				
-				std::shared_ptr<AsmLine> ToExpr = Program.FlattenExpression(std::dynamic_pointer_cast<Token_Expression>($6));
+				std::shared_ptr<AsmLine> ToExpr = Program.FlattenExpression(std::static_pointer_cast<Token_Expression>($6));
 				line2 -> SetRm(ToExpr -> GetRd());
 				
 				//The branch line
@@ -1063,7 +1103,7 @@ RepeatStatement: K_REPEAT StatementList K_UNTIL Expression
 		;
 
 WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
-					std::shared_ptr<Token_Expression> expr = std::dynamic_pointer_cast<Token_Expression>($2);
+					std::shared_ptr<Token_Expression> expr = std::static_pointer_cast<Token_Expression>($2);
 					if (expr -> GetType() != Program.GetTypeSymbol("boolean").first->GetTokenDerived<Token_Type>()){
 						HandleError("In the while loop header, expression must evaluate to type boolean. ", E_PARSE, E_ERROR, $2->GetLine(), $2->GetColumn());
 						YYERROR;
@@ -1113,7 +1153,7 @@ WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
 					Program.GetCurrentBlock()->InLoopStackPush();
 					
 				} K_DO Statement{ //NOTE: Statement is $5
-					std::shared_ptr<Token_Expression> expr = std::dynamic_pointer_cast<Token_Expression>($2);
+					std::shared_ptr<Token_Expression> expr = std::static_pointer_cast<Token_Expression>($2);
 					std::shared_ptr<AsmLine> line1 = Program.FlattenExpression(expr, nullptr, true);
 					Op_T Op = expr -> GetOp();
 					

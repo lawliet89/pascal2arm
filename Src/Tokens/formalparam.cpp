@@ -18,6 +18,7 @@ Token_FormalParam::Token_FormalParam(const Token_FormalParam& obj): Token(obj), 
 Token_FormalParam Token_FormalParam::operator=(const Token_FormalParam& obj)
 {
 	if (this != &obj){
+		Token::operator=(obj);
 		Params = obj.Params;
 	}
 	return *this;
