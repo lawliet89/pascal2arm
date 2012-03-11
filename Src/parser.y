@@ -378,14 +378,18 @@ ParamDeclaration: ValueParam
 		| ConstantParam */
 		;
 
-ValueParam:	IdentifierList ':' Type
+ValueParam:	IdentifierList ':' Type {
+				
+			}
 	/*	| Identifier ':' Type '=' DefaultParamValue  */
 		;
 VarParam: K_VAR IdentifierList ':' Type
 		;
 		
 SubroutineBlock: Block
-		| I_FORWARD
+		| I_FORWARD	{		//TODO Forward declaration
+		
+		}
 		;
 
 ProcDeclaration: ProcHeader ';' SubroutineBlock ';'{
@@ -397,13 +401,48 @@ ProcDeclaration: ProcHeader ';' SubroutineBlock ';'{
 ProcHeader: K_PROCEDURE Identifier FormalParamList{
 			//Create the token for the procedure
 			//TODO
-			Program.CreateProcSymbol($2 -> GetStrValue());
+			Program.CreateProcFuncSymbol($2 -> GetStrValue());
 		};
 
 FuncDeclaration: FuncHeader ';' SubroutineBlock ';'
 		;
 
-FuncHeader: K_FUNCTION Identifier FormalParamList ':' Type
+FuncHeader: K_FUNCTION Identifier {	//NOTE This is $3
+					//Check that identifier is not defined in this scope
+					//AsmCode sym = Program.CheckSymbol($2->GetStrValue());
+					try{
+						//Create a new block and a new function
+						Program.CreateProcFuncSymbol($2 -> GetStrValue(),true);
+					}
+					catch(AsmCode sym){
+						if (sym == SymbolExistsInCurrentBlock){
+							std::stringstream msg;
+							msg << "Identifier '" << $2->GetStrValue() << "' has already been declared in this scope."	;			
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+							YYERROR;
+						}
+						else if (sym == SymbolReserved){
+							std::stringstream msg;
+							msg << "Identifier '" << $2->GetStrValue() << "' is a reserved identifier.";				
+							HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $2 -> GetLine(), $2 -> GetColumn());
+							YYERROR;
+						}
+						else if (sym == SymbolExistsInOuterBlock && Flags.Pedantic){
+							std::stringstream msg;
+							msg << "Identifier '" << $2->GetStrValue() << "' might occlude another symbol defined in an outer scope.";				
+							HandleError(msg.str().c_str(), E_PARSE, E_WARNING, $2 -> GetLine(), $2 -> GetColumn());
+						}
+					}
+
+				} FormalParamList ':' Type { //NOTE $4 $5 $6
+					//Get function
+					std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.GetSymbol($2 -> GetStrValue());
+					std::shared_ptr<Token_Func> function = sym.first->GetTokenDerived<Token_Func>();
+					function -> SetReturnType(std::dynamic_pointer_cast<Token_Type>($6));
+					
+					//Let's deal with formal param
+					
+				}
 			;
 
 /* Expression */
@@ -530,7 +569,7 @@ Factor: '(' Expression ')' {
 						//TODO with qualifier
 					}
 
-	| FuncCall		//TODO
+	| FuncCall		{ $$ = $1; }
 	| UnsignedConstant { 
 				std::shared_ptr<Token_Type> FactorType;
 				//Determine type
@@ -599,22 +638,25 @@ Factor: '(' Expression ')' {
 					Token_Factor::Form_T Form;
 					std::shared_ptr<Token_Type> FactorType;
 					
-					switch (SymType){
-						case Symbol::Function:
-						case Symbol::Procedure:		//For the purpose of this, we regard func and proc as the same. We will do type check later
-							Form = Token_Factor::FuncCall; 
-							FactorType = sym.first->GetTokenDerived<Token_Func>()->GetReturnType();
-							break;
-						case Symbol::Constant:		//Ditto
-						case Symbol::Variable:
-							Form = Token_Factor::VarRef; 
-							FactorType = sym.first->GetTokenDerived<Token_Var>()->GetVarType();
-							break;
-						case Symbol::Typename:	//Shouldn't happen
-							std::stringstream msg;
-							msg << "Unexpected type '" << $1 -> GetStrValue() << "'.";
-							HandleError(msg.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
-							YYERROR;
+					if (SymType == Symbol::Procedure){
+						std::stringstream msg2;
+						msg2 << "Identifier " << $1 -> GetStrValue() << "' is a procedure -- expressions must have a type. ";
+						HandleError(msg2.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+						YYERROR;
+					}
+					else if (SymType == Symbol::Function){
+						Form = Token_Factor::FuncCall; 
+						FactorType = sym.first->GetTokenDerived<Token_Func>()->GetReturnType();
+					}
+					else if (SymType == Symbol::Constant || Symbol::Variable){
+						Form = Token_Factor::VarRef; 
+						FactorType = sym.first->GetTokenDerived<Token_Var>()->GetVarType();
+					}
+					else if (SymType == Symbol::Typename){	//Shouldn't happen
+						std::stringstream msg;
+						msg << "Unexpected type '" << $1 -> GetStrValue() << "'.";
+						HandleError(msg.str().c_str(), E_PARSE, E_FATAL, LexerLineCount, LexerCharCount);
+						YYERROR;
 					}
 					$$.reset(new Token_Factor(Form, sym.first -> GetValue(), FactorType));
 				}
@@ -622,13 +664,16 @@ Factor: '(' Expression ')' {
 					if (e == SymbolNotExists){
 						std::stringstream msg;
 						msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
-						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, LexerLineCount, LexerCharCount);
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
 					}
 					else{
 						std::stringstream msg;
 						msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
 						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
 					}
+					YYERROR;
+				}
+				catch(...){
 					YYERROR;
 				}
 				
@@ -674,7 +719,7 @@ SignedConstant: Signed_Int { $$ = $1; }
 		;
 		
 FuncCall: Identifier '(' ActualParamList ')' {
-				//TODO FuncCall Token
+				
 			}
 	/* | Identifier */
 	;
@@ -875,8 +920,9 @@ IfTest: K_IF Expression K_THEN{
 			};
 			
 IfExecute: IfBody IfElse {
-				//There was an elsestd::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
+				//There was an else
 				Program.SetNextLabel(Program.IfLabelStackPop());
+				Program.IfLineStackPop();
 			}
 		| IfBody {
 			//Oh? Never came to be

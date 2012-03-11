@@ -170,11 +170,11 @@ void HandleError(const char* message, ErrorClass_T ErrorClass, ErrorLevel_T leve
 	switch(ErrorClass){
 		case E_SYNTAX:
 			std::cout << "Syntax Error - ";
-			LexerSyntaxError = true;
+			LexerSyntaxError = level == E_ERROR ? true : LexerSyntaxError;
 			break;
 		case E_PARSE:
 			std::cout << "Parse Error - ";
-			ParseError = true;
+			ParseError = level == E_ERROR ? true : ParseError;
 			break;
 		default:
 			//std::cout << "Error - ";

@@ -90,6 +90,8 @@ void AsmFile::CreateGlobalScope(){
 	sym = CreateTypeSymbol("set", Token_Type::Set);
 	sym.first -> SetReserved();	
 
+	sym = CreateProcFuncSymbol("write", false, false);
+	sym.first -> SetReserved();		
 }
 
 /** Block Methods **/
@@ -279,15 +281,25 @@ void AsmFile::CreateVarSymbolsFromList(std::shared_ptr<Token_IDList> IDList, std
 }
 
 //Create Procedure Symbol
-std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcSymbol(std::string ID){
+std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcFuncSymbol(std::string ID, bool function, bool push) throw(AsmCode){	//CreateSymbol throws are not caught
 	//Create token value for procedure. Create a symbol. Create a block And link accordingly
 	std::pair<std::shared_ptr<Symbol>, AsmCode> result;
-	std::shared_ptr<Token_Func> tok(new Token_Func(ID, Token_Func::Procedure));
+	std::shared_ptr<Token_Func> tok;
+	std::shared_ptr<AsmBlock> block;
+	if (function){
+		tok.reset(new Token_Func(ID, Token_Func::Function));
+		block = CreateBlock(AsmBlock::Function);
+		result = CreateSymbol(Symbol::Function, ID, tok);
+	}
+	else{
+		tok.reset(new Token_Func(ID, Token_Func::Procedure));
+		block = CreateBlock(AsmBlock::Procedure);
+		result = CreateSymbol(Symbol::Procedure, ID, tok);
+	}
+	tok -> SetBlock(block);
 	
-	//Create block
-	std::shared_ptr<AsmBlock> block = CreateBlock(AsmBlock::Procedure);
-	//Push block
-	PushBlock(block);
+	if (push)
+		PushBlock(block);
 	
 	return result;
 }
@@ -551,8 +563,11 @@ std::shared_ptr<AsmLine> AsmFile::CreateCodeLine(AsmLine::OpType_T OpType, AsmLi
 	}
 	if (IsInLoop())
 		line -> SetInLoop();
-	CodeLines.push_back(line);
 	
+	if (GetCurrentBlock()-> IsGlobal())
+		CodeLines.push_back(line);
+	else
+		CodeLines.push_back(line);
 	return line;
 }
 
@@ -1904,7 +1919,7 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 	if (sym.first != nullptr){
 		//Found
 		EvictRegister(no);
-		State_T Previous = GetRegister(sym.second);
+		State_T &Previous = GetRegister(sym.second);
 		//Assign
 		Register.sym = var;
 		Register.WrittenTo = Previous.WrittenTo;

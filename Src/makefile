@@ -33,7 +33,7 @@ BISON_DEBUG := true
 OBJ_LIST := $(GEN_DIR)main.o $(GEN_DIR)utility.o $(GEN_DIR)lexer.o $(GEN_DIR)parser.o $(GEN_DIR)token.o $(GEN_DIR)int.o \
 $(GEN_DIR)real.o $(GEN_DIR)symbols.o $(GEN_DIR)asm.o $(GEN_DIR)op.o $(GEN_DIR)idList.o $(GEN_DIR)var.o \
 $(GEN_DIR)type.o $(GEN_DIR)func.o $(GEN_DIR)char.o $(GEN_DIR)expression.o $(GEN_DIR)term.o $(GEN_DIR)factor.o\
-$(GEN_DIR)exprlist.o
+$(GEN_DIR)exprlist.o $(GEN_DIR)formalparam.o
 #-------------------------------------------------------------------------------
 # END USER SETTINGS
 #-------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ $(GEN_DIR)type.o: Tokens/type.cpp Tokens/type.h token.h define.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 
-$(GEN_DIR)func.o: Tokens/func.cpp Tokens/func.h token.h Tokens/var.h Tokens/type.h Tokens/type.h
+$(GEN_DIR)func.o: Tokens/func.cpp Tokens/func.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 
@@ -172,6 +172,10 @@ $(GEN_DIR)factor.o: Tokens/factor.cpp Tokens/factor.h token.h Tokens/expression.
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 
 $(GEN_DIR)exprlist.o: Tokens/exprlist.cpp Tokens/exprlist.h token.h
+	@echo "Compiling $@"
+	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
+
+$(GEN_DIR)formalparam.o: Tokens/formalparam.cpp Tokens/formalparam.h token.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 

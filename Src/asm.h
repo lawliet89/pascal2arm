@@ -66,6 +66,7 @@ public:
 	std::string GetID() const{ return ID; }
 	Type_T GetType() const{ return Type; }
 	std::shared_ptr<AsmRegister> GetRegister(){ return Register; }
+	bool IsGlobal() const { return Type == Global; }
 	
 protected:
 	Type_T Type;		//Type of block & scope
@@ -149,7 +150,9 @@ public:
 		//Internal Use only
 		WRITE_INT=2000,	//Write int
 		WRITE_C,			//Write Char
-		SAVE			//Force Rd to be saved to memory if it was written
+		SAVE,			//Force Rd to be saved to memory if it was written
+		BLOCKPUSH,		//Push a block -- used to signify beginning of a function
+		BLOCKPOP		//Pop a block -- used to signify end of a function 
 	};
 	enum CC_T{	//Condition Code
 		EQ, CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
@@ -443,7 +446,7 @@ public:
 	std::shared_ptr<Symbol> CreateTempVar(std::shared_ptr<Token_Type> type);
 	
 	//Function and procedures
-	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcSymbol(std::string ID); //Create for the current block
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcFuncSymbol(std::string ID, bool function=false, bool push=true) throw(AsmCode); //Create for the current block
 	
 	/** Block Related Methods **/
 	//Block Stack

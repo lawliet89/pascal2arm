@@ -7,7 +7,7 @@ Token_Func::Token_Func(std::string ID, Token_Func::Type_T type):
 }
 
 Token_Func::Token_Func(const Token_Func &obj):
-	Token(obj), Type(obj.Type), Params(obj.Params)
+	Token(obj), Type(obj.Type), Params(obj.Params), block(obj.block)
 {
 	
 }
@@ -17,6 +17,7 @@ Token_Func Token_Func::operator=(const Token_Func &obj){
 		Token::operator=(obj);
 		Type = obj.Type;
 		Params = obj.Params;
+		block = obj.block;
 	}
 	return *this;
 }

@@ -60,7 +60,8 @@ enum T_Type{	//for token type
 	SimExpression,
 	Term,
 	Factor,
-	Operator
+	Operator,
+	FormalParamList
 };
 
 /** Operator Type **/
