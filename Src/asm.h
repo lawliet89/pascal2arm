@@ -214,7 +214,8 @@ public:
 		WRITE_C,			//Write Char
 		SAVE,			//Force Rd to be saved to memory if it was written
 		BLOCKPUSH,		//Push a block -- used to signify beginning of a function -- Rd should be the SYMBOL of the block.
-		BLOCKPOP		//Pop a block -- used to signify end of a function  -- Rd should be the SYMBOL of the block.
+		BLOCKPOP,		//Pop a block -- used to signify end of a function  -- Rd should be the SYMBOL of the block.
+		FUNCALL		//Rd is the return value, Rm, Rn, Ro supported i,e, max 3 args TODO for more
 	};
 	enum CC_T{	//Condition Code
 		EQ, CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,

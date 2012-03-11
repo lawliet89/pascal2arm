@@ -369,7 +369,7 @@ std::string AsmFile::GenerateCode(){
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
 	for (itList = CodeLines.begin(); itList != CodeLines.end(); itList++){
 		std::shared_ptr<AsmLine> line = *itList;
-		if (line -> GetCC() == AsmLine::NV)
+		if (line -> GetCC() == AsmLine::NV || line -> GetOpCode() == AsmLine::NOP)
 			continue;
 		std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;
 		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput, RoOutput;
@@ -422,6 +422,22 @@ std::string AsmFile::GenerateCode(){
 				output << "\tBL PRINTR0_ ;Print integer\n";
 			else
 				output << "\tSWI SWI_WriteC\n";
+			continue;
+		}
+		else if (OpCode == AsmLine::FUNCALL){
+			//Force Rd to be zero
+			output << Reg->ForceVar(Rd -> GetSymbol(),0, true, false);
+			
+			//Force the params into their respective positions
+			if (Rm != nullptr)
+				output << Reg->ForceVar(Rm -> GetSymbol(),1, true, false);
+			if (Rn != nullptr)
+				output << Reg->ForceVar(Rn -> GetSymbol(),2, true, false);
+			if (Ro != nullptr)
+				output << Reg->ForceVar(Ro -> GetSymbol(),3, true, false);
+			
+			//output << "\tBL " << ;
+			
 			continue;
 		}
 		
@@ -550,7 +566,7 @@ std::string AsmFile::GenerateCode(){
 	//NOTE Initial Code generated assumes ALL the variables are in registers. It is the code generator that has to take care of the stack and what not
 	for (itList = FunctionLines.begin(); itList != FunctionLines.end(); itList++){
 		std::shared_ptr<AsmLine> line = *itList;
-		if (line -> GetCC() == AsmLine::NV)
+		if (line -> GetCC() == AsmLine::NV || line -> GetOpCode() == AsmLine::NOP)
 			continue;
 		std::shared_ptr<AsmOp> Rd, Rm, Rn, Ro;
 		std::pair<std::string, std::string> RdOutput, RmOutput, RnOutput, RoOutput;
@@ -990,6 +1006,62 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					Rd -> SetWrite();
 				}
 			}
+		}
+		//Function
+		else if (Form == Token_Factor::FuncCall){
+			//TODO - More than three args
+			if (Rd == nullptr){
+				//Let's create an Rd
+				Rd.reset(new AsmOp(AsmOp::Register, AsmOp::Rd));
+				std::shared_ptr<Symbol> temp = CreateTempVar(expr -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+				Rd -> SetSymbol(temp);
+			}
+			std::shared_ptr<Token_Func> func = simple -> GetFuncToken();
+			std::vector<Token_FormalParam::Param_T> FormalParams = func -> GetParams() -> GetParams();
+			std::vector<std::shared_ptr<Token_Expression> >  exprs = simple->GetTokenDerived<Token_ExprList>()->GetList();
+			std::shared_ptr<AsmLine> line = CreateCodeLine(AsmLine::Directive, AsmLine::FUNCALL);
+			line -> SetRd(Rd);
+			
+			std::vector<std::shared_ptr<Token_Expression> >::iterator it;
+			unsigned i = 0;
+			for (it = exprs.begin(); it < exprs.end() && i < 3; it++, i++){
+				std::shared_ptr<Token_Expression> expr = *it;
+				
+				//OK create a new operator
+				std::shared_ptr<AsmOp> ExprRd(new AsmOp(AsmOp::Register, AsmOp::Rm));
+				ExprRd -> SetSymbol(FormalParams[i].Variable->GetSymbol());
+				std::shared_ptr<AsmLine> line2 = FlattenExpression(expr);
+				
+				std::shared_ptr<AsmOp> Ri( new AsmOp(*(line2->GetRd())) );
+				
+				switch (i){
+					case 0:
+						line -> SetRm(Ri); break;
+					case 1: 
+						line -> SetRn(Ri); break;
+					case 2:
+						line -> SetRo(Ri); break;
+					
+				}
+			}
+			//Create branch line
+			std::shared_ptr<AsmLine> branch = CreateCodeLine(AsmLine::BranchLink, AsmLine::BL);
+			std::shared_ptr<AsmOp> BranchOp(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+			BranchOp -> SetLabel(func -> GetSymbol()->GetLabel());
+			branch -> SetRd(BranchOp);
+			
+			if (simple -> IsNegate()){
+				result = CreateCodeLine(AsmLine::Processing, AsmLine::MVN);
+				result -> SetRm(Rd);
+				result -> SetRd(Rd);
+			}
+			else{
+				//Fake line
+				result.reset(new AsmLine(AsmLine::Directive, AsmLine::NOP));
+				//Create AsmOp for variable
+				result -> SetRd(Rd);
+			}
+						
 		}
 		
 	}
@@ -1613,7 +1685,40 @@ std::shared_ptr<AsmOp> AsmFile::FlattenFactor(std::shared_ptr<Token_Factor> fact
 		result -> SetToken( factor -> GetValueToken());
 	}
 	else if (form == Token_Factor::FuncCall){
-		//TODO
+		//TODO - More than three args
+		std::shared_ptr<Token_Func> func = factor -> GetFuncToken();
+		std::vector<Token_FormalParam::Param_T> FormalParams = func -> GetParams() -> GetParams();
+		std::vector<std::shared_ptr<Token_Expression> >  exprs = factor->GetTokenDerived<Token_ExprList>()->GetList();
+		std::shared_ptr<AsmLine> line = CreateCodeLine(AsmLine::Directive, AsmLine::FUNCALL);
+		line -> SetRd(Rd);
+		
+		std::vector<std::shared_ptr<Token_Expression> >::iterator it;
+		unsigned i = 0;
+		for (it = exprs.begin(); it < exprs.end() && i < 3; it++, i++){
+			std::shared_ptr<Token_Expression> expr = *it;
+			
+			//OK create a new operator
+			std::shared_ptr<AsmOp> ExprRd(new AsmOp(AsmOp::Register, AsmOp::Rm));
+			ExprRd -> SetSymbol(FormalParams[i].Variable->GetSymbol());
+			std::shared_ptr<AsmLine> line2 = FlattenExpression(expr);
+			
+			std::shared_ptr<AsmOp> Ri( new AsmOp(*(line2->GetRd())) );
+			
+			switch (i){
+				case 0:
+					line -> SetRm(Ri); break;
+				case 1: 
+					line -> SetRn(Ri); break;
+				case 2:
+					line -> SetRo(Ri); break;
+			}
+		}
+		
+		//Create branch line
+		std::shared_ptr<AsmLine> branch = CreateCodeLine(AsmLine::BranchLink, AsmLine::BL);
+		std::shared_ptr<AsmOp> BranchOp(new AsmOp(AsmOp::CodeLabel, AsmOp::Rd));
+		BranchOp -> SetLabel(func -> GetSymbol()->GetLabel());
+		branch -> SetRd(BranchOp);
 	}
 	
 	//Negate value

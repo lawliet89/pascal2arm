@@ -755,6 +755,47 @@ SignedConstant: Signed_Int { $$ = $1; }
 		;
 		
 FuncCall: Identifier '(' ActualParamList ')' {
+				std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
+				//Type and form of symbol
+				Symbol::Type_T SymType = sym.first -> GetType();
+				if (SymType != Symbol::Function){
+					std::stringstream msg;
+					msg << "Identifier '" << $1 -> GetStrValue() << "' is not a function.";
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+					YYERROR;
+				}
+				
+				//Check for parameters matching - TODO for optional parameters support.
+				std::vector<Token_FormalParam::Param_T> FormalParams = sym.first -> GetTokenDerived<Token_Func>() -> GetParams() -> GetParams();
+				std::vector<std::shared_ptr<Token_Expression> > ActualExpr = std::static_pointer_cast<Token_ExprList>($3) -> GetList();
+				if (FormalParams.size() != ActualExpr.size()){
+					std::stringstream msg;
+					msg << "Function '" << $1 -> GetStrValue() << "' expects " << FormalParams.size() << " parameter(s) but " << ActualExpr.size() << " were provided." ;
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+					YYERROR;
+				}
+				unsigned count = FormalParams.size();
+				//Check for parameter type matching
+				bool IsError = false;
+				for (unsigned i = 0; i < count; i++){
+					std::shared_ptr<Token_Type> LHS = FormalParams[i].Variable -> GetVarType(), RHS =  ActualExpr[i]->GetType();
+					if (Program.TypeCompatibilityCheck(LHS, RHS) != TypeCompatible ){
+						std::stringstream msg;
+						msg << "Function '" << $1 -> GetStrValue() << "' expects parameter " << i+1 <<" to be of type " << LHS -> TypeToString() << "\n\tbut type " << RHS -> TypeToString() << " provided.";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+						IsError = true;
+					}
+				}
+				
+				if (IsError){
+					YYERROR;
+				}
+				std::shared_ptr<Token_Func> func = sym.first->GetTokenDerived<Token_Func>();
+				//Time to create the factor
+				std::shared_ptr<Token_Factor> factor( new Token_Factor(Token_Factor::FuncCall, $3, func->GetReturnType()));
+				factor -> SetFuncToken(func);
+				
+				$$ = std::static_pointer_cast<Token>(factor);
 				
 			}
 	/* | Identifier */

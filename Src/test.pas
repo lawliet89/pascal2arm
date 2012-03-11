@@ -1,7 +1,8 @@
 program sample6;
 
-var A, B, C :  integer;
-
+var 
+	A, B, C :  integer;
+	bool : boolean;
 function incr(X: integer):integer;
    begin
        incr := X + 1;
@@ -9,6 +10,6 @@ function incr(X: integer):integer;
 
 begin
    A:=1;
-   //B:=incr(A);
+   B:=incr(A);
    write(B);
 end.

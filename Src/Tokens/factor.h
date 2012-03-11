@@ -6,6 +6,7 @@ class Token_Expression;
 class Token_SimExpression;
 class Token_Factor;
 class Token_Term;
+class Token_Func;
 
 #include "expression.h"
 #include "type.h"
@@ -37,12 +38,14 @@ public:
 	}
 	
 	void SetNegate(bool val=true){ Negate = val; }
+	void SetFuncToken(std::shared_ptr<Token_Func> tok) { FuncToken = tok; }
 	
 	Form_T GetForm() const{ return Form; }
 	bool IsNegate() const { return Negate; }
 	std::shared_ptr<Token> GetToken(){ return value; }
 	std::shared_ptr<Token_Type> GetType();
 	bool IsSimple(){ return Form != Expression; }  //TODO for more complicated stuff
+	std::shared_ptr<Token_Func> GetFuncToken() { return FuncToken; }
 	
 protected:
 	Form_T Form;
@@ -50,6 +53,8 @@ protected:
 	
 	bool Negate;		//Set if factor is to be negated
 	std::shared_ptr<Token> value;		//Value of the token
+	
+	std::shared_ptr<Token_Func> FuncToken;		//token of function
 };
 
 #endif

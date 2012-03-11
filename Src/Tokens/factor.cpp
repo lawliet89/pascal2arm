@@ -7,7 +7,7 @@ Token_Factor::Token_Factor(Token_Factor::Form_T Form, std::shared_ptr< Token > v
 }
 
 Token_Factor::Token_Factor(const Token_Factor & obj): 
-	Token(obj), Form(obj.Form), value(obj.value), Type(obj.Type), Negate(obj.Negate)
+	Token(obj), Form(obj.Form), value(obj.value), Type(obj.Type), Negate(obj.Negate), FuncToken(obj.FuncToken)
 {
 
 }
@@ -20,6 +20,7 @@ Token_Factor Token_Factor::operator=(const Token_Factor& obj)
 		value = obj.value;
 		Type = obj.Type;
 		Negate = obj.Negate;
+		FuncToken = obj.FuncToken;
 	}
 	
 	return *this;
