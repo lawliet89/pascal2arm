@@ -47,3 +47,16 @@ std::string Token::AsmDefaultValue(){
 	return result.str();
 	
 }
+
+bool Token::operator==(const Token &obj) const{
+	return StrValue == obj.StrValue;
+}
+bool Token::operator!=(const Token &obj) const{
+	return StrValue != obj.StrValue;
+}
+bool Token::operator==(const std::shared_ptr<Token> &obj) const{
+	return *this == *obj;
+}
+bool Token::operator!=(const std::shared_ptr<Token> &obj) const{
+	return *this != *obj;
+}

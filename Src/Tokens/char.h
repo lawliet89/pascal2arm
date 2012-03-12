@@ -20,6 +20,12 @@ public:
 	virtual std::string AsmDefaultValue() {return "0"; }
 	virtual std::string AsmValue();
 	virtual int GetSize(){ return 4; }
+	
+	//Comparing operators
+	bool operator==(const Token_Char &obj) const;
+	bool operator!=(const Token_Char &obj) const;
+	bool operator==(const Token &obj) const;		//Overridden
+	bool operator!=(const Token &obj) const;		//Overridden
 protected:
 	char value;
 	

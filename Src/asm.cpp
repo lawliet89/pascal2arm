@@ -90,8 +90,14 @@ void AsmFile::CreateGlobalScope(){
 	sym = CreateTypeSymbol("set", Token_Type::Set);
 	sym.first -> SetReserved();	
 
-	sym = CreateProcFuncSymbol("write", false, false);
+	sym = CreateProcFuncSymbol("write", false, false, false);
 	sym.first -> SetReserved();		
+	
+	sym = CreateProcFuncSymbol("new", false, false, false);
+	sym.first -> SetReserved();	
+	
+	sym = CreateProcFuncSymbol("dispose", false, false, false);
+	sym.first -> SetReserved();	
 }
 
 /** Block Methods **/
@@ -204,9 +210,9 @@ std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateSymbol(Symbol::Type_T
 //i.e. sym -> GetTokenDerived<Token_Type *>()
 std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateTypeSymbol(std::string id, Token_Type::P_Type pri, int sec) throw(AsmCode){
 	id = StringToLower(id);
-	Token_Type *ptr = new Token_Type(id, pri, sec);
+	std::shared_ptr<Token>ptr(new Token_Type(id, pri, sec));
 	
-	std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Typename, id, std::shared_ptr<Token>(ptr));
+	std::pair<std::shared_ptr<Symbol>, AsmCode> sym = CreateSymbol(Symbol::Typename, id, ptr);
 	return sym;
 }
 
@@ -285,31 +291,36 @@ std::vector<std::shared_ptr<Token_Var> > AsmFile::CreateVarSymbolsFromList(std::
 }
 
 //Create Procedure Symbol
-std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcFuncSymbol(std::string ID, bool function, bool push) throw(AsmCode){	//CreateSymbol throws are not caught
+std::pair<std::shared_ptr<Symbol>, AsmCode> AsmFile::CreateProcFuncSymbol(std::string ID, bool function, bool GenerateBlock, bool push) throw(AsmCode){	//CreateSymbol throws are not caught
 	//Create token value for procedure. Create a symbol. Create a block And link accordingly
 	std::pair<std::shared_ptr<Symbol>, AsmCode> result;
 	std::shared_ptr<Token_Func> tok;
 	std::shared_ptr<AsmBlock> block;
 	if (function){
 		tok.reset(new Token_Func(ID, Token_Func::Function));
-		block = CreateBlock(AsmBlock::Function);
+		if (GenerateBlock)
+			block = CreateBlock(AsmBlock::Function);
 		result = CreateSymbol(Symbol::Function, ID, tok);
 	}
 	else{
 		tok.reset(new Token_Func(ID, Token_Func::Procedure));
-		block = CreateBlock(AsmBlock::Procedure);
+		if (GenerateBlock)
+			block = CreateBlock(AsmBlock::Procedure);
 		result = CreateSymbol(Symbol::Procedure, ID, tok);
 	}
-	tok -> SetBlock(block);
-	block -> SetBlockSymbol(result.first);
+	if (GenerateBlock){
+		tok -> SetBlock(block);
+		block -> SetBlockSymbol(result.first);
+	}
 	tok -> SetSymbol(result.first);
 	
 	//Create label
 	std::shared_ptr<AsmLabel> label(new AsmLabel("func_" + ID, result.first));
 	result.first -> SetLabel(label);
-	result.first -> SetBlock(block);
+	if (GenerateBlock)
+		result.first -> SetBlock(block);
 	
-	if (push)
+	if (push && GenerateBlock)
 		PushBlock(block);
 	
 	return result;
@@ -550,7 +561,7 @@ std::string AsmFile::GenerateCode(){
 	if (Flags.SaveRegisters)
 		output << GetCurrentBlock()->GetRegister()->SaveAllRegisters();
 	
-	output << "\tSWI SWI_EXIT";
+	output << "\tSWI SWI_Exit";
 	
 	/** StdLib **/
 	try{
@@ -661,7 +672,7 @@ std::string AsmFile::GenerateCode(){
 			output << "; ------------------------------------------------------\n";
 			//STMED
 			output << sym -> GetLabel() -> GetID();
-			output << "\tSTMED SP!, {";
+			output << "\tSTMED R13!, {";
 			
 			std::vector<unsigned> list = Reg->GetListOfNotBelong();
 			for (std::vector<unsigned>::iterator itReg = list.begin(); itReg != list.end(); itReg++){
@@ -685,7 +696,7 @@ std::string AsmFile::GenerateCode(){
 				//}
 			}
 			
-			output << "\tLDMED SP!, {";
+			output << "\tLDMED R13!, {";
 			
 			for (std::vector<unsigned>::iterator itReg = list.begin(); itReg != list.end(); itReg++){
 				if (sym -> GetType() == Symbol::Function && *itReg == 4)
@@ -720,7 +731,7 @@ std::string AsmFile::GenerateCode(){
 			
 			//if (!save)
 				//No where to save -- so we use the stack
-			//	CurrentOutput << "\tSTMED SP!, {R0}; save R0\n";
+			//	CurrentOutput << "\tSTMED R13!, {R0}; save R0\n";
 			if (RdType == AsmOp::Register){
 				CurrentOutput << Reg->ForceVar(Rd -> GetSymbol(),0, true, false, save);
 			}
@@ -738,7 +749,7 @@ std::string AsmFile::GenerateCode(){
 				CurrentOutput << "\tSWI SWI_WriteC\n";
 			
 			//if (!save)
-			//	CurrentOutput << "\tLDMED SP!, {R0}; retrieve R0\n";
+			//	CurrentOutput << "\tLDMED R13!, {R0}; retrieve R0\n";
 			continue;
 		}
 		else if (OpCode == AsmLine::FUNCALL){			
@@ -940,7 +951,7 @@ AsmCode AsmFile::TypeCompatibilityCheck(std::shared_ptr<Token_Type> LHS, std::sh
 	return (*LHS) == (*RHS) ? TypeCompatible : TypeIncompatible;	//TODO more checks
 }
 
-std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd, bool cmp){
+std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expression> expr, std::shared_ptr<AsmOp> Rd, bool cmp){ //TODO switch to returning AsmOp only?
 	std::shared_ptr<AsmLine> result;
 	
 //	if (Rd == nullptr){
@@ -968,8 +979,10 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 				}
 				//Create AsmOp for variable
 				std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
-
-				Rm -> SetSymbol( std::static_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+				
+				std::shared_ptr<Token_Var> var = simple-> GetTokenDerived<Token_Var>();
+				std::shared_ptr<Symbol> sym = var -> GetSymbol();
+				Rm -> SetSymbol( sym );
 				Rd -> SetWrite();
 				result -> SetRm(Rm);
 				result -> SetRd(Rd);	
@@ -980,8 +993,8 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					result.reset(new AsmLine(AsmLine::Directive, AsmLine::NOP));
 					//Create AsmOp for variable
 					std::shared_ptr<AsmOp> Rd(new AsmOp( AsmOp::Register, AsmOp::Rd ) );
-
-					Rd -> SetSymbol( std::static_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
+					std::shared_ptr<Token_Var> var = simple-> GetTokenDerived<Token_Var>();
+					Rd -> SetSymbol( var -> GetSymbol() );
 					result -> SetRd(Rd);
 				}
 				else{
@@ -989,8 +1002,8 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 					//Create AsmOp for variable
 					std::shared_ptr<AsmOp> Rm(new AsmOp( AsmOp::Register, AsmOp::Rm ) );
 
-					Rm -> SetSymbol( std::static_pointer_cast<Token_Var>(simple -> GetValueToken()) -> GetSymbol() );
-					//Rd -> SetWrite();
+					std::shared_ptr<Token_Var> var = simple-> GetTokenDerived<Token_Var>();
+					Rm -> SetSymbol( var -> GetSymbol() );				
 					result -> SetRm(Rm);
 					result -> SetRd(Rd);
 				}
@@ -1148,9 +1161,9 @@ std::shared_ptr<AsmLine> AsmFile::FlattenExpression(std::shared_ptr<Token_Expres
 				result -> SetComment("Line " + ToString<int>(expr -> GetLine()));
 				
 				std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rm));
-				One -> SetImmediate("1");
+				One -> SetImmediate("#1");
 				std::shared_ptr<AsmOp> Zero(new AsmOp(AsmOp::Immediate, AsmOp::Rm));
-				Zero -> SetImmediate("0");
+				Zero -> SetImmediate("#0");
 				
 				if (Op == LT){
 					result = CreateCodeLine(AsmLine::Processing, AsmLine::MOV);
@@ -1710,8 +1723,9 @@ std::shared_ptr<AsmOp> AsmFile::FlattenFactor(std::shared_ptr<Token_Factor> fact
 		result = line -> GetRd();
 	}
 	else if (form == Token_Factor::VarRef){
+		std::shared_ptr<Token_Var> var = factor -> GetTokenDerived<Token_Var>();
 		result -> SetType(AsmOp::Register);
-		result -> SetSymbol(factor -> GetTokenDerived<Token_Var>() -> GetSymbol());
+		result -> SetSymbol( var -> GetSymbol());
 		result -> SetToken( factor -> GetValueToken());
 	}
 	else if (form == Token_Factor::FuncCall){
@@ -1943,6 +1957,7 @@ void AsmLine::InitialiseStaticMaps(){
 
 AsmOp::AsmOp(Type_T Type, Position_T Position):
 	Type(Type), Position(Position), Scale(AsmOp::NoScale), sym(nullptr), OffsetAddressOp(nullptr), ScaleOp(nullptr), Write(false), Label(nullptr)
+	//Dereference(false)
 {
 	
 }
@@ -1952,6 +1967,7 @@ AsmOp::AsmOp(const AsmOp &obj):
 	OffsetAddressOp(obj.OffsetAddressOp), ScaleOp(obj.ScaleOp),
 	ImmediateValue(obj.ImmediateValue), tok(obj.tok), Write(obj.Write),
 	Label(obj.Label)
+	//Dereference(obj.Dereference)
 {
 	
 }
@@ -1978,6 +1994,7 @@ AsmOp AsmOp::operator=(const AsmOp& obj)
 		tok = obj.tok;
 		Write = obj.Write;
 		Label = obj.Label;
+		//Dereference = obj.Dereference;
 	}
 	
 	return *this;
@@ -2284,7 +2301,7 @@ std::pair<std::shared_ptr<Symbol>, unsigned> AsmRegister::FindSymbol(std::shared
 		end = AsmUsableReg;
 	
 	for (unsigned i = 0; i <= end; i++){
-		if(Registers[i].sym.get() == sym.get()){
+		if(Registers[i].sym != nullptr && sym != nullptr && *(Registers[i].sym) == *sym){
 			result.first = Registers[i].sym;
 			result.second = i;
 			break;

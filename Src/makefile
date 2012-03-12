@@ -163,7 +163,7 @@ $(GEN_DIR)expression.o: Tokens/expression.cpp Tokens/expression.h token.h Tokens
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 
-$(GEN_DIR)term.o: Tokens/term.cpp Tokens/term.h token.h Tokens/factor.h Tokens/type.h
+$(GEN_DIR)term.o: Tokens/term.cpp Tokens/term.h token.h Tokens/factor.h Tokens/type.h Tokens/var.h
 	@echo "Compiling $@"
 	@$(COMPILER) $(CXXFLAGS) -c -o $@ $<	
 

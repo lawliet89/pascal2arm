@@ -65,6 +65,9 @@ public:
 	bool IsTemporary() const { return Temporary; }
 	std::shared_ptr<AsmLabel> GetLabel(){ return Label; }
 	
+	bool operator==(const Symbol &obj) const;
+	bool operator!=(const Symbol &obj) const;
+	
 protected:	//Consturctor is protected so that no one but AsmFile can instantiate
 	/** Methods **/
 	//OCCF

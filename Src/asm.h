@@ -348,6 +348,7 @@ public:
 	void SetToken(std::shared_ptr<Token> tok){ this -> tok = tok; }
 	void SetWrite(bool val = true){ Write = val; }
 	void SetLabel(std::shared_ptr<AsmLabel> val){ Label = val; }
+	//void SetDereference(bool val = true) { Dereference = val; }
 	
 	//Getters
 	Type_T GetType() const { return Type; }
@@ -361,6 +362,7 @@ public:
 	std::shared_ptr<Token> GetToken() { return tok;}
 	bool IsWrite() const { return Write; }
 	std::shared_ptr<AsmLabel> GetLabel() { return Label ;}
+	//bool GetDereference() const { return Dereference; }
 	
 protected:
 	Type_T Type;
@@ -375,6 +377,9 @@ protected:
 	std::shared_ptr<AsmOp> ScaleOp;
 	std::string ImmediateValue;			//Value of immediate
 	bool Write;			//Is this written to?
+	
+	//Variable flags
+	//bool Dereference;	//If the Op is a register, this means that the Op has a variable symbol that is to be dereferenced (i.e. variable symbol is a pointer)
 };
 
 /** AsmLabel
@@ -513,7 +518,7 @@ public:
 	std::shared_ptr<Symbol> CreateTempVar(std::shared_ptr<Token_Type> type);
 	
 	//Function and procedures
-	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcFuncSymbol(std::string ID, bool function=false, bool push=true) throw(AsmCode); //Create for the current block
+	std::pair<std::shared_ptr<Symbol>, AsmCode> CreateProcFuncSymbol(std::string ID, bool function=false, bool block=true, bool push=true) throw(AsmCode); //Create for the current block
 	
 	/** Block Related Methods **/
 	//Block Stack

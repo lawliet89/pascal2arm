@@ -29,7 +29,7 @@ CMP9_	DCD 10
 CMP10_	DCD 1
 ; Entry point
 
-PRINTR0_	STMED r13!,{r0-r4,r14}
+PRINTR0_	STMED R13!,{r0-r4,r14}
 		CMP R0, #0x0
 		MOVEQ R0, #0x30
 		SWIEQ SWI_WriteC
@@ -72,7 +72,7 @@ SUBTRACT_	CMP R1, R2
 		; Print a line break
 PrintNewL	MOV R0, #'\n'
 		SWI SWI_WriteC
-		LDMED r13!,{r0-r4,r15} ;Return
+		LDMED R13!,{r0-r4,r15} ;Return
 
 ;-------------------------------------------------------------------
 ; User functions and procedures

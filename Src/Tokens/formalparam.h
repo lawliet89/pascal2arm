@@ -36,6 +36,12 @@ public:
 	
 	unsigned GetSize() const { return Params.size(); }
 	
+// 	//Comparing operators
+// 	bool operator==(const Token_FormalParam &obj) const;
+// 	bool operator!=(const Token_FormalParam &obj) const;
+// 	bool operator==(const Token &obj) const;		//Overridden
+// 	bool operator!=(const Token &obj) const;		//Overridden
+	
 protected:
 	std::vector<Param_T> Params;		//List of parameters
 };

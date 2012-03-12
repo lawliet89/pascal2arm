@@ -55,6 +55,7 @@ public:
 	
 	//Getters
 	P_Type GetPrimary() const{ return Primary; }
+	unsigned GetSecondary() const { return Secondary; }
 	bool IsSubrange() const { return Secondary & Subrange; }
 	bool IsArray() const { return Secondary & Array; }
 	bool IsPointer() const { return Secondary & Pointer; }
@@ -64,6 +65,12 @@ public:
 	void SetSize(int size) { this -> size = size; }
 	int GetSize() const { return size; }
 	
+	//Setters
+	void SetArray(bool val=true);
+	void SetPointer(bool val=true);
+	void SetSubrange(bool val=true);
+	void CleanSecondary();
+	
 	//Default value for Type
 	virtual std::string AsmValue() { return AsmDefaultValue(); }
 	virtual std::string AsmDefaultValue();
@@ -71,11 +78,13 @@ public:
 	std::string TypeToString();
 	
 	//Comparing operators
-	bool operator==(const Token_Type &obj);
-	bool operator!=(const Token_Type &obj);
+	bool operator==(const Token_Type &obj) const;
+	bool operator!=(const Token_Type &obj) const;
+	bool operator==(const Token &obj) const;		//Overridden
+	bool operator!=(const Token &obj) const;		//Overridden
 protected:
 	P_Type Primary;
-	int Secondary;
+	unsigned Secondary;
 	int size;			//No of bytes.
 };
 

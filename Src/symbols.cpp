@@ -12,7 +12,8 @@ Symbol::Symbol(const Symbol &obj):
 	Value(obj.Value),
 	Reserved(obj.Reserved),
 	Block(obj.Block),
-	Temporary(obj.Temporary)
+	Temporary(obj.Temporary),
+	Label(obj.Label)
 {
 	//...
 }
@@ -25,6 +26,7 @@ Symbol Symbol::operator=(const Symbol &obj){
 		Reserved = obj.Reserved;
 		Block = obj.Block;
 		Temporary = obj.Temporary;
+		Label = obj.Label;
 	}
 	return *this;
 }
@@ -33,4 +35,23 @@ Symbol Symbol::operator=(const Symbol &obj){
 Symbol::~Symbol(){
 	
 }
+
+bool Symbol::operator==(const Symbol& obj) const{
+	//We are actually comparing the tokens
+	if (Value == nullptr || obj.Value == nullptr)
+		return ID == obj.ID;
+	else
+		return *Value == *(obj.Value);
+}
+
+bool Symbol::operator!=(const Symbol& obj) const
+{
+	//We are actually comparing the tokens
+	if (Value == nullptr || obj.Value == nullptr)
+		return ID != obj.ID;
+	else
+		return *Value != *(obj.Value);
+}
+
+
 

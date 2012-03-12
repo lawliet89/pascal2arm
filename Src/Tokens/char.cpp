@@ -24,3 +24,24 @@ Token_Char Token_Char::operator=(const Token_Char &obj){
 std::string Token_Char::AsmValue(){
 	return "#" + ToString<unsigned>((unsigned) value);
 }
+
+bool Token_Char::operator==(const Token_Char& obj) const
+{
+	return value == obj.value;
+}
+
+bool Token_Char::operator!=(const Token_Char& obj) const
+{
+	return value != obj.value;
+}
+
+
+bool Token_Char::operator==(const Token& obj) const
+{
+    return operator==(dynamic_cast<const Token_Char &>(obj));
+}
+
+bool Token_Char::operator!=(const Token& obj) const
+{
+	return operator!=(dynamic_cast<const Token_Char &>(obj));
+}

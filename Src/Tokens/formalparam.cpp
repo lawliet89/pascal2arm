@@ -42,3 +42,26 @@ void Token_FormalParam::AddParams(std::vector<std::shared_ptr<Token_Var> > list,
 		Params.push_back(Param_T(*it, Required, Reference));
 	}
 }
+/*
+bool Token_FormalParam::operator==(const Token_FormalParam& obj) const
+{
+	return Params == obj.Params;
+}
+
+bool Token_FormalParam::operator!=(const Token_FormalParam& obj) const
+{
+	return Params != obj.Params;
+}
+
+
+bool Token_FormalParam::operator==(const Token& obj) const
+{
+    return operator==(dynamic_cast<const Token_FormalParam &>(obj));
+}
+
+bool Token_FormalParam::operator!=(const Token& obj) const
+{
+	return operator!=(dynamic_cast<const Token_FormalParam &>(obj));
+}
+
+*/

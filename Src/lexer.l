@@ -160,16 +160,6 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 				CurrentToken.reset(new Token_Char((char) chara));
 				return V_CHAR; 
 			}
-"^"{LETTER}	{	LexerAddCharCount(); 
-				char chara;
-				
-				if (yytext[1] >= 97)
-					chara = yytext[1] - 96;
-				else
-					chara = yytext[1] - 64;
-				CurrentToken.reset(new Token_Char(chara));
-				return V_CHAR; 
-			}
 
 {STRING}	{LexerAddCharCount(); 
 			
@@ -220,7 +210,8 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 ")"    |
 ";"    |
 "/"    |
-"*"    {LexerAddCharCount(); return yytext[0]; }
+"*"    |
+"^"		{LexerAddCharCount(); return yytext[0]; }
 
 ".."    {LexerAddCharCount(); return(OP_DOTDOT); }
 ">="    {LexerAddCharCount(); return(OP_GE); }
@@ -229,7 +220,7 @@ SIGNED_NUMBER [+\-]?{DIGIT}+
 "**"    {LexerAddCharCount(); return(OP_STARSTAR); }
 			
 			
-"{"	LexerConsumeComments("{");		/* Consume Comments - Place at bottom! */
+"{"		LexerConsumeComments("{");		/* Consume Comments - Place at bottom! */
 "{*"	LexerConsumeComments("{*");
 "/*"	LexerConsumeComments("/*");
 "//"	LexerConsumeComments("//");
@@ -354,3 +345,18 @@ void LexerConsumeInvalid(){
 inline void LexerAddCharCount(){
 	LexerCharCount += strlen(yytext);
 }
+
+/**
+	Removed rules
+	
+"^"{LETTER}	{	LexerAddCharCount(); 
+				char chara;
+				
+				if (yytext[1] >= 97)
+					chara = yytext[1] - 96;
+				else
+					chara = yytext[1] - 64;
+				CurrentToken.reset(new Token_Char(chara));
+				return V_CHAR; 
+			}
+**/

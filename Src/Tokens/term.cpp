@@ -1,5 +1,5 @@
 #include "term.h"
-
+#include "var.h"
 Token_Term::Token_Term(std::shared_ptr<Token_Factor> Factor, Op_T Operator, std::shared_ptr<Token_Term> Term):
 	Token("term", T_Type::Term, false), Factor(Factor), Operator(Operator), Term(Term)
 {
@@ -31,6 +31,11 @@ Token_Term Token_Term::operator=(const Token_Term& obj)
 void Token_Term::CheckType() throw(AsmCode){
 	if (Operator == None || Term == nullptr){
 		Type = Factor -> GetType();
+		if (Factor -> GetForm() == Token_Factor::VarRef && Factor -> GetTokenDerived<Token_Var>() -> GetDereference()){
+			//Dereference
+			Type.reset(new Token_Type(*Type));		//clone
+			Type -> SetPointer(false);
+		}
 	}
 	else{
 		//Check for Type compatibility
@@ -38,6 +43,13 @@ void Token_Term::CheckType() throw(AsmCode){
 		Term -> CheckType();
 		LHS = Term -> GetType();
 		RHS = Factor -> GetType();
+		
+		//Check 
+		if (Factor -> GetForm() == Token_Factor::VarRef && Factor -> GetTokenDerived<Token_Var>() -> GetDereference()){
+			//Clone type for checking purposes and setting
+			RHS.reset(new Token_Type(*RHS));
+			RHS -> SetPointer(false);
+		}
 		
 		//For now simple equivalence - TODO
 		if (*LHS != *RHS)
@@ -48,6 +60,45 @@ void Token_Term::CheckType() throw(AsmCode){
 			throw OperatorIncompatible;
 		
 		//TODO Type promotion?
-		Type = LHS;
+		Type = RHS;
 	}
 }
+/*
+bool Token_Term::operator==(const Token_Term& obj) const
+{	//Check for nullptrs first
+	bool FactorNullHere = Factor == nullptr, FactorNullThere = obj.Factor == nullptr;
+	if (FactorNullHere ^ FactorNullThere)
+		return false;
+	
+	if (!FactorNullHere && *Factor != *(obj.Factor))
+		return false;
+	
+	if (Operator != obj.Operator)
+		return false;
+	
+	bool TermNullHere = Term == nullptr, TermNullThere = obj.Term == nullptr;
+	if (TermNullHere ^ TermNullThere)
+		return false;
+	
+	if (!TermNullHere && *Term != *(obj.Term))
+		return false;
+	
+	return true;
+}
+
+bool Token_Term::operator!=(const Token_Term& obj) const
+{
+	return !operator==(obj);
+}
+
+
+bool Token_Term::operator==(const Token& obj) const
+{
+    return operator==(dynamic_cast<const Token_Term &>(obj));
+}
+
+bool Token_Term::operator!=(const Token& obj) const
+{
+	return operator!=(dynamic_cast<const Token_Term &>(obj));
+}
+*/

@@ -61,7 +61,8 @@ enum T_Type{	//for token type
 	Term,
 	Factor,
 	Operator,
-	FormalParamList
+	FormalParamList,
+	PointerDereference
 };
 
 /** Operator Type **/

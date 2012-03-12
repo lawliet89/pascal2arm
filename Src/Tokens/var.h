@@ -2,6 +2,7 @@
 #define TokenVar
 #include <memory>
 #include <string>
+#include <vector>
 #include "../token.h"
 #include "../symbols.h"
 #include "../define.h"
@@ -35,12 +36,24 @@ public:
 	
 	//Symbol
 	std::shared_ptr<Symbol> GetSymbol() { return Sym; }
-	
+	void SetSymbol(std::shared_ptr<Symbol> ptr){
+		Sym = ptr;
+	}
 	bool IsTemp() const{ return Temp; }
 	void SetTemp(bool val) { Temp = val;}
 
 	virtual std::string AsmValue(){ return value -> AsmValue(); }
 	virtual std::string AsmDefaultValue(){ return Type -> AsmDefaultValue(); }
+	
+	//Variable modifiers
+	void SetDereference(bool val = true){ Dereference = val;}
+	bool GetDereference() const { return Dereference; }
+	
+	//Comparing operators
+	bool operator==(const Token_Var &obj) const;
+	bool operator!=(const Token_Var &obj) const;
+	bool operator==(const Token &obj) const;		//Overridden
+	bool operator!=(const Token &obj) const;		//Overridden
 	
 protected:
 	std::string id;
@@ -49,9 +62,9 @@ protected:
 	std::shared_ptr<Symbol> Sym;	//Associated Symbol
 	bool Temp;			//Whether a variable is temp
 	
-	//Only AsmFile can set the symbol
-	void SetSymbol(std::shared_ptr<Symbol> ptr){
-		Sym = ptr;
-	}
+	//Variable modifiers
+	bool Dereference;		//Only applicable for pointers. Set whether the variable has been dereferenced
+	std::vector<unsigned> Index;			//For an array, the index. 
+	
 };
 #endif

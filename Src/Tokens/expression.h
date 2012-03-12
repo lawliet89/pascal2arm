@@ -33,6 +33,11 @@ public:
 	bool IsSimple(){ return SimExpression==nullptr && Operator==None; }
 	std::shared_ptr<Symbol> GetTempVar(){ return TempVar; }
 	
+// 	//Comparing operators
+// 	bool operator==(const Token_SimExpression &obj) const;
+// 	bool operator!=(const Token_SimExpression &obj) const;
+// 	bool operator==(const Token &obj) const;		//Overridden
+// 	bool operator!=(const Token &obj) const;		//Overridden
 protected:
 	//Form: SimExpression OP Term where SimExpression can contain another SimExpression indefinitely
 	//When reduced to Term, SimExpression will be set to nullptr
@@ -74,6 +79,12 @@ public:
 	//static methods
 	static void SetBoolType(std::shared_ptr<Token_Type>) throw(AsmCode);
 
+// 	//Comparing operators
+// 	bool operator==(const Token_Expression &obj) const;
+// 	bool operator!=(const Token_Expression &obj) const;
+// 	bool operator==(const Token &obj) const;		//Overridden
+// 	bool operator!=(const Token &obj) const;		//Overridden	
+	
 protected:
 	//Form: Expression OP SimExpression where Expression can contain another Expression indefinitely
 	//When reduced to SimExpression, Expression will be set to nullptr

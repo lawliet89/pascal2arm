@@ -60,7 +60,46 @@ void Token_SimExpression::CheckType() throw(AsmCode){
 		Type = LHS;
 	}
 }
+/*
+bool Token_SimExpression::operator==(const Token_SimExpression& obj) const
+{	//Check for nullptrs first
+	bool SimExpressionNullHere = SimExpression == nullptr, SimExpressionNullThere = obj.SimExpression == nullptr;
+	if (SimExpressionNullHere ^ SimExpressionNullThere)
+		return false;
+	
+	if (!SimExpressionNullHere && *SimExpression != *(obj.SimExpression))
+		return false;
+	
+	if (Operator != obj.Operator)
+		return false;
+	
+	bool TermNullHere = Term == nullptr, TermNullThere = obj.Term == nullptr;
+	if (TermNullHere ^ TermNullThere)
+		return false;
+	
+	if (!TermNullHere && *Term != *(obj.Term))
+		return false;
+	
+	return true;
+}
 
+bool Token_SimExpression::operator!=(const Token_SimExpression& obj) const
+{
+	return !operator==(obj);
+}
+
+
+bool Token_SimExpression::operator==(const Token& obj) const
+{
+    return operator==(dynamic_cast<const Token_SimExpression &>(obj));
+}
+
+bool Token_SimExpression::operator!=(const Token& obj) const
+{
+	return operator!=(dynamic_cast<const Token_SimExpression &>(obj));
+}
+
+*/
 /** Expression **/
 Token_Expression::Token_Expression(std::shared_ptr<Token_SimExpression> SimExpression, Op_T Operator, std::shared_ptr<Token_Expression> Expression):
 	Token("expression", T_Type::Expression, false), SimExpression(SimExpression), Operator(Operator), Expression(Expression), TempVar(nullptr)
@@ -174,3 +213,41 @@ std::shared_ptr<Token_Factor> Token_Expression::GetSimple(){
 	
 	return result;
 }
+/*
+bool Token_Expression::operator==(const Token_Expression& obj) const
+{	//Check for nullptrs first
+	bool SimExpressionNullHere = SimExpression == nullptr, SimExpressionNullThere = obj.SimExpression == nullptr;
+	if (SimExpressionNullHere ^ SimExpressionNullThere)
+		return false;
+	
+	if (!SimExpressionNullHere && *SimExpression != *(obj.SimExpression))
+		return false;
+	
+	if (Operator != obj.Operator)
+		return false;
+	
+	bool ExprNullHere = Expression == nullptr, ExprNullThere = obj.Expression == nullptr;
+	if (ExprNullHere ^ ExprNullThere)
+		return false;
+	
+	if (!ExprNullHere && *Expression != *(obj.Expression))
+		return false;
+	
+	return true;
+}
+
+bool Token_Expression::operator!=(const Token_Expression& obj) const
+{
+	return !operator==(obj);
+}
+
+
+bool Token_Expression::operator==(const Token& obj) const
+{
+    return operator==(dynamic_cast<const Token_Expression &>(obj));
+}
+
+bool Token_Expression::operator!=(const Token& obj) const
+{
+	return operator!=(dynamic_cast<const Token_Expression &>(obj));
+}*/

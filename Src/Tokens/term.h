@@ -33,6 +33,12 @@ public:
 	bool IsSimple(){ return Term==nullptr && Operator==None; }
 	std::shared_ptr<Symbol> GetTempVar(){ return TempVar; }
 	
+	//Comparing operators
+// 	bool operator==(const Token_Term &obj) const;
+// 	bool operator!=(const Token_Term &obj) const;
+// 	bool operator==(const Token &obj) const;		//Overridden
+// 	bool operator!=(const Token &obj) const;		//Overridden
+	
 protected:
 	//Form: Term OP Factor where Term can contain another term indefinitely
 	//When reduced to Factor, Term will be set to nullptr

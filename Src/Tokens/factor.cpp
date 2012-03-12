@@ -32,3 +32,50 @@ std::shared_ptr<Token_Type> Token_Factor::GetType(){
 	else
 		return Type;
 }
+
+/*
+bool Token_Factor::operator==(const Token_Factor& obj) const
+{
+	bool here, there;
+	if (Form == obj.Form)
+		return false;
+	if (Negate != obj.Negate)
+		return false;
+	
+	here = value == nullptr;
+	there = obj.value == nullptr;
+	
+	if (here ^ there)
+		return false;
+	
+	if (!here && *value != *(obj.value))
+		return false;
+	
+	here = FuncToken == nullptr;
+	there = obj.FuncToken == nullptr;
+	
+	if (here ^ there)
+		return false;
+	
+	if (!here && *FuncToken != *(obj.FuncToken))
+		return false;
+	
+	return true;
+}
+
+bool Token_Factor::operator!=(const Token_Factor& obj) const
+{
+	return !operator==(obj);
+}
+
+
+bool Token_Factor::operator==(const Token& obj) const
+{
+    return operator==(dynamic_cast<const Token_Factor &>(obj));
+}
+
+bool Token_Factor::operator!=(const Token& obj) const
+{
+	return operator!=(dynamic_cast<const Token_Factor &>(obj));
+}
+*/

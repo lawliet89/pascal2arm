@@ -52,6 +52,11 @@ public:
 	
 	virtual int GetSize(){ return StrValue.length(); }
 	
+	virtual bool operator==(const Token &obj) const;
+	virtual bool operator!=(const Token &obj) const;
+	virtual bool operator==(const std::shared_ptr<Token> &obj) const;
+	virtual bool operator!=(const std::shared_ptr<Token> &obj) const;
+	
 protected:
 	std::string StrValue;
 	T_Type TokenType;			//Base Type of token

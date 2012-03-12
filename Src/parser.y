@@ -204,7 +204,10 @@ TypeList:	TypeList TypeDeclaration
 		| TypeDeclaration
 		;
 		
-TypeDeclaration: Identifier '=' Type ';' 
+TypeDeclaration: Identifier '=' Type ';' {
+					std::shared_ptr<Token_Type> type = std::static_pointer_cast<Token_Type>($3);
+					std::pair<std::shared_ptr<Symbol>, AsmCode> sym = Program.CreateTypeSymbol($1 -> GetStrValue(), type -> GetPrimary(), type -> GetSecondary());
+				}
 		;
 
 VarList:	VarList VarDeclaration
@@ -249,7 +252,7 @@ VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
 Type: SimpleType { $$ = $1; }
 	| StringType 
 	| StructuredType 
-	| PointerType   
+	| PointerType   { $$ = $1; }
 	| TypeIdentifier
 	;
 	
@@ -339,7 +342,15 @@ FileTypes: Type
 	| I_TEXT
 	;
 
-PointerType: '^' Type
+PointerType: '^' Type {
+				//Copy type
+				std::shared_ptr<Token_Type> type = std::static_pointer_cast<Token_Type>($2);
+				//Clone it
+				type.reset(new Token_Type(*type));
+				$$ = type;
+				//Set secondary flag
+				type -> SetPointer();
+			}
 	;
 
 /* Values */
@@ -649,7 +660,7 @@ Factor: '(' Expression ')' {
 					}
 
 	| VarRef		{
-						//TODO with qualifier
+						$$ = $1;
 					}
 
 	| FuncCall		{ $$ = $1; }
@@ -763,18 +774,72 @@ Factor: '(' Expression ')' {
 			}
 	/* Set, value typecast, address factor ?? */
 	;
-VarRef: SimpleVarReference VarQualifier{
-											//TODO Qualifier
-											
-										}
+VarRef: /*SimpleVarReference VarQualifier | */
+		Identifier VarQualifier {
+				//Check for symbols with identifier and then set the type of the factor accordingly
+				try{
+					std::pair<std::shared_ptr<Symbol>, AsmCode> sym(Program.GetSymbol($1 -> GetStrValue()));
+					//Type and form of symbol
+					Symbol::Type_T SymType = sym.first -> GetType();
+					
+					std::shared_ptr<Token_Type> FactorType;
+					std::shared_ptr<Token> FactorToken;
+					
+					if (SymType != Symbol::Variable){
+						std::stringstream msg2;
+						msg2 << "Identifier " << $1 -> GetStrValue() << "' is not a variable. Only variables can be used with qualifiers.";
+						HandleError(msg2.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+						YYERROR;
+					}
+					
+					//Check for qualifier type
+					T_Type QualifierType = $2 -> GetTokenType();
+					if (QualifierType == PointerDereference){
+						//Okay dereferencing a pointer
+						//Clone the variable 
+						std::shared_ptr<Token_Var> var( new Token_Var( * ( sym.first -> GetTokenDerived<Token_Var>() ) ) );
+						var -> SetDereference();
+						
+						//Clone the symbol
+						std::shared_ptr<Symbol> sym(new Symbol( * (var -> GetSymbol()) ) );
+						
+						//Assignment
+						sym -> SetToken(std::static_pointer_cast<Token>(var));
+						var -> SetSymbol(sym);
+						
+						FactorToken = std::static_pointer_cast<Token>(var);
+						FactorType = var -> GetVarType();
+					}
+					//TODO Arrays
+					
+					$$.reset(new Token_Factor(Token_Factor::VarRef, FactorToken, FactorType));
+				}
+				catch (AsmCode e){
+					if (e == SymbolNotExists){
+						std::stringstream msg;
+						msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+					}
+					else{
+						std::stringstream msg;
+						msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+					}
+					YYERROR;
+				}
+				catch(...){
+					YYERROR;
+				}								
+		}
 	/*| SimpleVarReference */
 	;
-
-SimpleVarReference: Identifier
-		;
+/*
+SimpleVarReference: Identifier { $$ = $1; }
+		;*/
 
 VarQualifier: FieldSpecifier
 		| Index
+		| '^' { $$.reset(new Token("^", PointerDereference, true)); }
 		;
 
 FieldSpecifier: '.' Identifier
@@ -981,6 +1046,35 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 			}
 				
 		}
+		| VarRef OP_ASSIGNMENT Expression{
+			//VarRef is a factor
+			//Get the variable
+			std::shared_ptr<Token_Var> var = std::static_pointer_cast<Token_Factor>($1) -> GetTokenDerived<Token_Var>();
+			std::shared_ptr<Token_Expression> RHS = std::static_pointer_cast<Token_Expression>($3);
+			std::shared_ptr<Token_Type> LHS_T, RHS_T = RHS -> GetType();
+			
+			//Pointer dereference
+			if (var -> GetDereference()){
+				//Set LHS_T
+				LHS_T.reset(new Token_Type( *(var -> GetVarType()) ));
+				LHS_T -> SetPointer(false);
+			}
+			
+			if (Program.TypeCompatibilityCheck(LHS_T, RHS_T) != TypeCompatible){
+				std::stringstream msg;
+				msg << "Incompatible Types: Variable '"<< $1 -> GetStrValue() << "' has type '" << LHS_T -> TypeToString();
+				msg << "'\n\tand expression has type '" << RHS_T -> TypeToString() << "'"; 
+				
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+				YYERROR;
+			}
+			//Clone symbol
+			std::shared_ptr<Symbol> sym(new Symbol( *(var -> GetSymbol()) ) );
+			sym -> SetToken(std::static_pointer_cast<Token>(var));
+			var -> SetSymbol(sym);
+			
+			Program.CreateAssignmentLine(sym, RHS);
+		}
 		/* += -= /= *= */
 		;
 
@@ -988,6 +1082,12 @@ ProcedureStatement: Identifier '(' ActualParamList ')' {
 				//We are going to hack in write here
 				if ($1 -> GetStrValue() == "write"){
 					Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
+				}
+				else if ($1 -> GetStrValue() == "new"){
+					//Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
+				}
+				else if ($1 -> GetStrValue() == "dispose"){
+					//Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
 				}
 				else{
 					try{
@@ -1138,7 +1238,7 @@ IfTest: K_IF Expression K_THEN{
 					//Create one more line to see if this is equal to true or not
 					//Create immediate 1
 					std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
-					One -> SetImmediate("1");
+					One -> SetImmediate("#1");
 					std::shared_ptr<AsmLine> LineTrueTest = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
 					LineTrueTest -> SetRd(line -> GetRd());
 					LineTrueTest -> SetRn(One);
@@ -1273,7 +1373,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				
 				//Create immediate 1
 				std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
-				One -> SetImmediate("1");
+				One -> SetImmediate("#1");
 				line1 -> SetRn(One);
 				
 				IndexOp.reset(new AsmOp(*IndexOp));		//Clone IndexOp
@@ -1318,7 +1418,7 @@ WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
 						//Create one more line to see if this is equal to true or not
 						//Create immediate 1
 						std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
-						One -> SetImmediate("1");
+						One -> SetImmediate("#1");
 						std::shared_ptr<AsmLine> LineTrueTest = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
 						LineTrueTest -> SetRd(line1 -> GetRd());
 						LineTrueTest -> SetRn(One);
@@ -1359,7 +1459,7 @@ WhileStatement: K_WHILE Expression { 	//NOTE: This is $3
 						//Create one more line to see if this is equal to true or not
 						//Create immediate 1
 						std::shared_ptr<AsmOp> One(new AsmOp(AsmOp::Immediate, AsmOp::Rn));
-						One -> SetImmediate("1");
+						One -> SetImmediate("#1");
 						std::shared_ptr<AsmLine> LineTrueTest = Program.CreateCodeLine(AsmLine::Processing, AsmLine::CMP);
 						LineTrueTest -> SetRd(line1 -> GetRd());
 						LineTrueTest -> SetRn(One);

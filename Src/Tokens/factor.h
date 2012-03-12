@@ -47,6 +47,11 @@ public:
 	bool IsSimple(){ return Form != Expression; }  //TODO for more complicated stuff
 	std::shared_ptr<Token_Func> GetFuncToken() { return FuncToken; }
 	
+	//Comparing operators
+// 	bool operator==(const Token_Factor &obj) const;
+// 	bool operator!=(const Token_Factor &obj) const;
+// 	bool operator==(const Token &obj) const;		//Overridden
+// 	bool operator!=(const Token &obj) const;		//Overridden
 protected:
 	Form_T Form;
 	std::shared_ptr<Token_Type> Type;
