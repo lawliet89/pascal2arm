@@ -435,6 +435,16 @@ std::string AsmFile::GenerateCode(){
 				output << "\tSWI SWI_WriteC\n";
 			continue;
 		}
+		else if (OpCode == AsmLine::NEW){
+			output << Reg->ForceVar(Rd -> GetSymbol(),0, false, true, true, false);
+			output << "\tBL NEW ; NEW procedure call\n";
+			continue;
+		}
+		else if (OpCode == AsmLine::DISPOSE){
+			output << Reg->ForceVar(Rd -> GetSymbol(),0, false, true, true, false);
+			output << "\tBL DISPOSE ; DISPOSE procedure call\n";
+			continue;
+		}
 		else if (OpCode == AsmLine::FUNCALL){			
 			//Force save the variable in R4
 			//output << Reg -> SaveRegister(4);
@@ -751,6 +761,14 @@ std::string AsmFile::GenerateCode(){
 			//if (!save)
 			//	CurrentOutput << "\tLDMED R13!, {R0}; retrieve R0\n";
 			continue;
+		}
+		else if (OpCode == AsmLine::NEW){
+			output << Reg->ForceVar(Rd -> GetSymbol(),0, false, true, true, false);
+			output << "\tBL NEW";
+		}
+		else if (OpCode == AsmLine::DISPOSE){
+			output << Reg->ForceVar(Rd -> GetSymbol(),0, false, true, true, false);
+			output << "\tBL DISPOSE";
 		}
 		else if (OpCode == AsmLine::FUNCALL){			
 			//Force save the variable in R4
@@ -1775,7 +1793,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenFactor(std::shared_ptr<Token_Factor> fact
 	
 	return result;
 }	
-
+//Write Procedure
 void AsmFile::CreateWriteLine(std::shared_ptr<Token_ExprList> list){
 	//We will only look at the first expression...
 	std::shared_ptr<Token_Expression> expr = list->GetList()[0];
@@ -1783,15 +1801,97 @@ void AsmFile::CreateWriteLine(std::shared_ptr<Token_ExprList> list){
 	std::shared_ptr<AsmLine> line;
 	if (type->GetPrimary() == Token_Type::Integer){		
 		std::shared_ptr<AsmLine> exprLine = FlattenExpression(expr);
-		line = CreateCodeLine(AsmLine::Processing, AsmLine::WRITE_INT);	
+		line = CreateCodeLine(AsmLine::Directive, AsmLine::WRITE_INT);	
 		line -> SetRd(exprLine -> GetRd());
 	}
 	else if (type->GetPrimary() == Token_Type::Char){
-std::shared_ptr<AsmLine> exprLine = FlattenExpression(expr);
-		line = CreateCodeLine(AsmLine::Processing, AsmLine::WRITE_C);	
+		std::shared_ptr<AsmLine> exprLine = FlattenExpression(expr);
+		line = CreateCodeLine(AsmLine::Directive, AsmLine::WRITE_C);	
 		line -> SetRd(exprLine -> GetRd());
 	}
 	
+}
+
+void AsmFile::CreateNewProcLine(std::shared_ptr<Token_ExprList> tok){
+	std::vector<std::shared_ptr<Token_Expression> > list = tok -> GetList();
+	if (list.size() != 1){
+		std::stringstream msg;
+		msg << "Procedure 'new' expects 1 argument, but "<< list.size() << "was provided.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, tok->GetLine(), tok->GetColumn());
+		return;
+	}
+	
+	//Check that expression has a pointer type
+	std::shared_ptr<Token_Type> type = list[0] -> GetType();
+	if (!type -> IsPointer()){
+		std::stringstream msg;
+		msg << "Procedure 'new' expects the argument to be a pointer but an expression of type '" << type -> TypeToString() << "' was provided.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, list[0]->GetLine(), list[0]->GetColumn());
+		return;
+	}
+	
+	//Check that expression is strictly simple
+	std::shared_ptr<Token_Factor> factor = list[0] -> GetSimple();
+	if (factor == nullptr){
+		std::stringstream msg;
+		msg << "Procedure 'new' expects the argument to be a pointer variable but an expression was provided.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, list[0]->GetLine(), list[0]->GetColumn());
+		return;
+	}
+	//Check that it has a form of VarRef
+	if (factor->GetForm() != Token_Factor::VarRef){
+		std::stringstream msg;
+		msg << "Procedure 'new' expects the argument to be a pointer variable.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, list[0]->GetLine(), list[0]->GetColumn());
+		return;
+	}
+	
+	std::shared_ptr<AsmLine> line = CreateCodeLine(AsmLine::Directive, AsmLine::NEW);
+	std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
+	line -> SetRd(Rd);
+	Rd -> SetWrite();
+	Rd -> SetSymbol(factor -> GetTokenDerived<Token_Var>() -> GetSymbol());
+}
+
+void AsmFile::CreateDisposeProcLine(std::shared_ptr<Token_ExprList> tok){
+	std::vector<std::shared_ptr<Token_Expression> > list = tok -> GetList();
+	if (list.size() != 1){
+		std::stringstream msg;
+		msg << "Procedure 'dispose' expects 1 argument, but "<< list.size() << "was provided.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, tok->GetLine(), tok->GetColumn());
+		return;
+	}
+	
+	//Check that expression has a pointer type
+	std::shared_ptr<Token_Type> type = list[0] -> GetType();
+	if (!type -> IsPointer()){
+		std::stringstream msg;
+		msg << "Procedure 'dispose' expects the argument to be a pointer but an expression of type '" << type -> TypeToString() << "' was provided.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, list[0]->GetLine(), list[0]->GetColumn());
+		return;
+	}
+	
+	//Check that expression is strictly simple
+	std::shared_ptr<Token_Factor> factor = list[0] -> GetSimple();
+	if (factor == nullptr){
+		std::stringstream msg;
+		msg << "Procedure 'dispose' expects the argument to be a pointer variable but an expression was provided.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, list[0]->GetLine(), list[0]->GetColumn());
+		return;
+	}
+	//Check that it has a form of VarRef
+	if (factor->GetForm() != Token_Factor::VarRef){
+		std::stringstream msg;
+		msg << "Procedure 'dispose' expects the argument to be a pointer variable.";
+		HandleError(msg.str().c_str(), E_PARSE, E_ERROR, list[0]->GetLine(), list[0]->GetColumn());
+		return;
+	}
+	
+	std::shared_ptr<AsmLine> line = CreateCodeLine(AsmLine::Directive, AsmLine::DISPOSE);
+	std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
+	line -> SetRd(Rd);
+	Rd -> SetWrite();
+	Rd -> SetSymbol(factor -> GetTokenDerived<Token_Var>() -> GetSymbol());
 }
 
 /** Compiler Debugging Methods **/
@@ -2238,9 +2338,21 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 		SaveRegister(result);
 		EvictRegister(result);
 	}
+	std::string deref;
+	if (sym -> GetType() == Symbol::Variable){
+		if (sym -> GetTokenDerived<Token_Var>() -> GetDereference())
+			deref = " dereferenced";
+	}
+	output << ";\t\t R" << ToReturn.first << " is now " << sym->GetLabel()->GetID() << deref << "\n";
 	if (sym != nullptr && load && !sym -> IsTemporary()){
 		//Load data into register
-		output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << " ;Loading variable\n";
+		if (sym ->GetTokenDerived<Token_Var>() -> GetDereference()){
+			output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << "; Load address of pointer\n";
+			output << "\tLDR R" << AsmScratch << ", [R" << AsmScratch << "]; Load address pointed to by pointer\n";
+		}
+		else{
+			output << "\tLDR R" << AsmScratch << ", =" << sym -> GetLabel() -> GetID() << " ;Loading variable\n";
+		}
 		output << "\tLDR R" << ToReturn.first << ", [R" << AsmScratch << "]\n";
 	}
 	GetRegister(ToReturn.first).sym = sym;
@@ -2317,10 +2429,20 @@ std::string AsmRegister::SaveRegister(std::shared_ptr<Symbol> var){
 	if (result.first != nullptr){
 		//Might need to saved
 		State_T &Register = GetRegister(result.second);
+		
 		//Check if register has been written to and if the variable is a temporary and if it's permanent
 		if ( (Register.WrittenTo || InLoop )  && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp() && Register.sym -> GetLabel() != nullptr){
-			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
-			output << "\tSTR R" << result.second << ", [R" << AsmScratch << "]\n";
+			//Let's see if the variable is a dereference
+			if (Register.sym->GetTokenDerived<Token_Var>() -> GetDereference()){
+				output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable - Load address of pointer\n";
+				output << "\tLDR R" << AsmScratch << ", [R" << AsmScratch << "]; Load address pointed to by pointer\n";
+			}
+			else{
+				output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable - Load address of variable\n";
+			}
+			
+			output << "\tSTR R" << result.second << ", [R" << AsmScratch << "]; save variable\n";
+
 		}
 	}
 	return output.str();
@@ -2331,8 +2453,14 @@ std::string AsmRegister::SaveRegister(unsigned no){
 	std::stringstream output;
 	
 	if ( (Register.WrittenTo || InLoop ) && Register.sym != nullptr && !Register.sym->GetTokenDerived<Token_Var>() -> IsTemp() && Register.sym -> GetLabel() != nullptr){
-		output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
-		output << "\tSTR R" << no << ", [R" << AsmScratch << "]\n";
+		if (Register.sym->GetTokenDerived<Token_Var>() -> GetDereference()){
+			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable - Load address of pointer\n";
+			output << "\tLDR R" << AsmScratch << ", [R" << AsmScratch << "]; Load address pointed to by pointer\n";
+		}
+		else{
+			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
+		}
+			output << "\tSTR R" << no << ", [R" << AsmScratch << "]\n";
 	}
 	return output.str();
 }
@@ -2360,7 +2488,12 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 	if (save)
 		//Force save no
 		result << SaveRegister(no);	
-	
+	std::string deref;
+	if (var -> GetType() == Symbol::Variable){
+		if (var -> GetTokenDerived<Token_Var>() -> GetDereference())
+			deref = " dereferenced";
+	}
+	result << ";\t\t R" << no << " is now forced to be " << var->GetLabel()->GetID() << deref << "\n";
 	if (sym.first != nullptr){
 		//Found
 		EvictRegister(no);
@@ -2368,6 +2501,7 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 		//Assign
 		Register.sym = var;
 		Register.WrittenTo = Previous.WrittenTo;
+		
 		if (move)
 			result << "\tMOV R" << no << ", R" << sym.second << " ; force moving\n"; 
 		EvictRegister(sym.second);
@@ -2380,8 +2514,13 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 		Register.sym = var;
 		//Load?
 		if (Register.sym != nullptr && load && !Register.sym -> IsTemporary()){
-			//Load data into register
-			result << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << " ;Loading variable\n";
+			if (var ->GetTokenDerived<Token_Var>() -> GetDereference()){
+				result << "\tLDR R" << AsmScratch << ", =" << var -> GetLabel() -> GetID() << "; Load address of pointer\n";
+				result << "\tLDR R" << AsmScratch << ", [R" << AsmScratch << "]; Load address pointed to by pointer\n";
+			}
+			else{
+				result << "\tLDR R" << AsmScratch << ", =" << var -> GetLabel() -> GetID() << " ;Loading variable\n";
+			}
 			result << "\tLDR R" << no << ", [R" << AsmScratch << "]\n";
 		};
 	}

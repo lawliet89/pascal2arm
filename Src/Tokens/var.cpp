@@ -25,7 +25,7 @@ Token_Var Token_Var::operator=(const Token_Var &obj){
 	return *this;
 }
 bool Token_Var::operator==(const Token_Var &obj) const{
-	if (id != obj.id)
+	if (GetStrValue() != obj.GetStrValue())
 		return false;
 	
 	bool here, there;
@@ -36,6 +36,10 @@ bool Token_Var::operator==(const Token_Var &obj) const{
 		return false;
 	
 	if (!here && *Type != *(obj.Type))
+		return false;
+	
+	//Check that both have dereference flags
+	if (Dereference != obj.Dereference)
 		return false;
 	
 	return true;

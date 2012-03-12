@@ -40,17 +40,18 @@ bool Symbol::operator==(const Symbol& obj) const{
 	//We are actually comparing the tokens
 	if (Value == nullptr || obj.Value == nullptr)
 		return ID == obj.ID;
-	else
+	else{
+		if (Value == nullptr && obj.Value != nullptr)
+			return false;
+		if (obj.Value == nullptr && Value != nullptr)
+			return false;
 		return *Value == *(obj.Value);
+	}
 }
 
 bool Symbol::operator!=(const Symbol& obj) const
 {
-	//We are actually comparing the tokens
-	if (Value == nullptr || obj.Value == nullptr)
-		return ID != obj.ID;
-	else
-		return *Value != *(obj.Value);
+	return !operator==(obj);
 }
 
 

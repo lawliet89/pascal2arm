@@ -1084,10 +1084,10 @@ ProcedureStatement: Identifier '(' ActualParamList ')' {
 					Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
 				}
 				else if ($1 -> GetStrValue() == "new"){
-					//Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
+					Program.CreateNewProcLine(std::static_pointer_cast<Token_ExprList>($3));
 				}
 				else if ($1 -> GetStrValue() == "dispose"){
-					//Program.CreateWriteLine(std::static_pointer_cast<Token_ExprList>($3));
+					Program.CreateDisposeProcLine(std::static_pointer_cast<Token_ExprList>($3));
 				}
 				else{
 					try{

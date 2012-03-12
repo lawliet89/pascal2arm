@@ -75,5 +75,28 @@ PrintNewL	MOV R0, #'\n'
 		LDMED R13!,{r0-r4,r15} ;Return
 
 ;-------------------------------------------------------------------
+; New Procedure 
+; R0 - Pointer to initialise - Only supports one word pointers
+; NOTE: Does not reuse disposed addresses. Simple allocator
+;-------------------------------------------------------------------
+
+NEW		STMED R13!, {R1,R2,R14}
+		LDR R2, =HeapPtr		; Address of heap pointer
+		LDR R1, [R2]			; Load value of heap pointer
+		MOV R0, R1				; Give new address to R0
+		ADD R1, R1, #4			; Increment heap pointer
+		STR R1, [R2]			; Save heap pointer
+		LDMED R13!, {R1,R2,R15}	; Return
+		
+;-------------------------------------------------------------------
+; Dispose Procedure 
+; R0 - Pointer to dispose - Only supports one word pointers
+; NOTE: Does not reuse disposed addresses. Simple deallocator
+;-------------------------------------------------------------------
+
+DISPOSE	MOV R0, #0		; Simply resets the pointer
+		MOV R15, R14	; Return
+
+;-------------------------------------------------------------------
 ; User functions and procedures
 ;-------------------------------------------------------------------

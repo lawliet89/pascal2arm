@@ -11,7 +11,7 @@ begin
    ptr1^ := 10;
    ptr2 := ptr1;
    A := 10 + ptr1^;
-   //write(ptr1^);
+   write(ptr1^);
    dispose(ptr1);
 end.
 

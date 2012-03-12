@@ -215,7 +215,9 @@ public:
 		SAVE,			//Force Rd to be saved to memory if it was written
 		BLOCKPUSH,		//Push a block -- used to signify beginning of a function -- Rd should be the SYMBOL of the block.
 		BLOCKPOP,		//Pop a block -- used to signify end of a function  -- Rd should be the SYMBOL of the block.
-		FUNCALL		//Rd is the return value, Rm, Rn, Ro supported i,e, max 3 args TODO for more
+		FUNCALL,		//Rd is the return value, Rm, Rn, Ro supported i,e, max 3 args TODO for more
+		NEW,
+		DISPOSE
 	};
 	enum CC_T{	//Condition Code
 		EQ, CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
@@ -562,7 +564,9 @@ public:
 	
 	//Hack -- Create Write()
 	void CreateWriteLine(std::shared_ptr<Token_ExprList> list);		//Only supports ONE expression 
-		
+	void CreateNewProcLine(std::shared_ptr<Token_ExprList> list);
+	void CreateDisposeProcLine(std::shared_ptr<Token_ExprList> list);
+	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
 	void PrintBlocks();

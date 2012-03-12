@@ -56,7 +56,6 @@ public:
 	bool operator!=(const Token &obj) const;		//Overridden
 	
 protected:
-	std::string id;
 	std::shared_ptr<Token> value;
 	std::shared_ptr<Token_Type> Type;
 	std::shared_ptr<Symbol> Sym;	//Associated Symbol

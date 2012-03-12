@@ -108,11 +108,11 @@ void ParseArg(int argc, char **argv){
 			case 'p':
 				Flags.Pedantic = true;
 				break;
+			case 's':
+				Flags.SaveRegisters = true;
 			case '?':
 				/* getopt_long already printed an error message. */
 				break;
-			case 's':
-				Flags.SaveRegisters = true;
 			default:	//Shouldn't happen.
 				abort ();
 		}
