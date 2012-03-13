@@ -40,6 +40,12 @@ public:
 	bool GetHasReturn() const { return HasReturn; }
 	bool IsFunction() const { return Type == Function && ReturnType != nullptr; }
 
+	//Comparing operators
+	bool operator==(const Token_Func &obj) const;
+	bool operator!=(const Token_Func &obj) const;
+	bool operator==(const Token &obj) const;		//Overridden
+	bool operator!=(const Token &obj) const;		//Overridden	
+	
 protected:
 	Type_T Type;
 	std::shared_ptr<Symbol> sym;		//Associated symbol

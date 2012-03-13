@@ -50,10 +50,20 @@ bool Token_Var::operator!=(const Token_Var &obj) const{
 
 bool Token_Var::operator==(const Token& obj) const
 {
-    return operator==(dynamic_cast<const Token_Var &>(obj));
+	try{
+		return operator==(dynamic_cast<const Token_Var &>(obj));
+	}
+	catch (std::bad_cast e){
+		return false;
+	}
 }
 
 bool Token_Var::operator!=(const Token& obj) const
 {
-	return operator!=(dynamic_cast<const Token_Var &>(obj));
+	try{
+		return operator!=(dynamic_cast<const Token_Var &>(obj));
+	}
+	catch (std::bad_cast e){
+		return true;
+	}
 }

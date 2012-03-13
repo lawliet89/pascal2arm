@@ -41,6 +41,8 @@ bool Symbol::operator==(const Symbol& obj) const{
 	if (Value == nullptr || obj.Value == nullptr)
 		return ID == obj.ID;
 	else{
+		if (ID != obj.ID)
+			return false;
 		if (Value == nullptr && obj.Value != nullptr)
 			return false;
 		if (obj.Value == nullptr && Value != nullptr)

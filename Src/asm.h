@@ -119,6 +119,9 @@ public:
 	void InLoopStackPop() { InLoopCount--; }
 	bool IsInLoop() { return (InLoopCount != 0); }	
 	void SetNextLabel(std::shared_ptr<AsmLabel> label) { NextLabel = label; }
+	
+	bool operator==(const AsmBlock &obj) const;
+	bool operator!=(const AsmBlock &obj) const;
 protected:
 	Type_T Type;		//Type of block & scope
 	//List of symbols defined in this block

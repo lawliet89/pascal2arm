@@ -1,17 +1,14 @@
-program sample8;
+program sample6;
 
-type int_pointer =  ^integer;
+var A, B, C :  integer;
 
-var  
-	ptr1, ptr2 :int_pointer;
-	A : integer;
+function incr(X: integer):integer;
+   begin
+       incr := X + 1;
+   end;
 
 begin
-   new(ptr1);
-   ptr1^ := 10;
-   ptr2 := ptr1;
-   A := 10 + ptr1^;
-   write(ptr1^);
-   dispose(ptr1);
+   A:=1;
+   B:=incr(A);
+   write(B);
 end.
-

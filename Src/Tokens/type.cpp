@@ -87,12 +87,24 @@ bool Token_Type::operator!=(const Token_Type &obj) const{
 
 bool Token_Type::operator==(const Token& obj) const
 {
-    return operator==(dynamic_cast<const Token_Type &>(obj));
+	try{
+		return operator==(dynamic_cast<const Token_Type &>(obj));
+	}
+	catch (std::bad_cast e){
+		return false;
+	}
+	
 }
 
 bool Token_Type::operator!=(const Token& obj) const
 {
-	return operator!=(dynamic_cast<const Token_Type &>(obj));
+	try{
+		return operator!=(dynamic_cast<const Token_Type &>(obj));
+	}
+	catch (std::bad_cast e){
+		return false;
+	}
+	
 }
 
 

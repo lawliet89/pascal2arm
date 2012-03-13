@@ -2226,6 +2226,16 @@ std::shared_ptr<AsmLabel> AsmBlock::CreateWhileLabel(){
 	return result;
 }
 
+bool AsmBlock::operator==(const AsmBlock &obj) const{
+	return ID == obj.ID;
+}
+
+bool AsmBlock::operator!=(const AsmBlock& obj) const
+{
+	return ID != obj.ID;
+}
+
+
 
 /** AsmRegisters **/
 AsmRegister::AsmRegister(bool IsGlobal) : 
