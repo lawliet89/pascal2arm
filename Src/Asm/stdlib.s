@@ -82,9 +82,8 @@ PrintNewL	MOV R0, #'\n'
 
 NEW		STMED R13!, {R1,R2,R14}
 		LDR R2, =HeapPtr		; Address of heap pointer
-		LDR R1, [R2]			; Load value of heap pointer
+		LDR R1, [R2], #4		; Load value of heap pointer and increment
 		MOV R0, R1				; Give new address to R0
-		ADD R1, R1, #4			; Increment heap pointer
 		STR R1, [R2]			; Save heap pointer
 		LDMED R13!, {R1,R2,R15}	; Return
 		
