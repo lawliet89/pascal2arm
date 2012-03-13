@@ -263,7 +263,7 @@ SimpleType: OrdinalType { $$ = $1; }
 OrdinalType: I_INTEGER	{ $$ = Program.GetTypeSymbol("integer").first->GetValue(); }
 	| I_CHAR { $$ = Program.GetTypeSymbol("char").first->GetValue(); }
 	| I_BOOLEAN { $$ = Program.GetTypeSymbol("boolean").first->GetValue(); }
-	| EnumType { $$ = Program.GetTypeSymbol("enum").first->GetValue(); } /* TODO more handling */
+	| EnumType 
 	| SubrangeType
 	;
 
@@ -276,11 +276,17 @@ EnumTypeList: EnumTypeList ',' IdentifierList
 	/* | Identifier OP_ASSIGNMENT Expression */
 	;
 
-SubrangeType: SubrangeValue OP_DOTDOT SubrangeValue
+SubrangeType: SubrangeValue OP_DOTDOT SubrangeValue{
+				std::shared_ptr<Token_Type> type(new Token_Type("subrange", Token_Type::Integer, Token_Type::Subrange));
+				type -> SetLowerRange(GetValue<int>($1));
+				type -> SetUpperRange(GetValue<int>($3));
+				
+				$$ = std::static_pointer_cast<Token>(type);
+			}
 		;
-SubrangeValue: Identifier
-		| V_INT
-		| Signed_Int
+SubrangeValue: V_INT { $$ = $1; }
+		| Signed_Int { $$ = $1; }
+//		| Identifier
 		;
 
 RealType: I_REAL { $$ = Program.GetTypeSymbol("real").first->GetValue(); }

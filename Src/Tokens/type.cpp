@@ -3,13 +3,13 @@
 #include <sstream>
 
 Token_Type::Token_Type(std::string id, Token_Type::P_Type pri, int sec, int size):
-	Token(StringToLower(id), Type, true), Primary(pri), Secondary(sec), size(size)
+	Token(StringToLower(id), Type, true), Primary(pri), Secondary(sec), size(size), range(0,0)
 {
 	CleanSecondary();
 }
 
 Token_Type::Token_Type(const Token_Type &obj):
-	Token(obj), Primary(obj.Primary), Secondary(obj.Secondary), size(obj.size)
+	Token(obj), Primary(obj.Primary), Secondary(obj.Secondary), size(obj.size), range(obj.range), ArrayDimension(obj.ArrayDimension)
 {
 	CleanSecondary();
 }
@@ -20,6 +20,8 @@ Token_Type Token_Type::operator=(const Token_Type &obj){
 		Primary = obj.Primary;
 		Secondary = obj.Secondary;
 		size = obj.size;
+		range = obj.range;
+		ArrayDimension = obj.ArrayDimension;
 	}
 	CleanSecondary();
 	return *this;
@@ -79,7 +81,19 @@ std::string Token_Type::TypeToString(){
 }
 
 bool Token_Type::operator==(const Token_Type &obj) const{
-	return (obj.Primary == Primary && obj.Secondary == Secondary);
+	if (Primary != obj.Primary)
+		return false;
+	//Check pointer
+	if (IsPointer() != obj.IsPointer())
+		return false;
+	
+	//Subrange we can ignore
+		
+	//Check array
+	if (IsArray() != obj.IsArray())
+		return false;
+	
+	return true;
 }
 bool Token_Type::operator!=(const Token_Type &obj) const{
 	return !operator==(obj);
@@ -150,3 +164,27 @@ void Token_Type::CleanSecondary()
 	Secondary = Secondary & 7u;
 }
 
+std::pair< int, int > Token_Type::GetArrayDimensionBound(unsigned int n) const throw(AsmCode) 
+{
+	if (n >= ArrayDimension.size())
+		throw ArrayDimensionOutOfBound;
+	
+	return ArrayDimension.at(n);
+}
+
+unsigned Token_Type::SetArrayDimensionBound(std::pair< int, int > bound) throw(AsmCode)
+{
+	if (bound.first >= bound.second)
+		throw ArrayBoundInvalid;
+	ArrayDimension.push_back(bound);
+	return ArrayDimension.size()-1;
+}
+
+unsigned int Token_Type::GetArrayDimensionSize(unsigned int dimension) const throw(AsmCode)
+{
+	if (dimension >= ArrayDimension.size())
+		throw ArrayDimensionOutOfBound;
+	
+	std::pair<int, int> bounds = ArrayDimension.at(dimension);
+	return bounds.second-bounds.first+1;
+}

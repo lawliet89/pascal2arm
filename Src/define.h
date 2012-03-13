@@ -28,7 +28,12 @@ enum AsmCode{
 	OperatorIncompatible,
 	
 	BoolTypeUndefined,
-	BoolTypeIncorrect
+	BoolTypeIncorrect,
+	
+	ArrayOutofBound,
+	ArrayDimensionOutOfBound,
+	ArrayDimensionMismatch,
+	ArrayBoundInvalid
 };
 
 /**

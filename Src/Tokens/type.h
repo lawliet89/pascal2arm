@@ -1,6 +1,8 @@
 #ifndef TokenTypeH
 #define TokenTypeH
 #include <string>
+#include <vector>
+#include <utility>
 #include "../token.h"
 #include "../define.h"
 
@@ -77,6 +79,21 @@ public:
 
 	std::string TypeToString();
 	
+	//Subrange
+	void SetLowerRange(int val) { range.first = val; }
+	void SetUpperRange (int val) { range.second = val; }
+	
+	int GetLowerRange() const { return range.first; }
+	int GetUpperRange() const { return range.second; }
+	std::pair<int, int> GetSubrange(){ return range; }
+	
+	//Array -- Dimension counts from zero
+	unsigned GetArrayDimensionCount() const { return ArrayDimension.size(); }
+	std::pair<int,int> GetArrayDimensionBound(unsigned n) const throw(AsmCode) ;
+	unsigned SetArrayDimensionBound(std::pair<int,int> bound) throw(AsmCode);		//Returns the dimension
+	std::vector<std::pair<int,int> > GetArrayDimensions(){ return ArrayDimension; }
+	unsigned GetArrayDimensionSize(unsigned dimension) const throw(AsmCode);		//Get the number of elements in a dimension
+	
 	//Comparing operators
 	bool operator==(const Token_Type &obj) const;
 	bool operator!=(const Token_Type &obj) const;
@@ -86,6 +103,10 @@ protected:
 	P_Type Primary;
 	unsigned Secondary;
 	int size;			//No of bytes.
+	
+	//Flags
+	std::pair<int, int> range;
+	std::vector<std::pair<int,int> > ArrayDimension;	//Array dimensions
 };
 
 #endif

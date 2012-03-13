@@ -1,14 +1,14 @@
-program sample6;
+program sample7;
 
-var A, B, C :  integer;
-
-function incr(X: integer):integer;
-   begin
-       incr := X + 1;
-   end;
-
+var index   : integer;
+    myarray : array[1..5] of integer;
+    
 begin
-   A:=1;
-   B:=incr(A);
-   write(B);
+   /*
+   for index := 1 to 5 do
+          myarray[index]:= index;
+
+   for index := 1 to 5 do
+          write(myarray[index]);
+   */
 end.

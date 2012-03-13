@@ -49,6 +49,15 @@ public:
 	void SetDereference(bool val = true){ Dereference = val;}
 	bool GetDereference() const { return Dereference; }
 	
+	void SetIndex(unsigned dimension, int val) throw(AsmCode);
+	void SetHasIndex(bool val=true) { IndexSet = val; }
+	
+	std::vector<int> GetIndex() const { return Index; }
+	int GetIndex(unsigned dimension) const throw(AsmCode);
+	bool HasIndex() const { return IndexSet; }
+	
+	unsigned GetIndexOffset();
+	
 	//Comparing operators
 	bool operator==(const Token_Var &obj) const;
 	bool operator!=(const Token_Var &obj) const;
@@ -63,7 +72,8 @@ protected:
 	
 	//Variable modifiers
 	bool Dereference;		//Only applicable for pointers. Set whether the variable has been dereferenced
-	std::vector<unsigned> Index;			//For an array, the index. 
+	std::vector<int> Index;			//For an array, the index. 
+	bool IndexSet;
 	
 };
 #endif
