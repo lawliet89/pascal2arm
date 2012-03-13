@@ -1,14 +1,13 @@
-program sample7;
+program sample8;
 
-var index   : integer;
-    myarray : array[1..5] of integer;
-    
+type int_pointer =  ^integer;
+
+var  mypointer :int_pointer;
+
 begin
-   
-   for index := 1 to 5 do
-          myarray[index]:= index;
-
-   for index := 1 to 5 do
-          write(myarray[index]);
-   
+   new(mypointer);
+   mypointer^ := 10;
+   write(mypointer^);
+   dispose(mypointer);
 end.
+

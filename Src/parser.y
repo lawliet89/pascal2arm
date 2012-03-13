@@ -251,9 +251,9 @@ VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
 /* Types */
 Type: SimpleType { $$ = $1; }
 	| StringType 
-	| StructuredType 
+	| StructuredType { $$ = $1; }
 	| PointerType   { $$ = $1; }
-	| TypeIdentifier
+	| TypeIdentifier { $$ = $1; }
 	;
 	
 SimpleType: OrdinalType { $$ = $1; }
@@ -278,8 +278,15 @@ EnumTypeList: EnumTypeList ',' IdentifierList
 
 SubrangeType: SubrangeValue OP_DOTDOT SubrangeValue{
 				std::shared_ptr<Token_Type> type(new Token_Type("subrange", Token_Type::Integer, Token_Type::Subrange));
-				type -> SetLowerRange(GetValue<int>($1));
-				type -> SetUpperRange(GetValue<int>($3));
+				int lower = GetValue<int>($1), upper = GetValue<int>($3);
+				
+				if (lower >= upper){
+					HandleError("In a subrange, the lower bound  must be strictly less than the upper bound.", E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+					YYERROR;
+				}
+				
+				type -> SetLowerRange(lower);
+				type -> SetUpperRange(upper);
 				
 				$$ = std::static_pointer_cast<Token>(type);
 			}
@@ -313,24 +320,58 @@ TypeIdentifier: Identifier {
 	}
 };
 
-StructuredType: ArrayType
-		| RecordType
-		| SetType
-		| FileType
+StructuredType: ArrayType	{ $$ = $1; }
+		| RecordType	//Not supported
+		| SetType		//Not supported
+		| FileType		//Not supported
 		;
-ArrayType: Packness K_ARRAY ArraySize K_OF Type
+ArrayType: Packness K_ARRAY ArraySize K_OF Type {
+			
+		}
 	;
 
-Packness: K_PACKED		/* Maybe not implementing at all */
+Packness: K_PACKED		/* We are going to ignore this */
 		| 
 		;
 
-ArraySize: '[' SubRangeList ']'
+ArraySize: '[' SubRangeList ']' { $$ = $2; }
 	|
 	;
 
-SubRangeList: SubRangeList ',' SubrangeType
-		| SubrangeType
+SubRangeList: SubRangeList ',' SubrangeType{
+			try{
+				//Get $3 bounds and merge them into $1
+				std::shared_ptr<Token_Type> list, single;
+				list = std::static_pointer_cast<Token_Type>($1);
+				single = std::static_pointer_cast<Token_Type>($3);
+
+				list -> AddArrayDimensionBound(single -> GetArrayDimensionBound(0));
+				$$ = std::static_pointer_cast<Token>(list);
+			}
+			catch (AsmCode e){
+				std::stringstream msg;
+				msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+			}
+
+		}
+		| SubrangeType {
+			try{
+				std::shared_ptr<Token_Type> type(new Token_Type("array", Token_Type::Integer));	//We just assume it's integer for now
+				type -> SetArray();
+				
+				std::shared_ptr<Token_Type> subrange = std::static_pointer_cast<Token_Type>($1);
+				std::pair<int, int> bound(subrange -> GetLowerRange(), subrange -> GetUpperRange());
+				type -> AddArrayDimensionBound(bound);
+				
+				$$ = std::static_pointer_cast<Token>(type);
+			}
+			catch (AsmCode e){
+				std::stringstream msg;
+				msg << "An unknown error of code " << (int) e << " has occurred. This is probably a parser bug.";
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+			}
+		}
 		;
 
 RecordType: Packness K_RECORD FieldList K_END

@@ -172,7 +172,7 @@ std::pair< int, int > Token_Type::GetArrayDimensionBound(unsigned int n) const t
 	return ArrayDimension.at(n);
 }
 
-unsigned Token_Type::SetArrayDimensionBound(std::pair< int, int > bound) throw(AsmCode)
+unsigned Token_Type::AddArrayDimensionBound(std::pair< int, int > bound) throw(AsmCode)
 {
 	if (bound.first >= bound.second)
 		throw ArrayBoundInvalid;

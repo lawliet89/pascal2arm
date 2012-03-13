@@ -90,7 +90,7 @@ public:
 	//Array -- Dimension counts from zero
 	unsigned GetArrayDimensionCount() const { return ArrayDimension.size(); }
 	std::pair<int,int> GetArrayDimensionBound(unsigned n) const throw(AsmCode) ;
-	unsigned SetArrayDimensionBound(std::pair<int,int> bound) throw(AsmCode);		//Returns the dimension
+	unsigned AddArrayDimensionBound(std::pair<int,int> bound) throw(AsmCode);		//Returns the dimension
 	std::vector<std::pair<int,int> > GetArrayDimensions(){ return ArrayDimension; }
 	unsigned GetArrayDimensionSize(unsigned dimension) const throw(AsmCode);		//Get the number of elements in a dimension
 	
