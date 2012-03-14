@@ -48,8 +48,6 @@ public:
 	//OCCF
 	AsmBlock(Type_T type,std::shared_ptr<Token> tok=nullptr);		//TODO associate with a line
 	~AsmBlock(){}
-	AsmBlock (const AsmBlock &obj);
-	AsmBlock operator=(const AsmBlock &obj);
 	
 	//Assign one symbol to the list
 	void SetSymbol(std::shared_ptr<Symbol>) throw(AsmCode);		//Set one symbol
@@ -144,6 +142,10 @@ protected:
 	std::vector<std::shared_ptr<AsmLabel> > WhileEndLabelStack;
 	
 	unsigned InLoopCount;
+	
+private:
+	AsmBlock (const AsmBlock &obj);
+	AsmBlock operator=(const AsmBlock &obj);
 };
 
 /**

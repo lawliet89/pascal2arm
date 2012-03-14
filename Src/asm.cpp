@@ -30,20 +30,13 @@ AsmFile::~AsmFile(){
 }
 
 AsmFile::AsmFile(const AsmFile &obj): 
-	CodeLines(obj.CodeLines),
-	DataLines(obj.DataLines),
-	FunctionLines(obj.FunctionLines)	//TODO Copy constructor
+	
 {
 	//operator=(obj);
 }
 
 AsmFile AsmFile::operator=(const AsmFile &obj){
-	if (&obj != this){		//TODO Assignment operator - make these private?
-		//Vector will do deep copying for us.
-		CodeLines = obj.CodeLines;
-		DataLines = obj.DataLines;
-		FunctionLines = obj.FunctionLines;	
-	}
+	//Private
 	return *this;
 }
 
