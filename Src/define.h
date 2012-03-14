@@ -67,7 +67,8 @@ enum T_Type{	//for token type
 	Factor,
 	Operator,
 	FormalParamList,
-	PointerDereference
+	PointerDereference,
+	ArrayIndices
 };
 
 /** Operator Type **/

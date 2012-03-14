@@ -36,6 +36,11 @@ void Token_Term::CheckType() throw(AsmCode){
 			Type.reset(new Token_Type(*Type));		//clone
 			Type -> SetPointer(false);
 		}
+		//Arrays
+		if (Factor -> GetForm() == Token_Factor::VarRef && Factor -> GetTokenDerived<Token_Var>() -> GetIndexExpr() != nullptr){
+			Type.reset(new Token_Type(*Type));
+			Type -> SetArray(false);
+		}
 	}
 	else{
 		//Check for Type compatibility
@@ -44,14 +49,19 @@ void Token_Term::CheckType() throw(AsmCode){
 		LHS = Term -> GetType();
 		RHS = Factor -> GetType();
 		
-		//Check 
+		//Check for pointer
 		if (Factor -> GetForm() == Token_Factor::VarRef && Factor -> GetTokenDerived<Token_Var>() -> GetDereference()){
 			//Clone type for checking purposes and setting
 			RHS.reset(new Token_Type(*RHS));
 			RHS -> SetPointer(false);
 		}
+		//Arrays
+		if (Factor -> GetForm() == Token_Factor::VarRef && Factor -> GetTokenDerived<Token_Var>() -> GetIndexExpr() != nullptr){
+			RHS.reset(new Token_Type(*RHS));
+			RHS -> SetArray(false);
+		}
 		
-		//For now simple equivalence - TODO
+		//For now simple equivalence and must not have secondary types
 		if (*LHS != *RHS)
 			throw TypeIncompatible;
 		

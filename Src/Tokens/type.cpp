@@ -75,7 +75,7 @@ std::string Token_Type::TypeToString(){
 			str << "unknown";
 	}
 	if (IsArray()){
-		str << " array of size ";		//TODO
+		str << " array with " << GetArrayDimensionCount() << " dimensions";		//TODO
 	}
 	return str.str();
 }
@@ -187,4 +187,17 @@ unsigned int Token_Type::GetArrayDimensionSize(unsigned int dimension) const thr
 	
 	std::pair<int, int> bounds = ArrayDimension.at(dimension);
 	return bounds.second-bounds.first+1;
+}
+
+unsigned int Token_Type::GetArraySize() 
+{
+	unsigned result=1;
+	std::vector<std::pair<int,int> >::iterator it = ArrayDimension.begin();
+	
+	for (; it < ArrayDimension.end(); it++){
+		std::pair<int,int> bounds = *it;
+		result *= (bounds.second-bounds.first+1);
+	}
+	
+	return result;
 }

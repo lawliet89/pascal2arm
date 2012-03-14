@@ -58,6 +58,7 @@ public:
 	//Getters
 	P_Type GetPrimary() const{ return Primary; }
 	unsigned GetSecondary() const { return Secondary; }
+	
 	bool IsSubrange() const { return Secondary & Subrange; }
 	bool IsArray() const { return Secondary & Array; }
 	bool IsPointer() const { return Secondary & Pointer; }
@@ -68,10 +69,12 @@ public:
 	int GetSize() const { return size; }
 	
 	//Setters
+	void SetPrimary(P_Type val){ Primary = val; }
 	void SetArray(bool val=true);
 	void SetPointer(bool val=true);
 	void SetSubrange(bool val=true);
 	void CleanSecondary();
+	void MergeSecondary(unsigned val) { Secondary = Secondary | val; CleanSecondary(); }
 	
 	//Default value for Type
 	virtual std::string AsmValue() { return AsmDefaultValue(); }
@@ -93,6 +96,7 @@ public:
 	unsigned AddArrayDimensionBound(std::pair<int,int> bound) throw(AsmCode);		//Returns the dimension
 	std::vector<std::pair<int,int> > GetArrayDimensions(){ return ArrayDimension; }
 	unsigned GetArrayDimensionSize(unsigned dimension) const throw(AsmCode);		//Get the number of elements in a dimension
+	unsigned GetArraySize();
 	
 	//Comparing operators
 	bool operator==(const Token_Type &obj) const;

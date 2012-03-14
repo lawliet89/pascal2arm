@@ -194,6 +194,7 @@ public:
 		
 		//Psuedo and directives
 		ADR=900,
+		ALIGN,
 		AREA, //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Cacbjgcc.html
 		END, //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Babcfbje.html
 		ENTRY, //http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Cacbbebi.html
@@ -204,6 +205,7 @@ public:
 		DCFD,	//Double precision - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Caccijca.html
 		DCFS,	//Single - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Cacdagie.html
 		EQU, 	//http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0041c/Caccddic.html
+		FILL,	 //http://www.keil.com/support/man/docs/armasmref/armasmref_babchded.htm
 		NOP,
 		//INCLUDE	?
 		
@@ -220,7 +222,8 @@ public:
 		BLOCKPOP,		//Pop a block -- used to signify end of a function  -- Rd should be the SYMBOL of the block.
 		FUNCALL,		//Rd is the return value, Rm, Rn, Ro supported i,e, max 3 args TODO for more
 		NEW,
-		DISPOSE
+		DISPOSE,
+		LOADARRAY		//Rm is the array symbol, Rn is the offset
 	};
 	enum CC_T{	//Condition Code
 		EQ, CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
@@ -540,6 +543,7 @@ public:
 	
 	/** Line Related Methods **/
 	std::shared_ptr<AsmLine> CreateDataLine(std::shared_ptr<AsmLabel> Label, std::string value);	//Pass method with a completed label
+	std::shared_ptr<AsmLine> CreateDataArrayLine(std::shared_ptr<AsmLabel> Label, unsigned count);	//Pass method with a completed label
 	std::shared_ptr<AsmLine> CreateCodeLine(AsmLine::OpType_T, AsmLine::OpCode_T);		//Create an empty line and add it to list
 	std::pair<std::shared_ptr<AsmLine>, std::list<std::shared_ptr<AsmLine> >::iterator> CreateCodeLineIt(AsmLine::OpType_T, AsmLine::OpCode_T);	
 	std::shared_ptr<AsmLine> CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr);		//For assignment statements
@@ -569,6 +573,8 @@ public:
 	void CreateWriteLine(std::shared_ptr<Token_ExprList> list);		//Only supports ONE expression 
 	void CreateNewProcLine(std::shared_ptr<Token_ExprList> list);
 	void CreateDisposeProcLine(std::shared_ptr<Token_ExprList> list);
+
+	std::shared_ptr<Token_Expression> CreateArrayOffsetExpr(std::vector<std::shared_ptr<Token_Expression> > list, std::shared_ptr<Token_Type> type) throw(AsmCode);
 	
 	/** Compiler Debug Methods **/
 	void PrintSymbols();
@@ -591,6 +597,8 @@ protected:
 	std::vector<std::shared_ptr<AsmBlock> > BlockStack;
 	std::shared_ptr<AsmBlock> GlobalBlock;
 	
+	//Helper
+	std::shared_ptr<Token_Expression> _CreateArrayOffsetExpr(std::vector<std::shared_ptr<Token_Expression> > list, std::shared_ptr<Token_Type> type, unsigned i = 0) throw(AsmCode);
 
 };
 #endif

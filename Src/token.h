@@ -30,6 +30,7 @@ public:
 	virtual std::string GetStrValue() const { return StrValue; }
 	virtual const char* GetCStrValue() const { return StrValue.c_str(); }
 	T_Type GetTokenType() const { return TokenType; }
+	void SetTokenType(T_Type type) { TokenType = type; }
 	
 	//Return type is set to void * so that derived classes can override this
 	//Use the utility function DereferenceVoidPtr<T> to dereference this

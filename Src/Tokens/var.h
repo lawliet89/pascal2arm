@@ -10,6 +10,8 @@
 
 //Forward declaration
 class AsmFile;
+class AsmOp;
+class Token_Expression;
 
 class Token_Var: public Token{
 public:
@@ -49,14 +51,11 @@ public:
 	void SetDereference(bool val = true){ Dereference = val;}
 	bool GetDereference() const { return Dereference; }
 	
-	void SetIndex(unsigned dimension, int val) throw(AsmCode);
-	void SetHasIndex(bool val=true) { IndexSet = val; }
+	void SetIndexExpr(std::shared_ptr<Token_Expression>  IndexExpr) { this -> IndexExpr = IndexExpr; }
+	std::shared_ptr<Token_Expression>  GetIndexExpr() { return IndexExpr; }
 	
-	std::vector<int> GetIndex() const { return Index; }
-	int GetIndex(unsigned dimension) const throw(AsmCode);
-	bool HasIndex() const { return IndexSet; }
-	
-	unsigned GetIndexOffset();
+	void SetIndexFlat(std::shared_ptr<AsmOp> val) { IndexFlat = val; }
+	std::shared_ptr<AsmOp> GetIndexFlat() { return IndexFlat; }
 	
 	//Comparing operators
 	bool operator==(const Token_Var &obj) const;
@@ -72,8 +71,8 @@ protected:
 	
 	//Variable modifiers
 	bool Dereference;		//Only applicable for pointers. Set whether the variable has been dereferenced
-	std::vector<int> Index;			//For an array, the index. 
-	bool IndexSet;
+	std::shared_ptr<Token_Expression> IndexExpr;		//Before flattening
+	std::shared_ptr<AsmOp> IndexFlat;				//After flattening
 	
 };
 #endif

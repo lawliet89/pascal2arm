@@ -225,8 +225,8 @@ VarDeclaration:	IdentifierList ':' Type '=' Expression ';'{
 			
 			if (Program.TypeCompatibilityCheck(expr->GetType(), type) != TypeCompatible){
 				std::stringstream msg;
-				msg << "Variable(s) of type '" << expr->GetType()-> TypeToString();
-				msg << "' cannot be initialised with expressions of type '" << type -> TypeToString() << "'"; 
+				msg << "Variable(s) of type '" << type-> TypeToString();
+				msg << "' cannot be initialised with expressions of type '" << expr -> GetType() -> TypeToString() << "'"; 
 				
 				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
 				YYERROR;
@@ -264,7 +264,7 @@ OrdinalType: I_INTEGER	{ $$ = Program.GetTypeSymbol("integer").first->GetValue()
 	| I_CHAR { $$ = Program.GetTypeSymbol("char").first->GetValue(); }
 	| I_BOOLEAN { $$ = Program.GetTypeSymbol("boolean").first->GetValue(); }
 	| EnumType 
-	| SubrangeType
+	| SubrangeType { $$ = $1; }		//NOTE: Values for subrange is not checked. Impossible to check during run time
 	;
 
 EnumType:'(' EnumTypeList ')'
@@ -326,11 +326,17 @@ StructuredType: ArrayType	{ $$ = $1; }
 		| FileType		//Not supported
 		;
 ArrayType: Packness K_ARRAY ArraySize K_OF Type {
-			
+				std::shared_ptr<Token_Type> arrayType = std::static_pointer_cast<Token_Type>($3);
+				std::shared_ptr<Token_Type> dataType = std::static_pointer_cast<Token_Type>($5);
+				
+				arrayType -> SetPrimary(dataType -> GetPrimary());
+				arrayType -> MergeSecondary(dataType -> GetSecondary());
+				
+				$$ = std::static_pointer_cast<Token>(arrayType);
 		}
 	;
 
-Packness: K_PACKED		/* We are going to ignore this */
+Packness: K_PACKED		//Not supported
 		| 
 		;
 
@@ -439,7 +445,15 @@ ParamDeclaration: ValueParam { $$ = $1; }
 		;
 
 ValueParam:	IdentifierList ':' Type {
-				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1), std::static_pointer_cast<Token_Type>($3));
+				std::shared_ptr<Token_Type> type = std::static_pointer_cast<Token_Type>($3);
+				if (type -> IsArray()){
+					std::stringstream msg;
+					msg << "Procedure/Function parameters cannot be of type array.";			
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $3 -> GetLine(), $3 -> GetColumn());
+					YYERROR;
+				}
+				
+				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($1), type);
 				std::shared_ptr<Token_FormalParam> param(new Token_FormalParam());
 				param->AddParams(vars);
 				
@@ -449,7 +463,14 @@ ValueParam:	IdentifierList ':' Type {
 	/*	| Identifier ':' Type '=' DefaultParamValue  */
 		;
 VarParam: K_VAR IdentifierList ':' Type {
-				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($2), std::static_pointer_cast<Token_Type>($4));
+				std::shared_ptr<Token_Type> type = std::static_pointer_cast<Token_Type>($4);
+				if (type -> IsArray()){
+					std::stringstream msg;
+					msg << "Procedure/Function parameters cannot be of type array.";			
+					HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $4 -> GetLine(), $4 -> GetColumn());
+					YYERROR;
+				}
+				std::vector<std::shared_ptr<Token_Var> > vars = Program.CreateVarSymbolsFromList(std::static_pointer_cast<Token_IDList>($2), type);
 				std::shared_ptr<Token_FormalParam> param(new Token_FormalParam());
 				param->AddParams(vars, true, true);
 				
@@ -857,7 +878,34 @@ VarRef: /*SimpleVarReference VarQualifier | */
 						FactorToken = std::static_pointer_cast<Token>(var);
 						FactorType = var -> GetVarType();
 					}
-					//TODO Arrays
+					else if (QualifierType == ArrayIndices){
+						//Arrays
+						std::vector<std::shared_ptr<Token_Expression> > list = std::static_pointer_cast<Token_ExprList>($2) -> GetList();
+						std::shared_ptr<Token_Var> var( new Token_Var( * ( sym.first -> GetTokenDerived<Token_Var>() ) ) );
+						std::shared_ptr<Token_Type> varType = var -> GetVarType();
+						//Check that no of expressions = no of dimensions
+						if (list.size() != varType -> GetArrayDimensionCount()){
+							std::stringstream msg2;
+							msg2 << "Array  " << $1 -> GetStrValue() << "' is has " << varType -> GetArrayDimensionCount() << " dimensions but " << list.size() << " provided.";
+							HandleError(msg2.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+							YYERROR;
+						}
+						
+						//Based on expression list, we have to create one factor that contains the sum of all of these. 
+						std::shared_ptr<Token_Expression> IndexExpr = Program.CreateArrayOffsetExpr(list, varType);
+										
+						//Clone the symbol
+						std::shared_ptr<Symbol> sym(new Symbol( * (var -> GetSymbol()) ) );
+						
+						//Assignment
+						sym -> SetToken(std::static_pointer_cast<Token>(var));
+						var -> SetSymbol(sym);
+						
+						var -> SetIndexExpr(IndexExpr);
+						
+						FactorToken = std::static_pointer_cast<Token>(var);
+						FactorType = var -> GetVarType();
+					}
 					
 					$$.reset(new Token_Factor(Token_Factor::VarRef, FactorToken, FactorType));
 				}
@@ -865,6 +913,11 @@ VarRef: /*SimpleVarReference VarQualifier | */
 					if (e == SymbolNotExists){
 						std::stringstream msg;
 						msg << "Unknown identifier '" << $1 -> GetStrValue() << "'.";
+						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
+					}
+					else if (e == ArrayDimensionOutOfBound){
+						std::stringstream msg;
+						msg << "More dimensions than defined in the variable type was accessed.";
 						HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1->GetLine(), $1->GetColumn());
 					}
 					else{
@@ -885,18 +938,45 @@ SimpleVarReference: Identifier { $$ = $1; }
 		;*/
 
 VarQualifier: FieldSpecifier
-		| Index
+		| Index { $$ = $1; $$ -> SetTokenType(ArrayIndices); }
 		| '^' { $$.reset(new Token("^", PointerDereference, true)); }
 		;
 
 FieldSpecifier: '.' Identifier
 		;
 
-Index: '[' IndexList ']'
+Index: '[' IndexList ']' { 
+							$$ = $2;
+						}
 	;
 
-IndexList: IndexList ',' Expression
-	| Expression
+IndexList: IndexList ',' Expression {
+							//Check that expression is integer PURELY
+							std::shared_ptr<Token_Expression> expr = std::static_pointer_cast<Token_Expression>($3);
+							std::shared_ptr<Token_Type> type = expr -> GetType();
+							if (type -> GetPrimary() != Token_Type::Integer || type->GetSecondary() != 0){
+								std::stringstream msg;
+								msg << "Array index must be an integer expression - " << type -> TypeToString() << " provided.";
+								HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $3 -> GetLine(), $3 -> GetColumn());
+								YYERROR;
+							}
+							
+							$$ = $1;
+							std::static_pointer_cast<Token_ExprList>($$) -> AddExpression(expr);
+					}
+	| Expression {
+			//Check that expression is integer PURELY
+			std::shared_ptr<Token_Expression> expr = std::static_pointer_cast<Token_Expression>($1);
+			std::shared_ptr<Token_Type> type = expr -> GetType();
+			if (type -> GetPrimary() != Token_Type::Integer || type->GetSecondary() != 0){
+				std::stringstream msg;
+				msg << "Array index must be an integer expression - " << type -> TypeToString() << " provided.";
+				HandleError(msg.str().c_str(), E_PARSE, E_ERROR, $1 -> GetLine(), $1 -> GetColumn());
+				YYERROR;
+			}
+			
+			$$.reset(new Token_ExprList(expr));
+	}
 	;
 
 UnsignedConstant: V_REAL	{ $$.reset(new Token_Real(GetValue<double>(yylval), V_Real)); }
@@ -1099,14 +1179,18 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 			std::shared_ptr<Token_Var> var = std::static_pointer_cast<Token_Factor>($1) -> GetTokenDerived<Token_Var>();
 			std::shared_ptr<Token_Expression> RHS = std::static_pointer_cast<Token_Expression>($3);
 			std::shared_ptr<Token_Type> LHS_T, RHS_T = RHS -> GetType();
-			
+			LHS_T = var -> GetVarType();
 			//Pointer dereference
 			if (var -> GetDereference()){
 				//Set LHS_T
-				LHS_T.reset(new Token_Type( *(var -> GetVarType()) ));
+				LHS_T.reset(new Token_Type( *LHS_T ));
 				LHS_T -> SetPointer(false);
 			}
-			
+			else if (var -> GetIndexExpr() != nullptr){
+				//Set LHS_T
+				LHS_T.reset(new Token_Type( *LHS_T ));
+				LHS_T -> SetArray(false);
+			}
 			if (Program.TypeCompatibilityCheck(LHS_T, RHS_T) != TypeCompatible){
 				std::stringstream msg;
 				msg << "Incompatible Types: Variable '"<< $1 -> GetStrValue() << "' has type '" << LHS_T -> TypeToString();
