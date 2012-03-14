@@ -793,7 +793,8 @@ std::string AsmFile::GenerateCode(){
 		else if (OpCode == AsmLine::FUNCALL){			
 			//Force save the variable in R4
 			//output << Reg -> SaveRegister(4);
-			
+			//Since we are in a function we are going to LDMED
+			CurrentOutput << "\tSTMED R13! {R0-R2, R4}\n";
 			//Force the params into their respective positions
 			if (Rm != nullptr)
 				CurrentOutput << Reg->ForceVar(Rm -> GetSymbol(),0, true, false);
@@ -804,6 +805,32 @@ std::string AsmFile::GenerateCode(){
 			if (Rd != nullptr)
 				//Force Rd to be R4
 				output << Reg->ForceVar(Rd -> GetSymbol(),4, false, true, true, false);
+			
+			//We are going to force save them and evict them
+			Reg -> SaveRegister(0);
+			Reg -> SaveRegister(1);
+			Reg -> SaveRegister(2);
+			Reg -> SaveRegister(4);
+			
+			//Put the original parameters back
+			std::shared_ptr<Symbol> sym = GetCurrentBlock() -> GetBlockSymbol();
+			std::shared_ptr<Token_Func> func = sym->GetTokenDerived<Token_Func>();
+			std::vector<Token_FormalParam::Param_T> params = func -> GetParams()->GetParams();
+			
+			std::vector<Token_FormalParam::Param_T>::iterator paramIt;
+			unsigned i = 0;
+			
+			for (paramIt = params.begin(); paramIt < params.end(); paramIt++, i++){
+				Token_FormalParam::Param_T param = *paramIt;
+				Reg -> SetSymbol(i, param.Variable->GetSymbol());
+			}
+			
+			if (sym -> GetType() == Symbol::Function){
+				//Return variable - in the last used for now
+				Reg -> SetSymbol(4, sym);
+			}			
+			CurrentOutput << "\tLDMED R13! {R0-R2, R4}\n";
+			
 			
 			continue;
 		}
