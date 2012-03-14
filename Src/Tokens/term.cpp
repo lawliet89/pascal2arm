@@ -65,6 +65,9 @@ void Token_Term::CheckType() throw(AsmCode){
 		if (*LHS != *RHS)
 			throw TypeIncompatible;
 		
+		if (LHS -> IsPointer() || RHS -> IsPointer() || LHS -> IsArray() || RHS -> IsArray())
+			throw TypeIncompatible;
+		
 		//Simple operator check - TODO
 		if ((int) Operator < (int) Op_T::Multiply)
 			throw OperatorIncompatible;

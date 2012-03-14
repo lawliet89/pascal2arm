@@ -51,6 +51,8 @@ void Token_SimExpression::CheckType() throw(AsmCode){
 		//For now simple equivalence - TODO
 		if (*LHS != *RHS)
 			throw TypeIncompatible;
+		if (LHS -> IsPointer() || RHS -> IsPointer() || LHS -> IsArray() || RHS -> IsArray())
+			throw TypeIncompatible;
 		
 		//Simple operator check - TODO
 		if ((int) Operator < (int) Op_T::Add || (int) Operator > (int) Op_T::Xor)
@@ -158,7 +160,8 @@ void Token_Expression::CheckType() throw(AsmCode){
 		//For now simple equivalence - TODO
 		if (*LHS != *RHS)
 			throw TypeIncompatible;
-		
+		if (LHS -> IsPointer() || RHS -> IsPointer() || LHS -> IsArray() || RHS -> IsArray())
+			throw TypeIncompatible;		
 		//Simple operator check - TODO
 		//if ((int) Operator > (int) Op_T::In)
 		//	throw OperatorIncompatible;
