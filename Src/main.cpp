@@ -41,6 +41,6 @@ int main(int argc, char **argv){
 	std::cout << "Syntax okay" << std::endl;*/
 	
 	OUTPUT_FILE << OUTPUT.str();
-	
+	std::cout << "Compilation Complete.\n";
 	return 0;
 }

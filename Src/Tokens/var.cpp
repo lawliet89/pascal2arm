@@ -1,13 +1,13 @@
 #include "var.h"
 
 Token_Var::Token_Var(std::string id, std::shared_ptr<Token_Type> type, bool constant, bool temp):
-	Token(StringToLower(id), Variable, constant), Type(type), Temp(temp), Dereference(false)
+	Token(StringToLower(id), Variable, constant), Type(type), Temp(temp), Dereference(false), safe(false)
 {
 	//...
 }
 
 Token_Var::Token_Var(const Token_Var &obj):
-	Token(obj), value(obj.value), Type(obj.Type), Sym(obj.Sym), Temp(obj.Temp), Dereference(obj.Dereference), IndexExpr(obj.IndexExpr), IndexFlat(obj.IndexFlat)
+	Token(obj), value(obj.value), Type(obj.Type), Sym(obj.Sym), Temp(obj.Temp), Dereference(obj.Dereference), IndexExpr(obj.IndexExpr), IndexFlat(obj.IndexFlat), safe(obj.safe)
 {
 }
 
@@ -21,6 +21,7 @@ Token_Var Token_Var::operator=(const Token_Var &obj){
 		Dereference = obj.Dereference;
 		IndexExpr = obj.IndexExpr;
 		IndexFlat = obj.IndexFlat;
+		safe = obj.safe;
 	}
 	
 	return *this;
@@ -42,6 +43,8 @@ bool Token_Var::operator==(const Token_Var &obj) const{
 	//Check that both have dereference flags
 	if (Dereference != obj.Dereference)
 		return false;
+	
+	//If both are arrays then we will see if 
 	
 	return true;
 }

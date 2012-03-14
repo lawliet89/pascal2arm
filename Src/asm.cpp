@@ -424,14 +424,20 @@ std::string AsmFile::GenerateCode(){
 			AsmOp::Type_T RdType = Rd -> GetType();
 
 			if (RdType == AsmOp::Register){
-				output << Reg->ForceVar(Rd -> GetSymbol(),0, true, false);
+				output << Reg->SaveRegister(0);
+				Reg->EvictRegister(0);
+				Reg->IncrementCounter();
+				RdOutput =  Reg-> GetVarRead(Rd -> GetSymbol());
+				output << RdOutput.second;
+				output << "\tMOV R0, ";
+				output << RdOutput.first << "; Moving register temporarily\n";
 			}
 			else if (RdType == AsmOp::Immediate){
 				output << Reg->SaveRegister(0);
 				Reg->EvictRegister(0);
 				Reg->IncrementCounter();
 				output << "\tMOV R0, ";
-				output << Rd -> GetImmediate() << "\n";
+				output << Rd -> GetImmediate() << "; Moving immediate temporarily\n";
 			}
 			if (OpCode == AsmLine::WRITE_INT)
 				output << "\tBL PRINTR0_ ;Print integer\n";
@@ -464,6 +470,24 @@ std::string AsmFile::GenerateCode(){
 				//Force Rd to be R4
 				output << Reg->ForceVar(Rd -> GetSymbol(),4, false, true, true, false);
 			
+			continue;
+		}
+		else if (OpCode == AsmLine::MAKEPERMANENT){
+			std::pair<std::shared_ptr<Symbol>, unsigned> result = Reg -> FindSymbol(Rd -> GetSymbol());
+			Reg -> SetPermanent(result.second);
+			continue;
+		}
+		else if (OpCode == AsmLine::MAKENONPERMANENT){
+			std::pair<std::shared_ptr<Symbol>, unsigned> result = Reg -> FindSymbol(Rd -> GetSymbol());
+			Reg -> SetPermanent(result.second, false);
+			continue;
+		}
+		else if (OpCode == AsmLine::FORCESAVELOOP){
+			output << Reg->SaveAllRegisters(true);
+			continue;
+		}
+		else if (OpCode == AsmLine::FORCESAVE){
+			output << Reg->SaveAllRegisters();
 			continue;
 		}
 		/*else if (OpCode == AsmLine::LOADARRAY){
@@ -785,10 +809,12 @@ std::string AsmFile::GenerateCode(){
 		else if (OpCode == AsmLine::NEW){
 			output << Reg->ForceVar(Rd -> GetSymbol(),0, false, true, true, false);
 			output << "\tBL NEW";
+			continue;
 		}
 		else if (OpCode == AsmLine::DISPOSE){
 			output << Reg->ForceVar(Rd -> GetSymbol(),0, false, true, true, false);
 			output << "\tBL DISPOSE";
+			continue;
 		}
 		else if (OpCode == AsmLine::FUNCALL){			
 			//Force save the variable in R4
@@ -834,7 +860,24 @@ std::string AsmFile::GenerateCode(){
 			
 			continue;
 		}
-		
+		else if (OpCode == AsmLine::MAKEPERMANENT){
+			std::pair<std::shared_ptr<Symbol>, unsigned> result = Reg -> FindSymbol(Rd -> GetSymbol());
+			Reg -> SetPermanent(result.second);
+			continue;
+		}
+		else if (OpCode == AsmLine::MAKENONPERMANENT){
+			std::pair<std::shared_ptr<Symbol>, unsigned> result = Reg -> FindSymbol(Rd -> GetSymbol());
+			Reg -> SetPermanent(result.second, false);
+			continue;
+		}
+		else if (OpCode == AsmLine::FORCESAVELOOP){
+			CurrentOutput << Reg->SaveAllRegisters(true);
+			continue;
+		}
+		else if (OpCode == AsmLine::FORCESAVE){
+			CurrentOutput << Reg->SaveAllRegisters();
+			continue;
+		}
 		/** Rm **/ //TODO
 		if (Rm != nullptr){
 			//Check its type - Register, Literal, LSL, LSR, ASR, ROR, RRX
@@ -996,12 +1039,24 @@ std::pair<std::shared_ptr<AsmLine>, std::list<std::shared_ptr<AsmLine> >::iterat
 	return result;
 }
 
-std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr){
+std::shared_ptr<AsmLine> AsmFile::CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr, bool safe){
 	std::shared_ptr<AsmLine> line;
 	
 	std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
-	Rd -> SetSymbol(sym);
 	
+	
+	
+	if (safe){
+		//Clone variable
+		sym.reset(new Symbol(*sym));
+		std::shared_ptr<Token_Var> var = sym -> GetTokenDerived<Token_Var>();
+		var.reset(new Token_Var(*var));
+		var -> SetSafe();
+		sym -> SetToken(std::static_pointer_cast<Token>(var));
+		var -> SetSymbol(sym);
+	}
+	
+	Rd -> SetSymbol(sym);
 	line = FlattenExpression(expr, Rd);
 	
 	if (sym -> GetType() == Symbol::Function){
@@ -1821,7 +1876,7 @@ std::shared_ptr<AsmOp> AsmFile::FlattenFactor(std::shared_ptr<Token_Factor> fact
 		if (var -> GetIndexExpr() != nullptr){
 			//Create a new OP that will hold an offset value
 			std::shared_ptr<AsmOp> tempOp (new AsmOp(AsmOp::Register, AsmOp::Rd));
-			std::shared_ptr<Symbol> temp = CreateTempVar(factor -> GetType());		//TODO - Check for strict simplicity to reduce temp var usage
+			std::shared_ptr<Symbol> temp = CreateTempVar(GetTypeSymbol("integer").first->GetTokenDerived<Token_Type>());		//TODO - Check for strict simplicity to reduce temp var usage
 			tempOp -> SetSymbol(temp);
 			
 			tempOp = FlattenExpression(var -> GetIndexExpr(), tempOp) -> GetRd();
@@ -1992,15 +2047,38 @@ std::shared_ptr<Token_Expression> AsmFile::CreateArrayOffsetExpr(std::vector<std
 	std::shared_ptr<Token_Term> Four( new Token_Term(std::shared_ptr<Token_Factor>( new Token_Factor(Token_Factor::Constant, four, integer))));
 		
 	if (type -> GetArrayDimensionCount() == 1){
-		//Wrap expression around a factor
-		std::shared_ptr<Token_Factor> factor(new Token_Factor( Token_Factor::Expression, std::static_pointer_cast<Token>(list[0]), integer));
-		//Just multiply the expression by four
-		std::shared_ptr<Token_Term> product( new Token_Term( factor, Multiply, Four));
+		//See if the expression is strictly simple
+		std::shared_ptr<Token_Factor> simple = list[0] -> GetSimple();
 		
-		std::shared_ptr<Token_SimExpression> simexpr(new Token_SimExpression(product));
-		std::shared_ptr<Token_Expression> expr(new Token_Expression(simexpr));
-		
-		return expr;
+		if (simple != nullptr){
+			std::shared_ptr<Token_Factor> factor;
+			Token_Factor::Form_T form = simple -> GetForm();
+			std::shared_ptr<Token_Term> term;
+			if (form == Token_Factor::Constant){
+				std::shared_ptr<Token_Int> product(new Token_Int( simple -> GetTokenDerived<Token_Int>() -> GetInt() * 4, V_Int));
+				factor.reset(new Token_Factor( Token_Factor::Constant, product , integer));
+				term.reset( new Token_Term( factor));
+			}
+			else if (form == Token_Factor::VarRef){
+				term.reset( new Token_Term( simple, Multiply, Four));
+			}
+			
+			
+			std::shared_ptr<Token_SimExpression> simexpr(new Token_SimExpression(term));
+			std::shared_ptr<Token_Expression> expr(new Token_Expression(simexpr));
+			return expr;
+		}
+		else{
+			//Wrap expression around a factor
+			std::shared_ptr<Token_Factor> factor(new Token_Factor( Token_Factor::Expression, std::static_pointer_cast<Token>(list[0]), integer));
+			//Just multiply the expression by four
+			std::shared_ptr<Token_Term> product( new Token_Term( factor, Multiply, Four));
+			
+			std::shared_ptr<Token_SimExpression> simexpr(new Token_SimExpression(product));
+			std::shared_ptr<Token_Expression> expr(new Token_Expression(simexpr));
+			
+			return expr;
+		}
 	}
 	else{
 		//Wrap expression around a factor
@@ -2439,7 +2517,7 @@ bool AsmBlock::operator!=(const AsmBlock& obj) const
 
 /** AsmRegisters **/
 AsmRegister::AsmRegister(bool IsGlobal) : 
-	Registers(AsmUsableReg+1, AsmRegister::State_T(IsGlobal)), counter(0), InitialUse(0),  InLoop(false)
+	Registers(AsmUsableReg+1, AsmRegister::State_T(IsGlobal)), counter(0), InitialUse(1),  InLoop(false)
 {
 
 }
@@ -2521,8 +2599,13 @@ bool AsmRegister::GetPermanent(unsigned ID) const{
 std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_ptr<Symbol> sym, bool load){
 	std::pair<unsigned, std::string> ToReturn;
 	std::stringstream output;
+
+	
 	if (InitialUse <= AsmUsableReg){
 		//Okay easy
+		if (sym -> GetTokenDerived<Token_Var>() != nullptr && sym ->GetTokenDerived<Token_Var>()->IsSafe() && InitialUse <= 4){
+			InitialUse = 5;
+		}
 		ToReturn.first =  InitialUse;
 		InitialUse++;
 	}
@@ -2530,7 +2613,11 @@ std::pair<unsigned, std::string> AsmRegister::GetAvailableRegister(std::shared_p
 		//Find LRU
 		unsigned result, counter=UINT_MAX;
 		bool candidate = false;
-		for (unsigned i = 0; i < AsmUsableReg; i++){
+		unsigned i = 0;
+		if (sym -> GetTokenDerived<Token_Var>() != nullptr && sym ->GetTokenDerived<Token_Var>()->IsSafe()){
+			i = 5;
+		}
+		for (; i < AsmUsableReg; i++){
 			State_T &Register = GetRegister(i);
 			if (!Register.Permanent && Register.LastUsed < counter){
 				counter = Register.LastUsed;
@@ -2598,8 +2685,19 @@ std::pair<std::string, std::string> AsmRegister::GetVarRead(std::shared_ptr<Symb
 	}
 	else{
 		//Found
-		result.first = "R" + ToString<unsigned>(sym.second);
-		GetRegister(sym.second).LastUsed = counter;
+		if (var -> GetTokenDerived<Token_Var>() != nullptr && var -> GetTokenDerived<Token_Var>() -> IsSafe() && sym.second <= 4){
+			//We have to move it
+			EvictRegister(sym.second);
+			std::pair<unsigned, std::string> ID = GetAvailableRegister(var);
+			result.second = ID.second;
+			result.second = result.second + "\tMOV R" + ToString<unsigned>(ID.first) + ", R" + ToString<unsigned>(sym.second) + "\n";
+			result.first = ID.first;
+			GetRegister(ID.first).LastUsed = counter;
+		}
+		else{
+			result.first = "R" + ToString<unsigned>(sym.second);
+			GetRegister(sym.second).LastUsed = counter;
+		}
 	}
 	counter++;
 	return result;
@@ -2617,14 +2715,38 @@ std::pair<std::string, std::string> AsmRegister::GetVarWrite(std::shared_ptr<Sym
 		GetRegister(ID.first).LastUsed = counter;
 		GetRegister(ID.first).WrittenTo = true;
 		GetRegister(ID.first).WrittenBefore = true;
+		if (InLoop)
+			GetRegister(ID.first).LoopWrittenTo = true;
 	}
 	else{
 		//Found
-		result.first = "R" + ToString<unsigned>(sym.second);
-		GetRegister(sym.second).LastUsed = counter;
-		GetRegister(sym.second).WrittenTo = true;
-		GetRegister(sym.second).WrittenBefore = true;
+		if (var -> GetTokenDerived<Token_Var>() != nullptr && var -> GetTokenDerived<Token_Var>() -> IsSafe() && sym.second <= 4){
+			//We have to move it
+			EvictRegister(sym.second);
+			std::pair<unsigned, std::string> ID = GetAvailableRegister(var);
+			result.second = ID.second;
+			result.second = result.second + "\tMOV R" + ToString<unsigned>(ID.first) + ", R" + ToString<unsigned>(sym.second) + "\n";
+			result.first = ID.first;
+			
+			GetRegister(ID.first).LastUsed = counter;
+			GetRegister(ID.first).WrittenTo = true;
+			GetRegister(ID.first).WrittenBefore = true;
+			if (InLoop)
+				GetRegister(ID.first).LoopWrittenTo = true;
+		}
+		else{
+			result.first = "R" + ToString<unsigned>(sym.second);
+			GetRegister(sym.second).LastUsed = counter;
+			GetRegister(sym.second).WrittenTo = true;
+			GetRegister(sym.second).WrittenBefore = true;
+			if (InLoop)
+				GetRegister(sym.second).LoopWrittenTo = true;
+		}
 	}
+	//if (InLoop && var ->GetTokenDerived<Token_Var>() != nullptr &&  var ->GetTokenDerived<Token_Var>() -> GetIndexFlat() != nullptr){
+	//if (InLoop){
+	//	result.second += SaveRegister(var);
+	//}
 	counter++;
 	return result;
 }
@@ -2667,14 +2789,15 @@ std::string AsmRegister::SaveRegister(std::shared_ptr<Symbol> var){
 				output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Load address of array start\n";
 				std::pair<std::string, std::string> Offset = GetVarRead( Register.sym ->GetTokenDerived<Token_Var>() -> GetIndexFlat() -> GetSymbol() );
 				output << Offset.second;
-				output << "\tSTR R" << result.second << ", [R" << AsmScratch << ", " << Offset.first << "]; Load array with offset calculated\n";
+				output << "\tSTR R" << result.second << ", [R" << AsmScratch << ", " << Offset.first << "]; Store array with offset calculated\n";
 			}
 			else{
 				output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable - Load address of variable\n";
 				output << "\tSTR R" << result.second << ", [R" << AsmScratch << "]; save variable\n";
 			}
 			
-			
+			Register.WrittenTo = false;
+			Register.LoopWrittenTo = false;
 
 		}
 	}
@@ -2696,13 +2819,14 @@ std::string AsmRegister::SaveRegister(unsigned no){
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Load address of array start\n";
 			std::pair<std::string, std::string> Offset = GetVarRead( Register.sym ->GetTokenDerived<Token_Var>() -> GetIndexFlat() -> GetSymbol() );
 			output << Offset.second;
-			output << "\tSTR R" << no << ", [R" << AsmScratch << ", " << Offset.first << "]; Load array with offset calculated\n";
+			output << "\tSTR R" << no << ", [R" << AsmScratch << ", " << Offset.first << "]; Store array with offset calculated\n";
 		}
 		else{
 			output << "\tLDR R" << AsmScratch << ", =" << Register.sym -> GetLabel() -> GetID() << "; Force storage of variable\n";
 			output << "\tSTR R" << no << ", [R" << AsmScratch << "]\n";
 		}
-			
+		Register.WrittenTo = false;
+		Register.LoopWrittenTo = false;	
 	}
 	return output.str();
 }
@@ -2781,9 +2905,11 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 		};
 	}
 
-	if (write)
+	if (write){
 		Register.WrittenTo = true;
-	
+		if (InLoop)
+			Register.LoopWrittenTo = true;
+	}
 	counter++;
 	if (InitialUse <= no)
 		InitialUse = ++no;
@@ -2791,15 +2917,17 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 	return result.str();
 }
 
-std::string AsmRegister::SaveAllRegisters(){
+std::string AsmRegister::SaveAllRegisters(bool LoopOnly){
 	std::stringstream result;
 	unsigned end = InitialUse;
 	
 	if (end > AsmUsableReg)
 		end = AsmUsableReg;
-	for (unsigned i = 0; i <= end; i++)
+	for (unsigned i = 0; i <= end; i++){
+		if (LoopOnly && !GetRegister(i).LoopWrittenTo)
+			continue;
 		result << SaveRegister(i);
-	
+	}
 	return result.str();
 }
 

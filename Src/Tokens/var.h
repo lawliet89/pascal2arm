@@ -63,6 +63,10 @@ public:
 	bool operator==(const Token &obj) const;		//Overridden
 	bool operator!=(const Token &obj) const;		//Overridden
 	
+	//If variable is safe, then it will not be assigned to R0-R4
+	bool IsSafe() const { return safe; }
+	void SetSafe(bool val=true) { safe = val; }
+	
 protected:
 	std::shared_ptr<Token> value;
 	std::shared_ptr<Token_Type> Type;
@@ -73,6 +77,8 @@ protected:
 	bool Dereference;		//Only applicable for pointers. Set whether the variable has been dereferenced
 	std::shared_ptr<Token_Expression> IndexExpr;		//Before flattening
 	std::shared_ptr<AsmOp> IndexFlat;				//After flattening
+	
+	bool safe;		//Ask the memory manager not to use R1-R4
 	
 };
 #endif

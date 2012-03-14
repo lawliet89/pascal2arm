@@ -1190,6 +1190,24 @@ AssignmentStatement: Identifier OP_ASSIGNMENT Expression {
 				//Set LHS_T
 				LHS_T.reset(new Token_Type( *LHS_T ));
 				LHS_T -> SetArray(false);
+				
+				//We need to flatten varef
+				//Temp op to store flattened offset
+				std::shared_ptr<AsmOp> tempOp (new AsmOp(AsmOp::Register, AsmOp::Rd));
+				std::shared_ptr<Symbol> temp = Program.CreateTempVar(Program.GetTypeSymbol("integer").first->GetTokenDerived<Token_Type>());		//TODO - Check for strict simplicity to reduce temp var usage
+				tempOp -> SetSymbol(temp);
+				
+				tempOp = Program.FlattenExpression(var -> GetIndexExpr(), tempOp) -> GetRd();
+				//std::shared_ptr<AsmLine> line = CreateCodeLine(AsmLine::Directive, AsmLine::LOADARRAY);
+				//line -> SetRn(tempOp);
+				
+				//std::shared_ptr<AsmOp> Rm(new AsmOp(AsmOp::Register, AsmOp::Rm));
+				//Rm -> SetSymbol(var -> GetSymbol());
+				//line -> SetRm(Rm);
+				
+				//Clone a result
+				//line -> SetRd(std::shared_ptr<AsmOp>(new AsmOp(*result)));
+				var -> SetIndexFlat(tempOp);
 			}
 			if (Program.TypeCompatibilityCheck(LHS_T, RHS_T) != TypeCompatible){
 				std::stringstream msg;
@@ -1469,7 +1487,11 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 						
 						/** Checks are done **/
 						//Set index to become FromExpr
-						Program.CreateAssignmentLine(index.first, FromExpr);
+						std::shared_ptr<AsmLine> line = Program.CreateAssignmentLine(index.first, FromExpr, true);
+						std::shared_ptr<AsmLine> line2 = Program.CreateCodeLine(AsmLine::Directive, AsmLine::MAKEPERMANENT);
+						line2 -> SetRd(line -> GetRd());
+						
+						$$ = line->GetRd()->GetSymbol()->GetValue();
 						
 						//Create branch label
 						std::shared_ptr<AsmLabel> label = Program.GetCurrentBlock()->CreateForLabel();
@@ -1491,6 +1513,8 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 						YYERROR;
 					}
 			} K_DO Statement {
+				//Force save loop
+				Program.CreateCodeLine(AsmLine::Directive, AsmLine::FORCESAVELOOP);
 				//NOTE: Statement is $9
 				//Increment index by one
 				std::pair<std::shared_ptr<Symbol>, AsmCode> index(Program.GetSymbol($2 -> GetStrValue()));
@@ -1523,7 +1547,14 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				LabelOp -> SetLabel(label);
 				branch -> SetRd(LabelOp);
 				
+				std::shared_ptr<AsmLine> line3 = Program.CreateCodeLine(AsmLine::Directive, AsmLine::MAKENONPERMANENT);
+				std::shared_ptr<AsmOp> Rd(new AsmOp(AsmOp::Register, AsmOp::Rd));
+				std::shared_ptr<Token_Var> token = std::static_pointer_cast<Token_Var>($7);
+				Rd -> SetSymbol(token -> GetSymbol());
+				line3 -> SetRd(Rd);
+				
 				Program.GetCurrentBlock()->InLoopStackPop();
+				
 			}
 	;
 

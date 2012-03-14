@@ -190,7 +190,7 @@ $(GEN_DIR)formalparam.o: Tokens/formalparam.cpp Tokens/formalparam.h token.h
 #-------------------------------------------------------------------------------
 # PHONY TARGETS
 #-------------------------------------------------------------------------------
-.PHONY : clean again clean-temp
+.PHONY : clean again clean-temp sample
 clean:
 	@rm -f -v *.o $(FLEX_HEADER) $(BISON_HEADER) $(PROGRAM) $(FLEX_CPP) $(BISON_CPP) 
 	@rm -f -v Gen/*
@@ -202,3 +202,13 @@ clean-temp:
 	@rm -f -v *~
 	@rm -f -v Tokens/*~
 	@rm -f -v Asm/*~
+	
+sample:
+	./a -H -p -o Output/sample1.s Sample/sample1.pas
+	./a -H -p -o Output/sample2.s Sample/sample2.pas
+	./a -H -p -o Output/sample3.s Sample/sample3.pas
+	./a -H -p -o Output/sample4.s Sample/sample4.pas
+	./a -H -p -o Output/sample5.s Sample/sample5.pas
+	./a -H -p -o Output/sample6.s Sample/sample6.pas
+	./a -H -p -o Output/sample7.s Sample/sample7.pas
+	./a -H -p -o Output/sample8.s Sample/sample8.pas

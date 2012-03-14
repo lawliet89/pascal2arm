@@ -1,22 +1,14 @@
-program sample7;
+program sample6;
 
-type int_ptr = ^integer;
+var A, B, C :  integer;
 
-var index   : integer;
-    myarray : array[1..5] of integer;
-    range : 1 .. 10;
-    ptr : int_ptr;
+function incr(X: integer):integer;
+   begin
+       incr := X + 1;
+   end;
+
 begin
-   
-   for index := 1 to 5 do
-          myarray[index]:= index;
-
-   for index := 1 to 5 do
-          write(myarray[index]);
-   
-   range := 999;
-   
-   range := ptr^;
-   index := myarray[5] + 5;
-   
+   A:=1;
+   B:=incr(A);
+   write(B);
 end.

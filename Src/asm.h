@@ -223,7 +223,11 @@ public:
 		FUNCALL,		//Rd is the return value, Rm, Rn, Ro supported i,e, max 3 args TODO for more
 		NEW,
 		DISPOSE,
-		LOADARRAY		//Rm is the array symbol, Rn is the offset
+		LOADARRAY,		//Rm is the array symbol, Rn is the offset
+		MAKEPERMANENT,	//Set the flag of a register (must be a variable loaded) permanent. Useful in loops
+		MAKENONPERMANENT, 
+		FORCESAVELOOP,	//Force all registers to be saved (only loop written ones)
+		FORCESAVE		//Save all registers
 	};
 	enum CC_T{	//Condition Code
 		EQ, CS, SQ, VS, GT, GE, PL, HI, HS, CC, NE, VC, LT, LE, MI, LO, LS,
@@ -452,7 +456,7 @@ public:
 	void EvictRegister(unsigned no);
 	std::string ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool load=true, bool write=false, bool save=true, bool move=true);	//Force variable to be in register no
 	void IncrementCounter(){ counter++; }
-	std::string SaveAllRegisters();
+	std::string SaveAllRegisters(bool LoopOnly=false);
 	unsigned GetCounter() const { return counter; }
 	
 	void SetFunctionRegisters(unsigned count);
@@ -465,7 +469,8 @@ protected:
 		unsigned LastUsed;		//Counter where register was last used
 		bool Permanent;		//Set to disallow storage of this to memory. Used in a function for R0-R3
 		bool WrittenBefore;	//Written to at all in its life.
-		State_T(bool IsGlobal=false): WrittenTo(false), BelongToScope(IsGlobal), Permanent(false), LastUsed(0), WrittenBefore(false){}
+		bool LoopWrittenTo;	//Whether it was written to in a loop.
+		State_T(bool IsGlobal=false): WrittenTo(false), BelongToScope(IsGlobal), Permanent(false), LastUsed(0), WrittenBefore(false), LoopWrittenTo(false){}
 	};
 	
 	std::vector<State_T> Registers;
@@ -546,7 +551,7 @@ public:
 	std::shared_ptr<AsmLine> CreateDataArrayLine(std::shared_ptr<AsmLabel> Label, unsigned count);	//Pass method with a completed label
 	std::shared_ptr<AsmLine> CreateCodeLine(AsmLine::OpType_T, AsmLine::OpCode_T);		//Create an empty line and add it to list
 	std::pair<std::shared_ptr<AsmLine>, std::list<std::shared_ptr<AsmLine> >::iterator> CreateCodeLineIt(AsmLine::OpType_T, AsmLine::OpCode_T);	
-	std::shared_ptr<AsmLine> CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr);		//For assignment statements
+	std::shared_ptr<AsmLine> CreateAssignmentLine(std::shared_ptr<Symbol> sym, std::shared_ptr<Token_Expression> expr, bool safe=false);		//For assignment statements
 	
 	/** Label Related Methods **/
 	std::shared_ptr<AsmLabel> CreateLabel(std::string ID, std::shared_ptr<Symbol> sym=nullptr, std::shared_ptr<AsmLine> Line = nullptr) throw(AsmCode);
