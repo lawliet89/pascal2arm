@@ -2919,6 +2919,7 @@ std::string AsmRegister::SaveAllRegisters(bool LoopOnly){
 		if (LoopOnly && !GetRegister(i).LoopWrittenTo)
 			continue;
 		result << SaveRegister(i);
+		EvictRegister(i);
 	}
 	return result.str();
 }
