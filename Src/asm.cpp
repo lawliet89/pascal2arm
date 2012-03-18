@@ -29,8 +29,7 @@ AsmFile::~AsmFile(){
 	//...
 }
 
-AsmFile::AsmFile(const AsmFile &obj): 
-	
+AsmFile::AsmFile(const AsmFile &obj)
 {
 	//operator=(obj);
 }
