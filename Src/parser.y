@@ -1513,8 +1513,6 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 						YYERROR;
 					}
 			} K_DO Statement {
-				//Force save loop
-				Program.CreateCodeLine(AsmLine::Directive, AsmLine::FORCESAVELOOP);
 				//NOTE: Statement is $9
 				//Increment index by one
 				std::pair<std::shared_ptr<Symbol>, AsmCode> index(Program.GetSymbol($2 -> GetStrValue()));
@@ -1538,6 +1536,9 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				
 				std::shared_ptr<AsmLine> ToExpr = Program.FlattenExpression(std::static_pointer_cast<Token_Expression>($6));
 				line2 -> SetRm(ToExpr -> GetRd());
+
+				//Force save loop
+				Program.CreateCodeLine(AsmLine::Directive, AsmLine::FORCESAVELOOP);
 				
 				//The branch line
 				std::shared_ptr<AsmLabel> label = Program.GetCurrentBlock()->ForLabelStackPop();
@@ -1552,7 +1553,7 @@ ForStatement: K_FOR Identifier OP_ASSIGNMENT Expression K_TO Expression { //NOTE
 				std::shared_ptr<Token_Var> token = std::static_pointer_cast<Token_Var>($7);
 				Rd -> SetSymbol(token -> GetSymbol());
 				line3 -> SetRd(Rd);
-				
+							
 				Program.GetCurrentBlock()->InLoopStackPop();
 				
 			}

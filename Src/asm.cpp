@@ -2911,6 +2911,7 @@ std::string AsmRegister::ForceVar(std::shared_ptr<Symbol> var, unsigned no, bool
 
 std::string AsmRegister::SaveAllRegisters(bool LoopOnly){
 	std::stringstream result;
+	std::vector<unsigned> evictList;
 	unsigned end = InitialUse;
 	
 	if (end > AsmUsableReg)
@@ -2919,8 +2920,11 @@ std::string AsmRegister::SaveAllRegisters(bool LoopOnly){
 		if (LoopOnly && !GetRegister(i).LoopWrittenTo)
 			continue;
 		result << SaveRegister(i);
-		EvictRegister(i);
+		evictList.push_back(i);
 	}
+	
+	for (std::vector<unsigned>::iterator it = evictList.begin(); it < evictList.end(); it++)
+		EvictRegister(*it);
 	return result.str();
 }
 
