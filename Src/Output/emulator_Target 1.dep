@@ -1,0 +1,2 @@
+Dependencies for Project 'emulator', Target 'Target 1': (DO NOT MODIFY !)
+F (.\test.s)(0x4F663D82)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I D:\Keil\ARM\RV31\Inc -I D:\Keil\ARM\CMSIS\Include --list "test.lst" --xref -o "test.o" --depend "test.d")
